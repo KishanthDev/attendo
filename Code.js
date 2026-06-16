@@ -12,6 +12,16 @@ const SHEETS = {
   ANN: 'Announcements'
 };
 
+function debugTodaySummary() {
+  Logger.log(
+    JSON.stringify(
+      getAttendanceSummary("EMP-204415"),
+      null,
+      2
+    )
+  );
+}
+
 function doGet(e) {
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
@@ -20,13 +30,20 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+function debugRawCheckIn() {
+  const sheet = getDb().getSheetByName(SHEETS.ATT);
+  const data = sheet.getDataRange().getValues();
+
+  Logger.log(typeof data[1][3]);
+  Logger.log(data[1][3]);
+}
 // ==========================================
 // SETUP & INSTALLATION
 // ==========================================
 
 function setupSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
+
   const schemas = {
     [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate'],
     [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status', 'LateArrival'],
@@ -37,27 +54,24 @@ function setupSystem() {
     [SHEETS.ANN]: ['AnnID', 'Date', 'Title', 'Content', 'Status']
   };
 
- Object.entries(schemas).forEach(([sheetName, headers]) => {
+  for (const [sheetName, headers] of Object.entries(schemas)) {
     let sheet = ss.getSheetByName(sheetName);
-
     if (!sheet) {
       sheet = ss.insertSheet(sheetName);
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f8fafc");
     }
+  }
 
-    sheet.getRange(1, 1, 1, headers.length)
-      .setValues([headers]);
-  });
+  // Default Settings
+  const setSheet = ss.getSheetByName(SHEETS.SET);
+  if (setSheet.getLastRow() === 1) {
+    setSheet.appendRow(['DailyWorkingHours', '8']);
+    setSheet.appendRow(['LateArrivalTime', '09:15']);
+  }
   return "Setup successful.";
 }
 
-function testCheckInCell() {
-  const sheet = SpreadsheetApp.getActive()
-    .getSheetByName("Attendance");
-
-  Logger.log(
-    sheet.getRange(2,4).getValue()
-  );
-}
 // ==========================================
 // UTILITIES & DB HELPERS
 // ==========================================
@@ -69,41 +83,52 @@ function getSheetDataAsJSON(sheetName) {
   if (!sheet) return [];
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return [];
-  
+
   const headers = data.shift();
-return data.map(row => {
-  let obj = {};
+  return data.map(row => {
+    let obj = {};
 
-  headers.forEach((header, i) => {
-    const value = row[i];
+    headers.forEach((header, i) => {
+      const value = row[i];
 
-    // Handle CheckIn / CheckOut separately
-    if (header === 'CheckIn' || header === 'CheckOut') {
+      // Attendance Date column
+      if (sheetName === SHEETS.ATT && header === 'Date') {
 
-      if (value instanceof Date) {
-        // If Sheets converted epoch to Date, convert back safely
-        obj[header] = isNaN(value.getTime())
-          ? ''
-          : String(value.getTime());
-      } else {
-        obj[header] = value || '';
+        if (value instanceof Date) {
+          obj[header] = Utilities.formatDate(
+            value,
+            Session.getScriptTimeZone(),
+            "yyyy-MM-dd"
+          );
+        } else {
+          obj[header] = String(value);
+        }
+
+        return;
       }
 
-      return;
-    }
+      // CheckIn / CheckOut
+      if (header === 'CheckIn' || header === 'CheckOut') {
+        if (value instanceof Date) {
+          obj[header] = String(value.getTime());
+        } else {
+          obj[header] = value || '';
+        }
+        return;
+      }
 
-    // Handle all date fields safely
-    if (value instanceof Date) {
-      obj[header] = isNaN(value.getTime())
-        ? ''
-        : value.toISOString();
-    } else {
-      obj[header] = value;
-    }
+      if (value instanceof Date) {
+        obj[header] = Utilities.formatDate(
+          value,
+          Session.getScriptTimeZone(),
+          "yyyy-MM-dd"
+        );
+      } else {
+        obj[header] = value;
+      }
+    });
+    return obj;
   });
-
-  return obj;
-});
 }
 
 function saveRowToSheet(sheetName, dataObj, keyField) {
@@ -111,7 +136,7 @@ function saveRowToSheet(sheetName, dataObj, keyField) {
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const keyValue = dataObj[keyField];
-  
+
   let rowIndex = -1;
   for (let i = 1; i < data.length; i++) {
     if (data[i][headers.indexOf(keyField)] === keyValue) {
@@ -119,7 +144,7 @@ function saveRowToSheet(sheetName, dataObj, keyField) {
       break;
     }
   }
-  
+
   const rowData = headers.map(h => dataObj[h] !== undefined ? dataObj[h] : '');
   if (rowIndex > -1) {
     sheet.getRange(rowIndex, 1, 1, headers.length).setValues([rowData]);
@@ -133,7 +158,7 @@ function deleteRowFromSheet(sheetName, keyField, keyValue) {
   const sheet = getDb().getSheetByName(sheetName);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
-  
+
   for (let i = data.length - 1; i >= 1; i--) {
     if (data[i][headers.indexOf(keyField)] === keyValue) {
       sheet.deleteRow(i + 1);
@@ -149,23 +174,45 @@ function logAudit(userEmail, action, details) {
 }
 
 // ==========================================
+// SETTINGS
+// ==========================================
+
+function getAppSettings() {
+  const data = getSheetDataAsJSON(SHEETS.SET);
+  let settings = { DailyWorkingHours: 8, LateArrivalTime: "09:15" };
+  data.forEach(row => {
+    if (row.Key === 'DailyWorkingHours') settings.DailyWorkingHours = Number(row.Value);
+    if (row.Key === 'LateArrivalTime') settings.LateArrivalTime = row.Value;
+  });
+  return settings;
+}
+
+function saveAppSettings(settingsData) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  saveRowToSheet(SHEETS.SET, { Key: 'DailyWorkingHours', Value: settingsData.DailyWorkingHours }, 'Key');
+  saveRowToSheet(SHEETS.SET, { Key: 'LateArrivalTime', Value: settingsData.LateArrivalTime }, 'Key');
+  logAudit(currentUser, 'UPDATE_SETTINGS', `Working Hours: ${settingsData.DailyWorkingHours}, Late Time: ${settingsData.LateArrivalTime}`);
+  return { status: 'Success', message: 'Settings updated successfully!' };
+}
+
+// ==========================================
 // AUTHENTICATION
 // ==========================================
 
 function loginUser(inputEmail) {
   let email = inputEmail ? inputEmail.trim() : Session.getActiveUser().getEmail();
-  if (!email) email = 'admin@company.com'; 
-  
+  if (!email) email = 'admin@company.com';
+
   const employees = getSheetDataAsJSON(SHEETS.EMP);
   let user = employees.find(e => e.Email.toLowerCase() === email.toLowerCase());
   if (!user) user = { EmpID: 'UNKNOWN', Name: 'Guest User', Email: email, Role: 'EMPLOYEE', Status: 'Inactive' };
-  
+
   logAudit(email, 'LOGIN', 'User accessed the portal.');
   return user;
 }
 
 // ==========================================
-// DASHBOARD APIs
+// DASHBOARD
 // ==========================================
 
 function getDashboardData() {
@@ -173,24 +220,26 @@ function getDashboardData() {
   const atts = getSheetDataAsJSON(SHEETS.ATT);
   const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
   const hols = getSheetDataAsJSON(SHEETS.HOL);
-  
+
   const todayDate = new Date();
-  const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth()+1).padStart(2,'0')}-${String(todayDate.getDate()).padStart(2,'0')}`;
-  
+  const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+
   const activeEmployees = emps.filter(e => e.Status === 'Active' && e.Role === 'EMPLOYEE');
   const activeEmpIds = activeEmployees.map(e => e.EmpID);
-  
-  const presentToday = atts.filter(a => {
-    if (!a.CheckIn || !activeEmpIds.includes(a.EmpID)) return false;
-    let d = new Date(a.Date);
-    if (isNaN(d.getTime())) return false;
-    let rStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    return rStr === todayStr;
-  }).length;
-  
+
+  // Create a Set of unique employees who have at least one check-in today
+  const presentSet = new Set();
+  atts.forEach(a => {
+    if (a.CheckIn && activeEmpIds.includes(a.EmpID)) {
+      let rStr = String(a.Date).split('T')[0];
+      if (rStr === todayStr) presentSet.add(a.EmpID);
+    }
+  });
+
   const leavesToday = leaves.filter(l => l.Status === 'Approved' && l.StartDate <= todayStr && l.EndDate >= todayStr && activeEmpIds.includes(l.EmpID)).length;
+  const presentToday = presentSet.size;
   const absentToday = activeEmployees.length - presentToday - leavesToday;
-  
+
   return {
     totalEmployees: activeEmployees.length,
     presentToday: presentToday,
@@ -198,7 +247,7 @@ function getDashboardData() {
     onLeaveToday: leavesToday,
     pendingLeaves: leaves.filter(l => l.Status === 'Pending').length,
     announcements: getSheetDataAsJSON(SHEETS.ANN).filter(a => a.Status === 'Active').slice(-5).reverse(),
-    upcomingHolidays: hols.filter(h => h.Date >= todayStr).sort((a,b) => a.Date > b.Date ? 1 : -1).slice(0, 3)
+    upcomingHolidays: hols.filter(h => h.Date >= todayStr).sort((a, b) => a.Date > b.Date ? 1 : -1).slice(0, 3)
   };
 }
 
@@ -218,7 +267,7 @@ function saveEmployee(empData) {
     empData.EmpID = 'EMP-' + Math.floor(100000 + Math.random() * 900000);
     empData.JoiningDate = new Date().toISOString().split('T')[0];
   }
-  
+
   empData.Role = 'EMPLOYEE';
   if (!empData.Status) empData.Status = 'Active';
 
@@ -235,87 +284,140 @@ function deleteEmployee(empID) {
 }
 
 // ==========================================
-// ATTENDANCE APIs (FIXED: DAILY SESSION LOCK)
+// ATTENDANCE APIs (RE-ENGINEERED)
 // ==========================================
 
-function getAttendance() { return getSheetDataAsJSON(SHEETS.ATT); }
+function getAttendanceSummary(empIdFilter = null) {
+  const rawData = getSheetDataAsJSON(SHEETS.ATT);
+  const settings = getAppSettings();
+  const reqHours = Number(settings.DailyWorkingHours) || 8;
+
+  let filtered = rawData;
+  if (empIdFilter) {
+    filtered = rawData.filter(r => r.EmpID === empIdFilter);
+  }
+
+  // Group by EmpID + Date
+  const groups = {};
+  filtered.forEach(row => {
+    const dStr = row.Date; // already yyyy-MM-dd
+
+    const key = row.EmpID + "_" + dStr;
+
+    if (!groups[key]) {
+      groups[key] = {
+        EmpID: row.EmpID,
+        Date: dStr,
+        TotalHours: 0,
+        Sessions: [],
+        RequiredHours: reqHours
+      };
+    }
+
+    groups[key].Sessions.push(row);
+
+    const h = Number(row.Hours);
+    if (!isNaN(h)) {
+      groups[key].TotalHours += h;
+    }
+  });
+
+  const result = Object.values(groups).map(g => {
+    if (g.TotalHours >= g.RequiredHours) g.Status = 'Completed';
+    else if (g.TotalHours >= g.RequiredHours / 2) g.Status = 'Half Day';
+    else if (g.TotalHours > 0) g.Status = 'Present';
+    else g.Status = 'Absent';
+
+    g.Sessions.sort((a, b) => Number(String(a.CheckIn).replace(/,/g, '')) - Number(String(b.CheckIn).replace(/,/g, '')));
+    return g;
+  });
+
+  result.sort((a, b) => a.Date > b.Date ? -1 : 1);
+  return result;
+}
 
 function markAttendance(action, empId) {
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const epochTimestamp = now.getTime();
   const currentUser = Session.getActiveUser().getEmail() || empId;
-  
+  const settings = getAppSettings();
+
   const sheet = getDb().getSheetByName(SHEETS.ATT);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
-  
+
   let lastRecordIndex = -1;
   let lastCheckIn = null;
   let lastCheckOut = null;
   let lastDateStr = null;
+  let sessionsToday = 0;
 
   for (let i = data.length - 1; i >= 1; i--) {
-    if (data[i][headers.indexOf('EmpID')] === empId) {
-      lastRecordIndex = i + 1; 
-      lastCheckIn = data[i][headers.indexOf('CheckIn')];
-      lastCheckOut = data[i][headers.indexOf('CheckOut')];
-      
+    let rowEmpId = data[i][headers.indexOf('EmpID')];
+    if (rowEmpId === empId) {
       let rawDate = data[i][headers.indexOf('Date')];
       let d = new Date(rawDate);
       if (!isNaN(d.getTime())) {
-        lastDateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        let rStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (rStr === todayStr) sessionsToday++;
+
+        if (lastRecordIndex === -1) {
+          lastRecordIndex = i + 1;
+          lastCheckIn = data[i][headers.indexOf('CheckIn')];
+          lastCheckOut = data[i][headers.indexOf('CheckOut')];
+          lastDateStr = rStr;
+        }
       }
-      break;
     }
   }
-  
-  // Strict Scope: Only block if they have an active session TODAY.
+
   const hasActiveSessionToday = (lastRecordIndex > -1 && lastDateStr === todayStr && (!lastCheckOut || lastCheckOut === ""));
 
   if (action === 'CHECK_IN') {
-    if (hasActiveSessionToday) {
-      return { status: 'Error', message: 'You already have an active check-in today! You must check out first.' };
+    if (hasActiveSessionToday) return { status: 'Error', message: 'You have an active session! Check out first.' };
+
+    let isLate = 'No';
+    if (sessionsToday === 0) { // Only check late arrival on the FIRST check-in of the day
+      const [lateH, lateM] = (settings.LateArrivalTime || "09:15").split(':').map(Number);
+      const currentH = now.getHours();
+      const currentM = now.getMinutes();
+      if (currentH > lateH || (currentH === lateH && currentM > lateM)) isLate = 'Yes';
     }
-    
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const isLate = (hours > 9 || (hours === 9 && minutes > 15)) ? 'Yes' : 'No';
-    
+
     sheet.appendRow([
-  'ATT-' + epochTimestamp,
-  empId,
-  todayStr,
-  String(epochTimestamp),
-  "",
-  "",
-  'Present',
-  isLate
-]);
+      'ATT-' + epochTimestamp,
+      empId,
+      todayStr,
+      String(epochTimestamp),
+      "",
+      "",
+      'Present',
+      isLate
+    ]);
     logAudit(currentUser, 'CHECK_IN', `Checked in at Epoch ${epochTimestamp}`);
     return { status: 'Success', message: 'Successfully checked in!' };
-    
+
   } else if (action === 'CHECK_OUT') {
-    if (!hasActiveSessionToday) {
-      return { status: 'Error', message: 'No active Check-In found for today. You must Check In first.' };
-    }
-    
-    // Safely parse check in string, stripping commas
+    if (!hasActiveSessionToday) return { status: 'Error', message: 'No active Check-In found. You must Check In first.' };
+
     const cleanCheckInStr = String(lastCheckIn).replace(/,/g, '');
     const cInEpoch = Number(cleanCheckInStr);
-    
     let workedHours = "0.00";
     if (!isNaN(cInEpoch) && cInEpoch > 0) {
       workedHours = (Math.abs(epochTimestamp - cInEpoch) / 36e5).toFixed(2);
     }
-    
-    sheet.getRange(lastRecordIndex, headers.indexOf('CheckOut') + 1).setValue(epochTimestamp);
+
+    sheet.getRange(
+      lastRecordIndex,
+      headers.indexOf('CheckOut') + 1
+    ).setValue(String(epochTimestamp));
     sheet.getRange(lastRecordIndex, headers.indexOf('Hours') + 1).setValue(workedHours);
-    logAudit(currentUser, 'CHECK_OUT', `Checked out. Hours: ${workedHours}`);
-    
+    logAudit(currentUser, 'CHECK_OUT', `Checked out. Session Hours: ${workedHours}`);
+
     return { status: 'Success', message: 'Successfully checked out!' };
   }
-  
+
   return { status: 'Error', message: 'Invalid action payload.' };
 }
 
@@ -341,10 +443,10 @@ function updateLeaveStatus(leaveId, status, remarks = '') {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
   let leave = leaves.find(l => l.LeaveID === leaveId);
-  if (leave) { 
-    leave.Status = status; 
+  if (leave) {
+    leave.Status = status;
     leave.Remarks = remarks;
-    saveRowToSheet(SHEETS.LEAVE, leave, 'LeaveID'); 
+    saveRowToSheet(SHEETS.LEAVE, leave, 'LeaveID');
     logAudit(currentUser, `LEAVE_${status.toUpperCase()}`, `Leave ${leaveId} ${status}. Remarks: ${remarks}`);
     return { status: 'Success', message: `Leave request has been ${status}.` };
   }
