@@ -36,6 +36,11 @@
       transition: opacity 0.3s ease-in-out;
     }
 
+    .nav-item.active {
+      pointer-events: none;
+      cursor: default;
+    }
+
     .view-section.active {
       display: block;
       opacity: 1;
@@ -136,19 +141,14 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
-
-    #global-loader {
-      backdrop-filter: blur(4px);
-    }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 dark:bg-dark-bg dark:text-gray-100 transition-colors duration-200">
 
-  <div id="global-loader"
-    class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 dark:bg-dark-bg/80 hidden">
+  <div id="global-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center hidden">
     <div class="animate-spin rounded-full h-14 w-14 border-4 border-gray-200 border-t-brand-600 mb-4"></div>
-    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Processing...</p>
+    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Loading...</p>
   </div>
 
   <div id="view-login" class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-50 dark:bg-dark-bg hidden">
@@ -496,7 +496,25 @@
 
   <script>
     const App = {
-      state: { user: null, currentView: '', theme: 'light', data: { employees: [], settings: null }, calDate: new Date() },
+      state: {
+        user: null,
+        currentView: '',
+        theme: 'light',
+
+        data: {
+          employees: [],
+          settings: null
+        },
+
+        cache: {
+          employees: null,
+          holidays: null,
+          announcements: null,
+          leaves: null
+        },
+
+        calDate: new Date()
+      },
 
       api: async (method, ...args) => {
         return new Promise((resolve, reject) => {
@@ -599,7 +617,8 @@
           App.ui.modals.close('employee-modal');
           const res = await App.api('saveEmployee', data);
           Swal.fire({ icon: 'success', title: 'Success', text: res.message });
-          App.loadData.employees();
+          App.state.cache.employees = null;
+          App.loadData.employees(true);
           App.loadData.dashboard();
         },
         deleteEmployee: async (id) => {
@@ -696,9 +715,20 @@
           const textColor = App.state.theme === 'dark' ? '#94a3b8' : '#64748b';
           window.dashChartInst = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'Attendance %', data: [95, 92, 88, 96, 90], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } } });
         },
-        employees: async () => {
-          App.state.data.employees = await App.api('getEmployees');
-          App.ui.render.employeeTable(App.state.data.employees);
+        employees: async (force = false) => {
+
+          if (!force && App.state.cache.employees) {
+            App.state.data.employees = App.state.cache.employees;
+            App.ui.render.employeeTable(App.state.data.employees);
+            return;
+          }
+
+          const data = await App.api('getEmployees');
+
+          App.state.cache.employees = data;
+          App.state.data.employees = data;
+
+          App.ui.render.employeeTable(data);
         },
         settings: () => {
           document.getElementById('set-daily-hours').value = App.state.data.settings?.DailyWorkingHours || 8;
@@ -894,12 +924,46 @@
         },
         switchView: (viewId) => {
           App.state.currentView = viewId;
-          document.getElementById('header-title').innerText = viewId;
+          const titles = {
+            dashboard: 'Dashboard',
+            employees: 'Employee Directory',
+            attendance: 'Attendance',
+            leaves: 'Leave Management',
+            holidays: 'Holiday Calendar',
+            announcements: 'Announcements',
+            settings: 'Settings'
+          };
+
+          document.getElementById('header-title').innerText =
+            titles[viewId] || viewId;
           document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
           setTimeout(() => document.getElementById(`view-${viewId}`).classList.add('active'), 10);
           document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white'));
+          // Reset all nav items
+          document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove(
+              'bg-brand-50',
+              'text-brand-600',
+              'dark:bg-slate-800',
+              'dark:text-white',
+              'pointer-events-none',
+              'cursor-default'
+            );
+          });
+
+          // Activate current nav item
           const activeNav = document.getElementById(`nav-${viewId}`);
-          if (activeNav) activeNav.classList.add('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white');
+
+          if (activeNav) {
+            activeNav.classList.add(
+              'bg-brand-50',
+              'text-brand-600',
+              'dark:bg-slate-800',
+              'dark:text-white',
+              'pointer-events-none',
+              'cursor-default'
+            );
+          }
           if (App.loadData[viewId]) App.loadData[viewId]();
         },
         render: {
