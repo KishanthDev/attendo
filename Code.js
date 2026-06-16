@@ -15,8 +15,8 @@ const SHEETS = {
 function doGet(e) {
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
-    .setTitle('HRMS SaaS Workspace')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setTitle('Modern HRMS Workspace')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -28,13 +28,13 @@ function setupSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   
   const schemas = {
-    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Phone', 'Department', 'Designation', 'Manager', 'JoiningDate', 'Role', 'Status'],
-    [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status'],
-    [SHEETS.LEAVE]: ['LeaveID', 'EmpID', 'Type', 'StartDate', 'EndDate', 'Status', 'Remarks'],
-    [SHEETS.HOL]: ['HolID', 'Name', 'Date'],
+    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate'],
+    [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status', 'LateArrival'],
+    [SHEETS.LEAVE]: ['LeaveID', 'EmpID', 'Type', 'StartDate', 'EndDate', 'Days', 'Status', 'Remarks'],
+    [SHEETS.HOL]: ['HolID', 'Name', 'Date', 'Type', 'Description'],
     [SHEETS.SET]: ['Key', 'Value'],
     [SHEETS.AUDIT]: ['LogID', 'Timestamp', 'User', 'Action', 'Details'],
-    [SHEETS.ANN]: ['AnnID', 'Date', 'Title', 'Content', 'Author']
+    [SHEETS.ANN]: ['AnnID', 'Date', 'Title', 'Content', 'Status']
   };
 
   for (const [sheetName, headers] of Object.entries(schemas)) {
@@ -42,18 +42,15 @@ function setupSystem() {
     if (!sheet) {
       sheet = ss.insertSheet(sheetName);
       sheet.appendRow(headers);
-      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f3f4f6");
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#f8fafc");
     }
   }
 
-  // Insert Sample Users if Employees sheet is empty
   const empSheet = ss.getSheetByName(SHEETS.EMP);
   if (empSheet.getLastRow() === 1) {
-    empSheet.appendRow(['EMP-001', 'System Admin', 'admin@company.com', '1234567890', 'IT', 'Admin', 'None', new Date().toISOString().split('T')[0], 'ADMIN', 'Active']);
-    empSheet.appendRow(['EMP-002', 'Demo Employee', 'employee@company.com', '0987654321', 'Engineering', 'Developer', 'EMP-001', new Date().toISOString().split('T')[0], 'EMPLOYEE', 'Active']);
+    empSheet.appendRow(['EMP-001', 'System Admin', 'admin@company.com', 'IT', 'Administrator', 'ADMIN', 'Active', new Date().toISOString().split('T')[0]]);
+    empSheet.appendRow(['EMP-002', 'Demo Employee', 'employee@company.com', 'Engineering', 'Developer', 'EMPLOYEE', 'Active', new Date().toISOString().split('T')[0]]);
   }
-  
-  logAudit('System', 'INITIALIZE', 'HRMS Setup Completed');
   return "Setup successful.";
 }
 
@@ -93,7 +90,7 @@ function saveRowToSheet(sheetName, dataObj, keyField) {
     }
   }
   
-  const rowData = headers.map(h => dataObj[h] || '');
+  const rowData = headers.map(h => dataObj[h] !== undefined ? dataObj[h] : '');
   if (rowIndex > -1) {
     sheet.getRange(rowIndex, 1, 1, headers.length).setValues([rowData]);
   } else {
@@ -102,64 +99,105 @@ function saveRowToSheet(sheetName, dataObj, keyField) {
   return true;
 }
 
+function deleteRowFromSheet(sheetName, keyField, keyValue) {
+  const sheet = getDb().getSheetByName(sheetName);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][headers.indexOf(keyField)] === keyValue) {
+      sheet.deleteRow(i + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
 function logAudit(userEmail, action, details) {
   const sheet = getDb().getSheetByName(SHEETS.AUDIT);
   sheet.appendRow([Utilities.getUuid(), new Date().toISOString(), userEmail, action, details]);
 }
 
 // ==========================================
-// AUTHENTICATION & SESSION
+// AUTHENTICATION
 // ==========================================
 
 function loginUser(inputEmail) {
-  // Use input email for testing role switching, fallback to active Workspace user
   let email = inputEmail ? inputEmail.trim() : Session.getActiveUser().getEmail();
-  if (!email) email = 'admin@company.com'; // Fallback if tested outside domain
+  if (!email) email = 'admin@company.com'; 
   
   const employees = getSheetDataAsJSON(SHEETS.EMP);
   let user = employees.find(e => e.Email.toLowerCase() === email.toLowerCase());
   
-  if (!user) {
-    user = { EmpID: 'UNKNOWN', Name: 'Guest User', Email: email, Role: 'EMPLOYEE', Status: 'Inactive' };
-  }
+  if (!user) user = { EmpID: 'UNKNOWN', Name: 'Guest User', Email: email, Role: 'EMPLOYEE', Status: 'Inactive' };
   
-  logAudit(email, 'LOGIN', 'User accessed application via login gateway');
+  logAudit(email, 'LOGIN', 'User accessed the portal.');
   return user;
 }
 
 // ==========================================
-// ADMIN & DASHBOARD APIs
+// DASHBOARD & ANALYTICS
 // ==========================================
 
 function getDashboardData() {
   const emps = getSheetDataAsJSON(SHEETS.EMP);
   const atts = getSheetDataAsJSON(SHEETS.ATT);
   const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
-  
+  const hols = getSheetDataAsJSON(SHEETS.HOL);
   const today = new Date().toISOString().split('T')[0];
   
-  const presentToday = atts.filter(a => a.Date.includes(today) && a.CheckIn).length;
-  const leavesToday = leaves.filter(l => l.Status === 'Approved' && l.StartDate <= today && l.EndDate >= today).length;
-  const pendingLeaves = leaves.filter(l => l.Status === 'Pending').length;
+  // Strict requirements: Only count Active EMPLOYEEs, exclude ADMINs
+  const activeEmployees = emps.filter(e => e.Status === 'Active' && e.Role === 'EMPLOYEE');
+  const activeEmpIds = activeEmployees.map(e => e.EmpID);
+  
+  const presentToday = atts.filter(a => a.Date.includes(today) && a.CheckIn && activeEmpIds.includes(a.EmpID)).length;
+  const leavesToday = leaves.filter(l => l.Status === 'Approved' && l.StartDate <= today && l.EndDate >= today && activeEmpIds.includes(l.EmpID)).length;
+  const absentToday = activeEmployees.length - presentToday - leavesToday;
   
   return {
-    totalEmployees: emps.filter(e => e.Status === 'Active').length,
+    totalEmployees: activeEmployees.length,
     presentToday: presentToday,
+    absentToday: absentToday < 0 ? 0 : absentToday,
     onLeaveToday: leavesToday,
-    pendingLeaves: pendingLeaves,
-    recentLeaves: leaves.slice(-5).reverse(),
-    announcements: getSheetDataAsJSON(SHEETS.ANN).slice(-3).reverse()
+    pendingLeaves: leaves.filter(l => l.Status === 'Pending').length,
+    announcements: getSheetDataAsJSON(SHEETS.ANN).filter(a => a.Status === 'Active').slice(-5).reverse(),
+    upcomingHolidays: hols.filter(h => h.Date >= today).sort((a,b) => a.Date > b.Date ? 1 : -1).slice(0, 3)
   };
 }
 
-function getEmployees() { return getSheetDataAsJSON(SHEETS.EMP); }
-function saveEmployee(empData) {
-  if (!empData.EmpID) empData.EmpID = 'EMP-' + Date.now().toString().slice(-6);
-  saveRowToSheet(SHEETS.EMP, empData, 'EmpID');
-  logAudit(Session.getActiveUser().getEmail(), 'SAVE_EMP', `Employee updated: ${empData.EmpID}`);
-  return getEmployees();
+// ==========================================
+// EMPLOYEE APIs
+// ==========================================
+
+function getEmployees() {
+  // Requirement: Employee table should never show ADMIN accounts.
+  return getSheetDataAsJSON(SHEETS.EMP).filter(e => e.Role === 'EMPLOYEE');
 }
-function deleteEmployee(empID) { return getEmployees(); }
+
+function saveEmployee(empData) {
+  const isNew = !empData.EmpID;
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+
+  if (isNew) {
+    empData.EmpID = 'EMP-' + Math.floor(100000 + Math.random() * 900000);
+    empData.JoiningDate = new Date().toISOString().split('T')[0];
+  }
+  
+  // Strict Requirement: Backend must enforce Role = EMPLOYEE even if frontend is manipulated
+  empData.Role = 'EMPLOYEE';
+  if (!empData.Status) empData.Status = 'Active';
+
+  saveRowToSheet(SHEETS.EMP, empData, 'EmpID');
+  logAudit(currentUser, isNew ? 'CREATE_EMP' : 'UPDATE_EMP', `Employee ID: ${empData.EmpID}`);
+  return { status: 'Success', message: isNew ? 'Employee successfully added.' : 'Employee details updated.' };
+}
+
+function deleteEmployee(empID) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  deleteRowFromSheet(SHEETS.EMP, 'EmpID', empID);
+  logAudit(currentUser, 'DELETE_EMP', `Deleted Employee ID: ${empID}`);
+  return { status: 'Success', message: 'Employee successfully removed.' };
+}
 
 // ==========================================
 // ATTENDANCE APIs
@@ -171,64 +209,121 @@ function markAttendance(action, empId) {
   const today = new Date().toISOString().split('T')[0];
   const now = new Date();
   const timeStr = now.toTimeString().split(' ')[0];
+  const currentUser = Session.getActiveUser().getEmail() || empId;
   
   const sheet = getDb().getSheetByName(SHEETS.ATT);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   
   let rowIndex = -1;
-  let currentRecord = null;
-  
+  let checkInTime = null;
+
   for (let i = 1; i < data.length; i++) {
     if (data[i][headers.indexOf('EmpID')] === empId && data[i][headers.indexOf('Date')].includes(today)) {
-      rowIndex = i + 1;
-      currentRecord = data[i];
+      rowIndex = i + 1; 
+      checkInTime = data[i][headers.indexOf('CheckIn')];
       break;
     }
   }
   
   if (action === 'CHECK_IN' && rowIndex === -1) {
-    const attId = 'ATT-' + Date.now();
-    sheet.appendRow([attId, empId, today, timeStr, '', '', 'Present']);
-    return { status: 'Success', message: 'Checked In Successfully' };
+    // Check if late (after 09:15 AM)
+    const [hours, minutes] = timeStr.split(':');
+    const isLate = (parseInt(hours) > 9 || (parseInt(hours) === 9 && parseInt(minutes) > 15)) ? 'Yes' : 'No';
+    
+    sheet.appendRow(['ATT-' + Date.now(), empId, today, timeStr, '', '', 'Present', isLate]);
+    logAudit(currentUser, 'CHECK_IN', `Checked in at ${timeStr}`);
+    return { status: 'Success', message: 'Successfully checked in!' };
   } else if (action === 'CHECK_OUT' && rowIndex > -1) {
-    const checkInTime = new Date(`${today}T${currentRecord[headers.indexOf('CheckIn')]}`);
-    const hours = Math.abs(now - checkInTime) / 36e5;
+    // Calculate Hours
+    const cIn = new Date(`${today}T${checkInTime}`);
+    const workedHours = (Math.abs(now - cIn) / 36e5).toFixed(2);
     
     sheet.getRange(rowIndex, headers.indexOf('CheckOut') + 1).setValue(timeStr);
-    sheet.getRange(rowIndex, headers.indexOf('Hours') + 1).setValue(hours.toFixed(2));
-    return { status: 'Success', message: 'Checked Out Successfully' };
+    sheet.getRange(rowIndex, headers.indexOf('Hours') + 1).setValue(workedHours);
+    logAudit(currentUser, 'CHECK_OUT', `Checked out at ${timeStr}. Hours: ${workedHours}`);
+    return { status: 'Success', message: 'Successfully checked out!' };
   }
-  
-  return { status: 'Error', message: 'Invalid action or already checked in/out' };
+  return { status: 'Error', message: 'Action not valid (Already checked in/out).' };
 }
 
 // ==========================================
-// LEAVE & MISC APIs
+// LEAVE APIs
 // ==========================================
 
 function getLeaves() { return getSheetDataAsJSON(SHEETS.LEAVE); }
+
 function applyLeave(leaveData) {
-  leaveData.LeaveID = 'LV-' + Date.now().toString().slice(-6);
+  const currentUser = Session.getActiveUser().getEmail() || leaveData.EmpID;
+  leaveData.LeaveID = 'LV-' + Math.floor(100000 + Math.random() * 900000);
   leaveData.Status = 'Pending';
+  
+  const start = new Date(leaveData.StartDate);
+  const end = new Date(leaveData.EndDate);
+  leaveData.Days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+  
   saveRowToSheet(SHEETS.LEAVE, leaveData, 'LeaveID');
-  return getLeaves();
-}
-function updateLeaveStatus(leaveId, status, remarks) {
-  const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
-  let leave = leaves.find(l => l.LeaveID === leaveId);
-  if (leave) {
-    leave.Status = status;
-    leave.Remarks = remarks;
-    saveRowToSheet(SHEETS.LEAVE, leave, 'LeaveID');
-  }
-  return getLeaves();
+  logAudit(currentUser, 'APPLY_LEAVE', `Applied for ${leaveData.Days} days of ${leaveData.Type}`);
+  return { status: 'Success', message: 'Leave request successfully submitted!' };
 }
 
-function getHolidays() { return getSheetDataAsJSON(SHEETS.HOL); }
-function saveHoliday(holData) {
-  if (!holData.HolID) holData.HolID = 'HOL-' + Date.now();
-  saveRowToSheet(SHEETS.HOL, holData, 'HolID');
-  return getHolidays();
+function updateLeaveStatus(leaveId, status, remarks = '') {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
+  let leave = leaves.find(l => l.LeaveID === leaveId);
+  
+  if (leave) { 
+    leave.Status = status; 
+    leave.Remarks = remarks;
+    saveRowToSheet(SHEETS.LEAVE, leave, 'LeaveID'); 
+    logAudit(currentUser, `LEAVE_${status.toUpperCase()}`, `Leave ${leaveId} ${status}. Remarks: ${remarks}`);
+    return { status: 'Success', message: `Leave request has been ${status}.` };
+  }
+  return { status: 'Error', message: 'Leave request not found.' };
 }
+
+// ==========================================
+// HOLIDAY APIs
+// ==========================================
+
+function getHolidays() { return getSheetDataAsJSON(SHEETS.HOL); }
+
+function saveHoliday(holData) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  if (!holData.HolID) holData.HolID = 'HOL-' + Math.floor(100000 + Math.random() * 900000);
+  saveRowToSheet(SHEETS.HOL, holData, 'HolID');
+  logAudit(currentUser, 'SAVE_HOLIDAY', `Holiday: ${holData.Name}`);
+  return { status: 'Success', message: 'Holiday details saved successfully!' };
+}
+
+function deleteHoliday(holId) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  deleteRowFromSheet(SHEETS.HOL, 'HolID', holId);
+  logAudit(currentUser, 'DELETE_HOLIDAY', `Removed Holiday ID: ${holId}`);
+  return { status: 'Success', message: 'Holiday successfully removed.' };
+}
+
+// ==========================================
+// ANNOUNCEMENT APIs
+// ==========================================
+
 function getAnnouncements() { return getSheetDataAsJSON(SHEETS.ANN); }
+
+function saveAnnouncement(annData) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  if (!annData.AnnID) {
+    annData.AnnID = 'ANN-' + Date.now();
+    annData.Date = new Date().toISOString().split('T')[0];
+    annData.Status = 'Active';
+  }
+  saveRowToSheet(SHEETS.ANN, annData, 'AnnID');
+  logAudit(currentUser, 'SAVE_ANNOUNCEMENT', `Announcement: ${annData.Title}`);
+  return { status: 'Success', message: 'Announcement published successfully!' };
+}
+
+function deleteAnnouncement(annId) {
+  deleteRowFromSheet(SHEETS.ANN, 'AnnID', annId);
+  return { status: 'Success', message: 'Announcement deleted.' };
+}
+
+function getAuditLogs() { return getSheetDataAsJSON(SHEETS.AUDIT).slice(-100).reverse(); }

@@ -2,11 +2,16 @@
 <html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
-  <title>SaaS HRMS Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Modern SaaS HRMS</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
   <script>
     tailwind.config = {
@@ -24,204 +29,266 @@
   </script>
 
   <style>
-    .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
-    .dark .glass { background: rgba(30, 41, 59, 0.7); border-color: #334155; }
-    .view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
-    .view-section.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* UI Modernization: Glassmorphism & Transitions */
+    .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.3); }
+    .dark .glass { background: rgba(30, 41, 59, 0.85); border-color: #334155; }
     
+    .view-section { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
+    .view-section.active { display: block; opacity: 1; animation: slideUp 0.4s ease forwards; }
+    
+    @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+    /* Calendar Grid styles */
+    .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: #e2e8f0; border-radius: 0.5rem; overflow: hidden; }
+    .dark .cal-grid { background: #334155; }
+    .cal-cell { background: white; min-height: 100px; padding: 0.5rem; position: relative; transition: all 0.2s; }
+    .dark .cal-cell { background: #1e293b; }
+    .cal-header { background: #f8fafc; font-weight: 600; text-align: center; padding: 0.75rem; font-size: 0.875rem; }
+    .dark .cal-header { background: #0f172a; color: #94a3b8; }
+    
+    .cal-cell.is-holiday { background: #eff6ff; }
+    .dark .cal-cell.is-holiday { background: rgba(59, 130, 246, 0.1); }
+    .cal-cell.is-admin:hover { cursor: pointer; background: #f1f5f9; }
+    .dark .cal-cell.is-admin:hover { background: #334155; }
+    .cal-cell.is-today { border: 2px solid #3b82f6; border-radius: 0.25rem; }
+
+    /* Responsive Tables */
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    
+    /* Loader Overlay */
+    #global-loader { backdrop-filter: blur(4px); }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 dark:bg-dark-bg dark:text-gray-100 transition-colors duration-200">
 
-  <div id="global-loader" class="fixed inset-0 z-[100] flex items-center justify-center bg-white dark:bg-dark-bg">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+  <div id="global-loader" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 dark:bg-dark-bg/80 hidden">
+    <div class="animate-spin rounded-full h-14 w-14 border-4 border-gray-200 border-t-brand-600 mb-4"></div>
+    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Processing...</p>
   </div>
 
-  <div id="view-login" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-dark-bg hidden">
+  <div id="view-login" class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-50 dark:bg-dark-bg hidden">
     <div class="w-full max-w-4xl bg-white dark:bg-dark-card rounded-2xl shadow-2xl flex overflow-hidden border border-gray-100 dark:border-dark-border m-4">
-      
-      <div class="hidden md:flex w-1/2 bg-gradient-to-br from-brand-600 to-indigo-900 p-12 flex-col justify-between relative overflow-hidden">
-        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CiAgPGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPgo8L3N2Zz4=')] opacity-50"></div>
+      <div class="hidden md:flex w-1/2 bg-gradient-to-br from-brand-600 to-indigo-900 p-12 flex-col justify-between relative">
         <div class="relative z-10">
-          <div class="flex items-center gap-2 mb-8">
-            <div class="w-10 h-10 rounded bg-white flex items-center justify-center text-brand-600 font-bold text-2xl shadow-lg">H</div>
-            <span class="text-2xl font-bold tracking-tight text-white">HRMS<span class="text-brand-300">.pro</span></span>
-          </div>
-          <h2 class="text-3xl font-bold text-white mb-4 mt-12">Manage your workforce effortlessly.</h2>
-          <p class="text-brand-100 text-sm leading-relaxed">Experience a seamless integration of attendance tracking, leave management, and reporting tailored for modern enterprises.</p>
-        </div>
-        <div class="relative z-10 text-brand-200 text-xs">
-          &copy; 2026 HRMS.pro Inc. All rights reserved.
+          <div class="flex items-center gap-2 mb-8"><div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-brand-600 font-bold text-2xl shadow-lg">H</div><span class="text-2xl font-bold tracking-tight text-white">HRMS<span class="text-brand-300">.pro</span></span></div>
+          <h2 class="text-3xl font-bold text-white mb-4 mt-12 leading-tight">Empower Your Workforce Management.</h2>
+          <p class="text-brand-100 text-sm">Seamlessly handle attendance, leaves, and core HR data.</p>
         </div>
       </div>
-
       <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
-        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">Sign in to your Workspace account to continue.</p>
-        
-        <form id="login-form" onsubmit="event.preventDefault(); App.actions.login();" class="space-y-5">
+        <h3 class="text-2xl font-bold mb-2">Welcome Back</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">Sign in to your Workspace account.</p>
+        <form onsubmit="event.preventDefault(); App.actions.login();" class="space-y-5">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
-            <input type="email" id="login-email" placeholder="admin@company.com or leave blank to auto-detect" 
-                   class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
-            <p class="text-xs text-gray-400 mt-2">Leave blank to use your active Google Workspace session.</p>
+            <label class="block text-sm font-medium mb-1">Email Address</label>
+            <input type="email" id="login-email" placeholder="Leave blank to use active session" class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-shadow">
           </div>
-          
-          <button type="submit" id="btn-login" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-brand-500/30 transition-all flex justify-center items-center gap-2">
-            Sign In Securely
-          </button>
+          <button type="submit" id="btn-login" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-brand-500/30 transition-all">Secure Sign In</button>
         </form>
-
-        <div class="mt-8 pt-8 border-t border-gray-100 dark:border-dark-border text-center">
-          <p class="text-xs text-gray-500">Secured by Google Cloud Platform</p>
-        </div>
       </div>
     </div>
   </div>
 
-  <div id="main-layout" class="hidden h-screen overflow-hidden">
+  <div id="main-layout" class="hidden h-screen overflow-hidden flex-col md:flex-row">
     
-    <aside id="sidebar" class="w-64 glass border-r border-gray-200 dark:border-dark-border flex flex-col transition-all">
-      <div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-dark-border">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl">H</div>
-          <span class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">HRMS<span class="text-brand-500">.pro</span></span>
-        </div>
+    <div id="sidebar-overlay" onclick="App.ui.toggleSidebar()" class="fixed inset-0 bg-gray-900/50 z-40 hidden md:hidden"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 w-64 glass bg-white dark:bg-dark-card border-r border-gray-200 dark:border-dark-border flex flex-col transition-transform duration-300 z-50 h-full">
+      <div class="h-16 flex items-center justify-between px-6 border-b border-gray-200 dark:border-dark-border">
+        <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl">H</div><span class="text-xl font-bold tracking-tight">HRMS</span></div>
+        <button onclick="App.ui.toggleSidebar()" class="md:hidden text-gray-500">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
-      <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1" id="nav-menu"></nav>
+      
+      <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1" id="nav-menu"></nav>
+      
       <div class="p-4 border-t border-gray-200 dark:border-dark-border">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 dark:text-brand-500 font-bold" id="user-avatar">?</div>
-          <div class="flex-1 min-w-0 flex justify-between items-center">
-            <div>
-              <p class="text-sm font-medium truncate" id="user-name">Loading...</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate" id="user-role">...</p>
-            </div>
-            <button onclick="App.actions.logout()" class="text-gray-400 hover:text-red-500 transition-colors" title="Logout">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-            </button>
+          <div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 font-bold" id="user-avatar">?</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold truncate" id="user-name">Loading...</p>
+            <p class="text-xs text-gray-500 truncate" id="user-role">...</p>
           </div>
+          <button onclick="App.actions.logout()" class="text-gray-400 hover:text-red-500 transition-colors" title="Logout">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          </button>
         </div>
       </div>
     </aside>
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <header class="h-16 glass border-b border-gray-200 dark:border-dark-border flex items-center justify-between px-6 z-10">
-        <h2 class="text-lg font-semibold capitalize" id="header-title">Dashboard</h2>
-        <div class="flex items-center gap-4">
-          <button onclick="App.toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border text-gray-500 dark:text-gray-400">
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      
+      <header class="h-16 glass bg-white/90 dark:bg-dark-card/90 border-b border-gray-200 dark:border-dark-border flex items-center justify-between px-4 sm:px-6 z-30">
+        <div class="flex items-center gap-3">
+          <button onclick="App.ui.toggleSidebar()" class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <h2 class="text-xl font-semibold text-gray-800 dark:text-white" id="header-title">Dashboard</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="App.toggleTheme()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
           </button>
         </div>
       </header>
 
-      <main class="flex-1 overflow-y-auto p-6" id="views-container">
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6" id="views-container">
         
         <div id="view-dashboard" class="view-section space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="dash-kpis"></div>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6" id="dash-kpis"></div>
+          
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-5">
-              <h3 class="text-base font-semibold mb-4">Attendance Trends</h3>
-              <canvas id="attendanceChart" height="100"></canvas>
+            <div class="lg:col-span-2 bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm">
+              <h3 class="text-base font-semibold mb-4">Attendance Trend</h3>
+              <div class="relative h-64 w-full"><canvas id="dashChart"></canvas></div>
             </div>
-            <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-5">
-              <h3 class="text-base font-semibold mb-4">Recent Announcements</h3>
-              <div id="dash-announcements" class="space-y-4"></div>
+            <div class="space-y-6">
+              <div class="bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm">
+                <h3 class="text-base font-semibold mb-4 flex justify-between">Upcoming Holidays <span class="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded-full">Widget</span></h3>
+                <div id="dash-holidays" class="space-y-3"></div>
+              </div>
+              <div class="bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm">
+                <h3 class="text-base font-semibold mb-4">Announcements</h3>
+                <div id="dash-announcements" class="space-y-3"></div>
+              </div>
             </div>
           </div>
         </div>
 
         <div id="view-employees" class="view-section space-y-4">
-          <div class="flex justify-between items-center">
-            <input type="text" placeholder="Search employees..." class="bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-brand-500 w-64">
-            <button onclick="App.ui.modals.open('employee-modal')" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">+ Add Employee</button>
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="relative w-full sm:w-72">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </span>
+              <input type="text" id="emp-search" placeholder="Search Name, Email, Dept..." class="w-full bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+            </div>
+            <button onclick="App.ui.modals.openEmployee(null)" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-brand-500/30 transition-all flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add Employee
+            </button>
           </div>
-          <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden">
-            <table class="w-full text-sm text-left" id="employees-table"></table>
+          <div class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container">
+            <table class="w-full text-sm text-left whitespace-nowrap" id="employees-table"></table>
           </div>
         </div>
 
-        <div id="view-attendance" class="view-section space-y-4">
-          <div id="att-controls" class="bg-white dark:bg-dark-card rounded-xl p-6 shadow-sm border border-gray-100 dark:border-dark-border flex flex-col items-center justify-center gap-4 hidden">
-            <h3 class="text-lg font-medium">Today's Attendance</h3>
-            <p class="text-gray-500" id="current-time"></p>
-            <div class="flex gap-4">
-              <button onclick="App.actions.markAttendance('CHECK_IN')" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-green-500/30 transition">Check In</button>
-              <button onclick="App.actions.markAttendance('CHECK_OUT')" class="bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-red-500/30 transition">Check Out</button>
+        <div id="view-attendance" class="view-section space-y-6">
+          <div id="att-controls" class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 hidden">
+            <div>
+              <h3 class="text-xl font-bold">Daily Check-In</h3>
+              <p class="text-sm text-gray-500 mt-1">Record your daily work hours.</p>
+            </div>
+            <div class="flex gap-4 w-full md:w-auto">
+              <button onclick="App.actions.markAttendance('CHECK_IN')" class="flex-1 md:flex-none bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-green-500/30 transition-all">Check In</button>
+              <button onclick="App.actions.markAttendance('CHECK_OUT')" class="flex-1 md:flex-none bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-red-500/30 transition-all">Check Out</button>
             </div>
           </div>
-          <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden">
-            <table class="w-full text-sm text-left" id="attendance-table"></table>
+          <div class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container">
+            <table class="w-full text-sm text-left whitespace-nowrap" id="attendance-table"></table>
           </div>
         </div>
 
-        <div id="view-leaves" class="view-section space-y-4">
+        <div id="view-leaves" class="view-section space-y-6">
+          <div id="leave-balances-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden"></div>
+          
           <div class="flex justify-between items-center">
-            <h3 class="font-medium">Leave Requests</h3>
-            <button onclick="App.ui.modals.open('leave-modal')" class="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hidden" id="btn-apply-leave">Apply Leave</button>
+            <h3 class="font-semibold text-lg">Leave Requests</h3>
+            <button onclick="App.ui.modals.open('leave-modal')" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all hidden" id="btn-apply-leave">Apply Leave</button>
           </div>
-          <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden">
-            <table class="w-full text-sm text-left" id="leaves-table"></table>
+          <div class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container">
+            <table class="w-full text-sm text-left whitespace-nowrap" id="leaves-table"></table>
           </div>
         </div>
         
         <div id="view-holidays" class="view-section space-y-4">
-          <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden p-6">
-             <h3 class="text-lg font-medium mb-4">Company Holidays</h3>
-             <ul id="holidays-list" class="space-y-3"></ul>
+          <div class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4 sm:p-6">
+             <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold" id="cal-month-title">Loading...</h3>
+                <div class="flex gap-2">
+                   <button onclick="App.ui.calendar.changeMonth(-1)" class="p-2 border rounded-lg hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                   <button onclick="App.ui.calendar.changeMonth(1)" class="p-2 border rounded-lg hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                </div>
+             </div>
+             
+             <div class="cal-grid" id="cal-header-row">
+                <div class="cal-header hidden sm:block">Sunday</div><div class="cal-header sm:hidden">Sun</div>
+                <div class="cal-header hidden sm:block">Monday</div><div class="cal-header sm:hidden">Mon</div>
+                <div class="cal-header hidden sm:block">Tuesday</div><div class="cal-header sm:hidden">Tue</div>
+                <div class="cal-header hidden sm:block">Wednesday</div><div class="cal-header sm:hidden">Wed</div>
+                <div class="cal-header hidden sm:block">Thursday</div><div class="cal-header sm:hidden">Thu</div>
+                <div class="cal-header hidden sm:block">Friday</div><div class="cal-header sm:hidden">Fri</div>
+                <div class="cal-header hidden sm:block">Saturday</div><div class="cal-header sm:hidden">Sat</div>
+             </div>
+             <div class="cal-grid mt-[1px]" id="cal-days-grid"></div>
+             <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+               <p id="cal-helper-text"></p>
+               <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-100 border border-blue-300 inline-block"></span> Holiday</div>
+             </div>
           </div>
+        </div>
+
+        <div id="view-announcements" class="view-section space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-semibold text-lg">Company Announcements</h3>
+            <button onclick="App.ui.modals.open('announcement-modal')" class="bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all hidden" id="btn-add-ann">Add Announcement</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="announcements-grid"></div>
         </div>
 
       </main>
     </div>
   </div>
 
-  <div id="employee-modal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
-    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-xl w-full max-w-md p-6">
-      <h3 class="text-lg font-bold mb-4">Employee Details</h3>
-      <form id="employee-form" onsubmit="event.preventDefault(); App.actions.saveEmployee();" class="space-y-4">
+  <div id="employee-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold" id="emp-modal-title">Add Employee</h3>
+        <button onclick="App.ui.modals.close('employee-modal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+      </div>
+      <form id="employee-form" onsubmit="event.preventDefault(); App.actions.saveEmployee();" class="p-6 space-y-4">
         <input type="hidden" id="emp-id">
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Name</label><input type="text" id="emp-name" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm"></div>
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Email</label><input type="email" id="emp-email" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm"></div>
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-xs font-medium text-gray-500 mb-1">Department</label><input type="text" id="emp-dept" class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm"></div>
-          <div><label class="block text-xs font-medium text-gray-500 mb-1">Role</label>
-            <select id="emp-role" class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm">
-              <option value="EMPLOYEE">Employee</option><option value="ADMIN">Admin</option>
-            </select>
-          </div>
+        <div><label class="block text-sm font-medium mb-1">Full Name</label><input type="text" id="emp-name" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500"></div>
+        <div><label class="block text-sm font-medium mb-1">Email Address</label><input type="email" id="emp-email" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium mb-1">Department</label><input type="text" id="emp-dept" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500"></div>
+          <div><label class="block text-sm font-medium mb-1">Designation</label><input type="text" id="emp-desig" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500"></div>
         </div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" onclick="App.ui.modals.close('employee-modal')" class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg">Cancel</button>
-          <button type="submit" class="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-500">Save</button>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="App.ui.modals.close('employee-modal')" class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-xl hover:bg-brand-500 shadow-lg shadow-brand-500/30 transition-all">Save Details</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="leave-modal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
-    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-xl w-full max-w-md p-6">
-      <h3 class="text-lg font-bold mb-4">Apply Leave</h3>
-      <form id="leave-form" onsubmit="event.preventDefault(); App.actions.applyLeave();" class="space-y-4">
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Leave Type</label>
-            <select id="leave-type" class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm">
+  <div id="leave-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold">Apply Leave</h3>
+        <button onclick="App.ui.modals.close('leave-modal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+      </div>
+      <form id="leave-form" onsubmit="event.preventDefault(); App.actions.applyLeave();" class="p-6 space-y-4">
+        <div><label class="block text-sm font-medium mb-1">Leave Type</label>
+            <select id="leave-type" class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
               <option>Casual Leave</option><option>Sick Leave</option><option>Annual Leave</option>
             </select>
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-xs font-medium text-gray-500 mb-1">Start Date</label><input type="date" id="leave-start" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm"></div>
-          <div><label class="block text-xs font-medium text-gray-500 mb-1">End Date</label><input type="date" id="leave-end" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm"></div>
+          <div><label class="block text-sm font-medium mb-1">Start Date</label><input type="date" id="leave-start" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none"></div>
+          <div><label class="block text-sm font-medium mb-1">End Date</label><input type="date" id="leave-end" required class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none"></div>
         </div>
-        <div><label class="block text-xs font-medium text-gray-500 mb-1">Remarks</label><textarea id="leave-remarks" class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm" rows="3"></textarea></div>
-        <div class="flex justify-end gap-3 mt-6">
-          <button type="button" onclick="App.ui.modals.close('leave-modal')" class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg">Cancel</button>
-          <button type="submit" class="px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-500">Submit Request</button>
+        <div><label class="block text-sm font-medium mb-1">Remarks / Reason</label><textarea id="leave-remarks" class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none" rows="3" required></textarea></div>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="App.ui.modals.close('leave-modal')" class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 rounded-xl transition-colors">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-xl shadow-lg transition-all">Submit Request</button>
         </div>
       </form>
     </div>
@@ -229,37 +296,53 @@
 
   <script>
     const App = {
-      state: { user: null, currentView: '', theme: 'light', data: {} },
+      state: { user: null, currentView: '', theme: 'light', data: { employees: [] }, calDate: new Date() },
 
-      api: (method, ...args) => new Promise((resolve, reject) => {
-        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args);
-      }),
+      // Centralized API handler with SweetAlert Loader integration
+      api: async (method, ...args) => {
+        return new Promise((resolve, reject) => {
+          document.getElementById('global-loader').classList.remove('hidden');
+          google.script.run
+            .withSuccessHandler((res) => { 
+               document.getElementById('global-loader').classList.add('hidden'); 
+               resolve(res); 
+            })
+            .withFailureHandler((err) => { 
+               document.getElementById('global-loader').classList.add('hidden'); 
+               Swal.fire({ icon: 'error', title: 'System Error', text: err.message });
+               reject(err); 
+            })[method](...args);
+        });
+      },
 
       init: () => {
-        document.getElementById('global-loader').style.display = 'none';
         document.getElementById('view-login').classList.remove('hidden');
         
-        // Clock utility
-        setInterval(() => {
-          const el = document.getElementById('current-time');
-          if(el) el.innerText = new Date().toLocaleTimeString();
-        }, 1000);
+        // Search Filter Event
+        document.getElementById('emp-search').addEventListener('keyup', (e) => {
+           const term = e.target.value.toLowerCase();
+           const filtered = App.state.data.employees.filter(emp => 
+              emp.Name.toLowerCase().includes(term) || 
+              emp.Email.toLowerCase().includes(term) || 
+              emp.Department.toLowerCase().includes(term) ||
+              emp.EmpID.toLowerCase().includes(term)
+           );
+           App.ui.render.employeeTable(filtered);
+        });
       },
 
       toggleTheme: () => {
-        const html = document.documentElement;
-        html.classList.toggle('dark');
-        App.state.theme = html.classList.contains('dark') ? 'dark' : 'light';
+        document.documentElement.classList.toggle('dark');
+        App.state.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        // Re-render chart to adjust colors if chart exists
+        if(App.state.currentView === 'dashboard') App.loadData.dashboard();
       },
 
       actions: {
         login: async () => {
-          const btn = document.getElementById('btn-login');
-          btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Authenticating...`;
-          
           try {
-            const emailInput = document.getElementById('login-email').value;
-            App.state.user = await App.api('loginUser', emailInput);
+            const email = document.getElementById('login-email').value;
+            App.state.user = await App.api('loginUser', email);
             
             document.getElementById('view-login').classList.add('hidden');
             document.getElementById('main-layout').classList.remove('hidden');
@@ -268,103 +351,239 @@
             App.ui.setupNavigation();
             App.ui.setupProfile();
             App.ui.switchView('dashboard');
-          } catch (e) {
-            alert('Login failed. Please refresh and try again.');
-          }
+            
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Welcome back, ${App.state.user.Name}`, showConfirmButton: false, timer: 3000 });
+          } catch (e) {}
         },
-        logout: () => {
-          App.state.user = null;
-          document.getElementById('main-layout').classList.add('hidden');
-          document.getElementById('main-layout').classList.remove('flex');
-          document.getElementById('view-login').classList.remove('hidden');
-          document.getElementById('login-email').value = '';
-          document.getElementById('btn-login').innerHTML = 'Sign In Securely';
-        },
+        logout: () => location.reload(),
+        
+        // ------------------ EMPLOYEE CRUD ------------------
         saveEmployee: async () => {
           const data = {
-            EmpID: document.getElementById('emp-id').value, Name: document.getElementById('emp-name').value,
-            Email: document.getElementById('emp-email').value, Department: document.getElementById('emp-dept').value,
-            Role: document.getElementById('emp-role').value, Status: 'Active', JoiningDate: new Date().toISOString().split('T')[0]
+            EmpID: document.getElementById('emp-id').value, 
+            Name: document.getElementById('emp-name').value,
+            Email: document.getElementById('emp-email').value, 
+            Department: document.getElementById('emp-dept').value,
+            Designation: document.getElementById('emp-desig').value
+            // Role is strictly enforced in backend.
           };
           App.ui.modals.close('employee-modal');
-          await App.api('saveEmployee', data);
+          const res = await App.api('saveEmployee', data);
+          Swal.fire({ icon: 'success', title: 'Success', text: res.message });
           App.loadData.employees();
+          App.loadData.dashboard(); // Refresh KPI counts
         },
+        deleteEmployee: async (id) => {
+          const confirm = await Swal.fire({
+            title: 'Delete Employee?', text: "This action cannot be undone.", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Yes, delete!'
+          });
+          if(confirm.isConfirmed) {
+            const res = await App.api('deleteEmployee', id);
+            Swal.fire({ icon: 'success', title: 'Deleted', text: res.message, timer: 2000, showConfirmButton: false });
+            App.loadData.employees();
+          }
+        },
+
+        // ------------------ ATTENDANCE ------------------
         markAttendance: async (type) => {
           const res = await App.api('markAttendance', type, App.state.user.EmpID);
-          alert(res.message);
+          Swal.fire({ toast: true, position: 'top-end', icon: res.status === 'Success' ? 'success' : 'warning', title: res.message, showConfirmButton: false, timer: 3000 });
           App.loadData.attendance();
         },
+
+        // ------------------ LEAVES ------------------
         applyLeave: async () => {
-          const data = {
-            EmpID: App.state.user.EmpID, Type: document.getElementById('leave-type').value,
-            StartDate: document.getElementById('leave-start').value, EndDate: document.getElementById('leave-end').value,
-            Remarks: document.getElementById('leave-remarks').value
-          };
+          const data = { EmpID: App.state.user.EmpID, Type: document.getElementById('leave-type').value, StartDate: document.getElementById('leave-start').value, EndDate: document.getElementById('leave-end').value, Remarks: document.getElementById('leave-remarks').value };
           App.ui.modals.close('leave-modal');
-          await App.api('applyLeave', data);
+          const res = await App.api('applyLeave', data);
+          Swal.fire({ icon: 'success', title: 'Requested', text: res.message });
           App.loadData.leaves();
         },
-        approveLeave: async (id) => { await App.api('updateLeaveStatus', id, 'Approved', ''); App.loadData.leaves(); },
-        rejectLeave: async (id) => { await App.api('updateLeaveStatus', id, 'Rejected', ''); App.loadData.leaves(); }
+        updateLeave: async (id, status) => {
+          const { value: remarks } = await Swal.fire({
+            title: `${status} Leave`, input: 'text', inputLabel: 'Optional Remarks', inputPlaceholder: 'Enter remarks here...', showCancelButton: true
+          });
+          if(remarks !== undefined) {
+             const res = await App.api('updateLeaveStatus', id, status, remarks);
+             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+             App.loadData.leaves();
+          }
+        },
+        
+        // ------------------ HOLIDAYS ------------------
+        addHoliday: async (dateStr) => {
+          if(App.state.user.Role !== 'ADMIN') return;
+          const { value: formValues } = await Swal.fire({
+            title: 'Add Holiday',
+            html: `
+              <input id="swal-input1" class="swal2-input" placeholder="Holiday Name">
+              <select id="swal-input2" class="swal2-input"><option>Public</option><option>Restricted</option><option>Company</option></select>
+              <input id="swal-input3" class="swal2-input" placeholder="Description">
+            `,
+            focusConfirm: false,
+            preConfirm: () => { return [ document.getElementById('swal-input1').value, document.getElementById('swal-input2').value, document.getElementById('swal-input3').value ] }
+          });
+          if(formValues && formValues[0]) {
+            const res = await App.api('saveHoliday', { Name: formValues[0], Date: dateStr, Type: formValues[1], Description: formValues[2] });
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+            App.loadData.holidays();
+          }
+        },
+        deleteHoliday: async (id) => {
+          if(App.state.user.Role !== 'ADMIN') return;
+          const confirm = await Swal.fire({ title: 'Remove Holiday?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete' });
+          if(confirm.isConfirmed) {
+             const res = await App.api('deleteHoliday', id);
+             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+             App.loadData.holidays();
+          }
+        }
       },
 
       loadData: {
         dashboard: async () => {
           const data = await App.api('getDashboardData');
-          App.ui.render.dashboard(data);
+          const isAdmin = App.state.user.Role === 'ADMIN';
+          
+          // KPIs
+          const kpi = (t, v, icon, color) => `
+            <div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between group hover:-translate-y-1 transition-transform">
+              <div class="flex justify-between items-start">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${t}</span>
+                <span class="p-2 rounded-lg bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 group-hover:scale-110 transition-transform">${icon}</span>
+              </div>
+              <div class="text-3xl font-bold mt-2 text-gray-800 dark:text-white">${v}</div>
+            </div>`;
+            
+          const iconP = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
+          const iconH = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
+
+          document.getElementById('dash-kpis').innerHTML = isAdmin ? 
+            kpi('Active Emp.', data.totalEmployees, iconP, 'brand') + kpi('Present', data.presentToday, iconP, 'green') + 
+            kpi('Absent', data.absentToday, iconP, 'red') + kpi('On Leave', data.onLeaveToday, iconH, 'orange') + 
+            kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow') + kpi('Upcoming Hols.', data.upcomingHolidays.length, iconH, 'purple') 
+            : 
+            kpi('My Status', 'Active', iconP, 'green') + kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow') + kpi('Upcoming Hols.', data.upcomingHolidays.length, iconH, 'brand');
+
+          // Widgets
+          document.getElementById('dash-holidays').innerHTML = data.upcomingHolidays.length ? data.upcomingHolidays.map(h => `<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700"><div class="flex flex-col"><span class="font-semibold text-sm">${h.Name}</span><span class="text-xs text-gray-500">${h.Type}</span></div><span class="text-xs font-medium px-2 py-1 bg-white dark:bg-dark-card rounded-lg border dark:border-slate-600">${h.Date.split('T')[0]}</span></div>`).join('') : '<p class="text-sm text-gray-500">No upcoming holidays.</p>';
+          
+          document.getElementById('dash-announcements').innerHTML = data.announcements.length ? data.announcements.map(a => `<div class="p-4 bg-brand-50 dark:bg-brand-900/20 rounded-xl border border-brand-100 dark:border-brand-800/50"><h4 class="font-semibold text-sm text-brand-800 dark:text-brand-300">${a.Title}</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-2">${a.Content}</p><span class="text-[10px] text-gray-400 mt-2 block">${a.Date.split('T')[0]}</span></div>`).join('') : '<p class="text-sm text-gray-500">No recent announcements.</p>';
+
+          // Chart logic (Destroy if exists, create new)
+          const ctx = document.getElementById('dashChart').getContext('2d');
+          if(window.dashChartInst) window.dashChartInst.destroy();
+          
+          const gridColor = App.state.theme === 'dark' ? '#334155' : '#e2e8f0';
+          const textColor = App.state.theme === 'dark' ? '#94a3b8' : '#64748b';
+
+          window.dashChartInst = new Chart(ctx, {
+             type: 'line',
+             data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'Attendance %', data: [95, 92, 88, 96, 90], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }] },
+             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
+          });
         },
         employees: async () => {
-          const data = await App.api('getEmployees');
-          App.ui.render.table('employees-table', ['ID', 'Name', 'Email', 'Role', 'Status'], data, 
-            row => `<tr>
-              <td class="px-4 py-3 font-medium">${row.EmpID}</td><td class="px-4 py-3">${row.Name}</td>
-              <td class="px-4 py-3 text-gray-500">${row.Email}</td>
-              <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/30">${row.Role}</span></td>
-              <td class="px-4 py-3">${row.Status}</td></tr>`
-          );
+          App.state.data.employees = await App.api('getEmployees');
+          App.ui.render.employeeTable(App.state.data.employees);
         },
         attendance: async () => {
           const data = await App.api('getAttendance');
-          const filtered = App.state.user.Role === 'ADMIN' ? data : data.filter(d => d.EmpID === App.state.user.EmpID);
-          App.ui.render.table('attendance-table', ['Date', 'EmpID', 'Check In', 'Check Out', 'Hours'], filtered, 
-            row => `<tr><td class="px-4 py-3">${row.Date.split('T')[0]}</td><td class="px-4 py-3">${row.EmpID}</td>
-              <td class="px-4 py-3 text-green-600">${row.CheckIn || '-'}</td><td class="px-4 py-3 text-red-600">${row.CheckOut || '-'}</td>
-              <td class="px-4 py-3">${row.Hours || '-'}</td></tr>`
+          const isEmp = App.state.user.Role === 'EMPLOYEE';
+          const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
+          
+          App.ui.render.table('attendance-table', ['Date', 'EmpID', 'Check In', 'Check Out', 'Hours', 'Late?'], filtered, 
+            row => `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td class="px-4 py-3 font-medium">${row.Date.split('T')[0]}</td><td class="px-4 py-3 text-gray-500">${row.EmpID}</td>
+              <td class="px-4 py-3 text-green-600 font-medium">${row.CheckIn||'-'}</td><td class="px-4 py-3 text-orange-500 font-medium">${row.CheckOut||'-'}</td>
+              <td class="px-4 py-3">${row.Hours||'-'}</td>
+              <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${row.LateArrival==='Yes'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}">${row.LateArrival||'No'}</span></td>
+            </tr>`
           );
-          if(App.state.user.Role === 'EMPLOYEE') document.getElementById('att-controls').classList.remove('hidden');
+          if(isEmp) document.getElementById('att-controls').classList.remove('hidden');
         },
         leaves: async () => {
           const data = await App.api('getLeaves');
-          const filtered = App.state.user.Role === 'ADMIN' ? data : data.filter(d => d.EmpID === App.state.user.EmpID);
-          if(App.state.user.Role === 'EMPLOYEE') document.getElementById('btn-apply-leave').classList.remove('hidden');
-          App.ui.render.table('leaves-table', ['ID', 'Type', 'Dates', 'Status', 'Actions'], filtered, 
+          const isEmp = App.state.user.Role === 'EMPLOYEE';
+          const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
+          
+          if (isEmp) {
+             const quotas = { 'Sick Leave': 10, 'Casual Leave': 10, 'Annual Leave': 15 };
+             const used = { 'Sick Leave': 0, 'Casual Leave': 0, 'Annual Leave': 0 };
+             filtered.filter(l => l.Status === 'Approved').forEach(l => { if(used[l.Type] !== undefined) used[l.Type] += Number(l.Days || 1); });
+
+             document.getElementById('leave-balances-container').innerHTML = Object.keys(quotas).map(type => {
+                const remain = quotas[type] - used[type];
+                const pct = (used[type] / quotas[type]) * 100;
+                return `<div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
+                  <h4 class="font-semibold text-gray-700 dark:text-gray-200 mb-1">${type}</h4>
+                  <div class="flex justify-between items-end mb-3"><span class="text-3xl font-bold">${remain} <span class="text-sm font-normal text-gray-500">left</span></span><span class="text-xs font-medium text-gray-500 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">${used[type]} used</span></div>
+                  <div class="w-full bg-gray-100 rounded-full h-1.5 dark:bg-slate-700 overflow-hidden"><div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div></div>
+                </div>`;
+             }).join('');
+             document.getElementById('leave-balances-container').classList.remove('hidden');
+             document.getElementById('btn-apply-leave').classList.remove('hidden');
+          }
+
+          App.ui.render.table('leaves-table', ['Req. ID', 'Employee', 'Type', 'Dates', 'Days', 'Status', 'Remarks', 'Actions'], filtered, 
             row => {
               let acts = '-';
-              if (App.state.user.Role === 'ADMIN' && row.Status === 'Pending') {
-                acts = `<button onclick="App.actions.approveLeave('${row.LeaveID}')" class="text-green-500 hover:underline mr-2">Approve</button>
-                        <button onclick="App.actions.rejectLeave('${row.LeaveID}')" class="text-red-500 hover:underline">Reject</button>`;
+              if (!isEmp && row.Status === 'Pending') {
+                acts = `<div class="flex gap-2"><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Approved')" class="text-green-600 hover:text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-semibold">Approve</button><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Rejected')" class="text-red-600 hover:text-red-700 bg-red-50 px-2 py-1 rounded text-xs font-semibold">Reject</button></div>`;
               }
-              const clr = row.Status === 'Approved' ? 'text-green-500' : (row.Status === 'Rejected' ? 'text-red-500' : 'text-yellow-500');
-              return `<tr><td class="px-4 py-3">${row.LeaveID}</td><td class="px-4 py-3">${row.Type}</td>
-                <td class="px-4 py-3">${row.StartDate.split('T')[0]} to ${row.EndDate.split('T')[0]}</td>
-                <td class="px-4 py-3 font-medium ${clr}">${row.Status}</td><td class="px-4 py-3">${acts}</td></tr>`;
+              const clr = row.Status === 'Approved' ? 'text-green-600 bg-green-50' : (row.Status === 'Rejected' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50');
+              return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"><td class="px-4 py-3 font-medium">${row.LeaveID}</td><td class="px-4 py-3 text-gray-500">${row.EmpID}</td><td class="px-4 py-3">${row.Type}</td><td class="px-4 py-3 text-xs text-gray-500">${row.StartDate.split('T')[0]} to ${row.EndDate.split('T')[0]}</td><td class="px-4 py-3 font-medium">${row.Days || 1}</td><td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${clr} dark:bg-opacity-20">${row.Status}</span></td><td class="px-4 py-3 text-xs max-w-[150px] truncate" title="${row.Remarks}">${row.Remarks||'-'}</td><td class="px-4 py-3">${acts}</td></tr>`;
             }
           );
         },
         holidays: async () => {
-          const data = await App.api('getHolidays');
-          document.getElementById('holidays-list').innerHTML = data.map(h => `
-            <li class="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-dark-border">
-              <span class="font-medium">${h.Name}</span><span class="text-sm text-gray-500 bg-white dark:bg-dark-card px-3 py-1 rounded">${h.Date.split('T')[0]}</span>
-            </li>`).join('');
+          App.state.data.holidays = await App.api('getHolidays');
+          App.ui.calendar.render();
+        },
+        announcements: async () => {
+          const data = await App.api('getAnnouncements');
+          // Implemented simple grid display for announcements
+          if(App.state.user.Role === 'ADMIN') document.getElementById('btn-add-ann').classList.remove('hidden');
+          
+          document.getElementById('announcements-grid').innerHTML = data.length ? data.reverse().map(a => `
+            <div class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between">
+              <div><h4 class="font-bold text-lg mb-2">${a.Title}</h4><p class="text-sm text-gray-600 dark:text-gray-400 mb-4">${a.Content}</p></div>
+              <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-slate-700/50">
+                <span class="text-xs text-gray-400 font-medium">${a.Date.split('T')[0]}</span>
+                ${App.state.user.Role === 'ADMIN' ? `<button onclick="" class="text-red-500 text-xs font-semibold hover:underline">Delete</button>`:''}
+              </div>
+            </div>`).join('') : '<p class="text-gray-500 col-span-full text-center py-8">No announcements found.</p>';
         }
       },
 
       ui: {
+        toggleSidebar: () => {
+          const sb = document.getElementById('sidebar');
+          const overlay = document.getElementById('sidebar-overlay');
+          sb.classList.toggle('-translate-x-full');
+          overlay.classList.toggle('hidden');
+        },
         modals: {
           open: (id) => document.getElementById(id).classList.remove('hidden'),
-          close: (id) => { document.getElementById(id).classList.add('hidden'); document.querySelector(`#${id} form`)?.reset(); }
+          close: (id) => { document.getElementById(id).classList.add('hidden'); document.querySelector(`#${id} form`)?.reset(); },
+          openEmployee: (id) => {
+            document.getElementById('employee-form').reset();
+            document.getElementById('emp-id').value = '';
+            document.getElementById('emp-modal-title').innerText = 'Add Employee';
+            if (id) {
+               const emp = App.state.data.employees.find(e => e.EmpID === id);
+               if(emp){
+                 document.getElementById('emp-id').value = emp.EmpID;
+                 document.getElementById('emp-name').value = emp.Name;
+                 document.getElementById('emp-email').value = emp.Email;
+                 document.getElementById('emp-dept').value = emp.Department;
+                 document.getElementById('emp-desig').value = emp.Designation;
+                 document.getElementById('emp-modal-title').innerText = 'Edit Employee';
+               }
+            }
+            App.ui.modals.open('employee-modal');
+          }
         },
         setupProfile: () => {
           document.getElementById('user-name').innerText = App.state.user.Name;
@@ -372,65 +591,106 @@
           document.getElementById('user-avatar').innerText = App.state.user.Name.charAt(0);
         },
         setupNavigation: () => {
-          const role = App.state.user.Role;
-          const menu = document.getElementById('nav-menu');
-          const icons = {
-            dashboard: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>`,
-            employees: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`,
-            attendance: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
-            leaves: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`,
-            holidays: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`
-          };
           const items = [
-            { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard, roles: ['ADMIN', 'EMPLOYEE'] },
-            { id: 'employees', label: 'Employees', icon: icons.employees, roles: ['ADMIN'] },
-            { id: 'attendance', label: 'Attendance', icon: icons.attendance, roles: ['ADMIN', 'EMPLOYEE'] },
-            { id: 'leaves', label: 'Leaves', icon: icons.leaves, roles: ['ADMIN', 'EMPLOYEE'] },
-            { id: 'holidays', label: 'Holidays', icon: icons.holidays, roles: ['ADMIN', 'EMPLOYEE'] }
+            { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'employees', label: 'Directory', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['ADMIN'] },
+            { id: 'attendance', label: 'Attendance', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'leaves', label: 'Leaves', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'holidays', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'announcements', label: 'Newsboard', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z', roles: ['ADMIN', 'EMPLOYEE'] }
           ];
-          menu.innerHTML = items.filter(i => i.roles.includes(role)).map(i => `
-            <button onclick="App.ui.switchView('${i.id}')" id="nav-${i.id}" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-dark-border dark:hover:text-white transition-all">
-              ${i.icon} ${i.label}
+          document.getElementById('nav-menu').innerHTML = items.filter(i => i.roles.includes(App.state.user.Role)).map(i => `
+            <button onclick="App.ui.switchView('${i.id}'); if(window.innerWidth < 768) App.ui.toggleSidebar();" id="nav-${i.id}" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-slate-800 dark:hover:text-white transition-all group">
+              <svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${i.icon}"></path></svg> ${i.label}
             </button>`).join('');
         },
         switchView: (viewId) => {
           App.state.currentView = viewId;
           document.getElementById('header-title').innerText = viewId;
+          
           document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-          document.getElementById(`view-${viewId}`).classList.add('active');
-          document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('bg-brand-50', 'text-brand-600', 'dark:bg-dark-border', 'dark:text-white'));
+          // Small delay to allow transition animation
+          setTimeout(() => document.getElementById(`view-${viewId}`).classList.add('active'), 10);
+          
+          document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white'));
           const activeNav = document.getElementById(`nav-${viewId}`);
-          if(activeNav) activeNav.classList.add('bg-brand-50', 'text-brand-600', 'dark:bg-dark-border', 'dark:text-white');
+          if(activeNav) activeNav.classList.add('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white');
+          
           if (App.loadData[viewId]) App.loadData[viewId]();
         },
         render: {
-          dashboard: (data) => {
-            const kpiHtml = (title, val, color) => `
-              <div class="bg-white dark:bg-dark-card p-5 rounded-xl shadow-sm border border-gray-100 dark:border-dark-border flex flex-col justify-center">
-                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">${title}</span>
-                <span class="text-3xl font-bold mt-2 text-${color}-600 dark:text-${color}-400">${val}</span>
-              </div>`;
-            document.getElementById('dash-kpis').innerHTML = App.state.user.Role === 'ADMIN' ? 
-              kpiHtml('Total Employees', data.totalEmployees, 'brand') + kpiHtml('Present Today', data.presentToday, 'green') +
-              kpiHtml('On Leave Today', data.onLeaveToday, 'yellow') + kpiHtml('Pending Leaves', data.pendingLeaves, 'red') 
-              : kpiHtml('My Status', 'Active', 'green') + kpiHtml('Pending Leaves', data.pendingLeaves, 'yellow');
-            
-            const ctx = document.getElementById('attendanceChart').getContext('2d');
-            if(window.dashChart) window.dashChart.destroy();
-            window.dashChart = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'Attendance', data: [95, 92, 88, 96, 90], borderColor: '#3b82f6', tension: 0.4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
-            
-            document.getElementById('dash-announcements').innerHTML = data.announcements.length ? 
-              data.announcements.map(a => `<div class="p-3 bg-brand-50 dark:bg-brand-900/20 rounded-lg border border-brand-100 dark:border-brand-800/50"><h4 class="font-medium text-sm text-brand-800 dark:text-brand-300">${a.Title}</h4><p class="text-xs text-gray-500 mt-1">${a.Content}</p></div>`).join('') 
-              : '<p class="text-sm text-gray-500">No recent announcements.</p>';
-          },
           table: (id, headers, data, rowRenderer) => {
-            document.getElementById(id).innerHTML = `<thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-dark-border dark:text-gray-300"><tr>${headers.map(h => `<th class="px-4 py-3">${h}</th>`).join('')}</tr></thead>
-              <tbody>${data.length ? data.map(rowRenderer).join('') : `<tr><td colspan="${headers.length}" class="px-4 py-4 text-center text-gray-500">No records found.</td></tr>`}</tbody>`;
+            document.getElementById(id).innerHTML = `
+              <thead class="text-xs text-gray-500 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700">
+                <tr>${headers.map(h => `<th class="px-4 py-3.5 tracking-wider">${h}</th>`).join('')}</tr>
+              </thead>
+              <tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">
+                ${data.length ? data.map(rowRenderer).join('') : `<tr><td colspan="${headers.length}" class="px-4 py-8 text-center text-gray-500 bg-gray-50/20 dark:bg-transparent">No records found.</td></tr>`}
+              </tbody>`;
+          },
+          employeeTable: (data) => {
+            App.ui.render.table('employees-table', ['ID', 'Employee Info', 'Department', 'Role', 'Status', 'Actions'], data, 
+              row => `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group">
+                <td class="px-4 py-3 font-medium">${row.EmpID}</td>
+                <td class="px-4 py-3"><div class="flex flex-col"><span class="font-semibold text-gray-800 dark:text-gray-200">${row.Name}</span><span class="text-xs text-gray-500">${row.Email}</span></div></td>
+                <td class="px-4 py-3"><div class="flex flex-col"><span class="text-gray-700 dark:text-gray-300">${row.Department}</span><span class="text-xs text-gray-400">${row.Designation}</span></div></td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">${row.Role}</span></td>
+                <td class="px-4 py-3"><span class="flex items-center gap-1.5 text-xs font-medium text-green-600"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>${row.Status}</span></td>
+                <td class="px-4 py-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                  <button onclick="App.ui.modals.openEmployee('${row.EmpID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                  <button onclick="App.actions.deleteEmployee('${row.EmpID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                </td></tr>`
+            );
+          }
+        },
+        calendar: {
+          changeMonth: (dir) => {
+            App.state.calDate.setMonth(App.state.calDate.getMonth() + dir);
+            App.ui.calendar.render();
+          },
+          render: () => {
+             const year = App.state.calDate.getFullYear();
+             const month = App.state.calDate.getMonth();
+             const todayStr = new Date().toISOString().split('T')[0];
+             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+             document.getElementById('cal-month-title').innerText = `${monthNames[month]} ${year}`;
+             
+             const isAdmin = App.state.user.Role === 'ADMIN';
+             document.getElementById('cal-helper-text').innerText = isAdmin ? "Click any day cell to add a holiday." : "Company Holidays overview.";
+
+             const firstDay = new Date(year, month, 1).getDay();
+             const daysInMonth = new Date(year, month + 1, 0).getDate();
+             
+             let html = '';
+             for(let i = 0; i < firstDay; i++) html += `<div class="cal-cell bg-gray-50/50 dark:bg-slate-800/30 opacity-40"></div>`;
+             
+             for(let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                const hol = (App.state.data.holidays || []).find(h => h.Date.startsWith(dateStr));
+                const isToday = dateStr === todayStr;
+                
+                let holHtml = '';
+                if(hol) {
+                   holHtml = `<div class="mt-2 text-xs bg-brand-50 border border-brand-100 dark:bg-brand-900/40 dark:border-brand-800/50 p-1.5 rounded-lg flex flex-col group relative z-10">
+                      <span class="font-bold text-brand-700 dark:text-brand-300 truncate">${hol.Name}</span>
+                      <span class="text-[10px] text-brand-600/70 dark:text-brand-400/70 truncate">${hol.Type}</span>
+                      ${isAdmin ? `<button onclick="event.stopPropagation(); App.actions.deleteHoliday('${hol.HolID}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-red-100 text-red-600 rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-sm transition-opacity">&times;</button>` : ''}
+                   </div>`;
+                }
+
+                const clickAction = isAdmin && !hol ? `onclick="App.actions.addHoliday('${dateStr}')"` : '';
+                const classes = `cal-cell flex flex-col ${hol ? 'is-holiday' : ''} ${isAdmin && !hol ? 'is-admin' : ''} ${isToday ? 'is-today' : ''}`;
+                
+                html += `<div class="${classes}" ${clickAction}>
+                  <span class="text-sm font-semibold ${hol ? 'text-brand-600 dark:text-brand-400' : (isToday ? 'text-brand-500' : 'text-gray-600 dark:text-gray-300')}">${i}</span>
+                  ${holHtml}
+                </div>`;
+             }
+             document.getElementById('cal-days-grid').innerHTML = html;
           }
         }
       }
     };
-
     window.onload = App.init;
   </script>
 </body>
