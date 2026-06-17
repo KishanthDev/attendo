@@ -45,7 +45,7 @@ function setupSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   const schemas = {
-    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate'],
+    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Password', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate'],
     [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status', 'LateArrival'],
     [SHEETS.LEAVE]: ['LeaveID', 'EmpID', 'Type', 'StartDate', 'EndDate', 'Days', 'Status', 'Remarks'],
     [SHEETS.HOL]: ['HolID', 'Name', 'Date', 'Type', 'Description'],
@@ -69,6 +69,52 @@ function setupSystem() {
     setSheet.appendRow(['DailyWorkingHours', '8']);
     setSheet.appendRow(['LateArrivalTime', '09:15']);
   }
+  // Sample Users
+  const empSheet = ss.getSheetByName(SHEETS.EMP);
+
+  const data = empSheet.getDataRange().getValues();
+
+  const adminExists = data.some(
+    row => row[2] === 'admin@company.com'
+  );
+
+  if (!adminExists) {
+    empSheet.appendRow([
+      'EMP001',
+      'System Admin',
+      'admin@company.com',
+      'admin123',
+      'Administration',
+      'Administrator',
+      'ADMIN',
+      'Active',
+      new Date()
+    ]);
+
+    empSheet.appendRow([
+      'EMP002',
+      'John Doe',
+      'john@company.com',
+      'john123',
+      'Engineering',
+      'Software Engineer',
+      'EMPLOYEE',
+      'Active',
+      new Date()
+    ]);
+
+    empSheet.appendRow([
+      'EMP003',
+      'Jane Smith',
+      'jane@company.com',
+      'jane123',
+      'HR',
+      'HR Executive',
+      'EMPLOYEE',
+      'Active',
+      new Date()
+    ]);
+  }
   return "Setup successful.";
 }
 
@@ -81,19 +127,20 @@ function getDb() { return SpreadsheetApp.getActiveSpreadsheet(); }
 function getSheetDataAsJSON(sheetName) {
   const sheet = getDb().getSheetByName(sheetName);
   if (!sheet) return [];
+
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return [];
 
   const headers = data.shift();
+
   return data.map(row => {
-    let obj = {};
+    const obj = {};
 
     headers.forEach((header, i) => {
       const value = row[i];
 
       // Attendance Date column
       if (sheetName === SHEETS.ATT && header === 'Date') {
-
         if (value instanceof Date) {
           obj[header] = Utilities.formatDate(
             value,
@@ -103,11 +150,10 @@ function getSheetDataAsJSON(sheetName) {
         } else {
           obj[header] = String(value);
         }
-
         return;
       }
 
-      // CheckIn / CheckOut
+      // Check In / Check Out
       if (header === 'CheckIn' || header === 'CheckOut') {
         if (value instanceof Date) {
           obj[header] = String(value.getTime());
@@ -117,6 +163,25 @@ function getSheetDataAsJSON(sheetName) {
         return;
       }
 
+      // Settings -> Late Arrival Time
+      if (
+        sheetName === SHEETS.SET &&
+        row[0] === 'LateArrivalTime' &&
+        header === 'Value'
+      ) {
+        if (value instanceof Date) {
+          obj[header] = Utilities.formatDate(
+            value,
+            Session.getScriptTimeZone(),
+            "HH:mm"
+          );
+        } else {
+          obj[header] = String(value).trim();
+        }
+        return;
+      }
+
+      // Generic Date Handling
       if (value instanceof Date) {
         obj[header] = Utilities.formatDate(
           value,
@@ -127,10 +192,10 @@ function getSheetDataAsJSON(sheetName) {
         obj[header] = value;
       }
     });
+
     return obj;
   });
 }
-
 function saveRowToSheet(sheetName, dataObj, keyField) {
   const sheet = getDb().getSheetByName(sheetName);
   const data = sheet.getDataRange().getValues();
@@ -179,11 +244,34 @@ function logAudit(userEmail, action, details) {
 
 function getAppSettings() {
   const data = getSheetDataAsJSON(SHEETS.SET);
-  let settings = { DailyWorkingHours: 8, LateArrivalTime: "09:15" };
+
+  let settings = {
+    DailyWorkingHours: 8,
+    LateArrivalTime: "09:15"
+  };
+
   data.forEach(row => {
-    if (row.Key === 'DailyWorkingHours') settings.DailyWorkingHours = Number(row.Value);
-    if (row.Key === 'LateArrivalTime') settings.LateArrivalTime = row.Value;
+    const key = String(row.Key).trim();
+
+    if (key === 'DailyWorkingHours') {
+      settings.DailyWorkingHours = Number(row.Value);
+    }
+
+    if (row.Key === 'LateArrivalTime') {
+      Logger.log(row.Value);
+
+      if (row.Value instanceof Date) {
+        settings.LateArrivalTime = Utilities.formatDate(
+          row.Value,
+          Session.getScriptTimeZone(),
+          'HH:mm'
+        );
+      } else {
+        settings.LateArrivalTime = String(row.Value);
+      }
+    }
   });
+
   return settings;
 }
 
@@ -199,16 +287,31 @@ function saveAppSettings(settingsData) {
 // AUTHENTICATION
 // ==========================================
 
-function loginUser(inputEmail) {
-  let email = inputEmail ? inputEmail.trim() : Session.getActiveUser().getEmail();
-  if (!email) email = 'admin@company.com';
+function loginUser(email, password) {
+  if (!email || !password) {
+    return { status: 'Error', message: 'Email and password are required.' };
+  }
 
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-  let user = employees.find(e => e.Email.toLowerCase() === email.toLowerCase());
-  if (!user) user = { EmpID: 'UNKNOWN', Name: 'Guest User', Email: email, Role: 'EMPLOYEE', Status: 'Inactive' };
+  let user = employees.find(e => e.Email.toLowerCase() === email.trim().toLowerCase());
+
+  if (!user) {
+    return { status: 'Error', message: 'Account not found.' };
+  }
+
+  if (user.Password !== password) {
+    return { status: 'Error', message: 'Invalid credentials.' };
+  }
+
+  if (user.Status !== 'Active') {
+    return { status: 'Error', message: 'Your account is inactive.' };
+  }
+
+  // Strip password before returning to client for security
+  delete user.Password;
 
   logAudit(email, 'LOGIN', 'User accessed the portal.');
-  return user;
+  return { status: 'Success', user: user };
 }
 
 // ==========================================
@@ -323,12 +426,32 @@ function getAttendanceSummary(empIdFilter = null) {
   });
 
   const result = Object.values(groups).map(g => {
-    if (g.TotalHours >= g.RequiredHours) g.Status = 'Completed';
-    else if (g.TotalHours >= g.RequiredHours / 2) g.Status = 'Half Day';
-    else if (g.TotalHours > 0) g.Status = 'Present';
-    else g.Status = 'Absent';
 
-    g.Sessions.sort((a, b) => Number(String(a.CheckIn).replace(/,/g, '')) - Number(String(b.CheckIn).replace(/,/g, '')));
+    const hasActiveSession = g.Sessions.some(
+      s => !s.CheckOut || s.CheckOut === ""
+    );
+
+    if (hasActiveSession) {
+      g.Status = 'Present';
+    }
+    else if (g.TotalHours >= g.RequiredHours) {
+      g.Status = 'Completed';
+    }
+    else if (g.TotalHours >= (g.RequiredHours / 2)) {
+      g.Status = 'Half Day';
+    }
+    else if (g.TotalHours > 0) {
+      g.Status = 'Present';
+    }
+    else {
+      g.Status = 'Absent';
+    }
+
+    g.Sessions.sort((a, b) =>
+      Number(String(a.CheckIn).replace(/,/g, '')) -
+      Number(String(b.CheckIn).replace(/,/g, ''))
+    );
+
     return g;
   });
 
@@ -384,6 +507,18 @@ function markAttendance(action, empId) {
       const currentM = now.getMinutes();
       if (currentH > lateH || (currentH === lateH && currentM > lateM)) isLate = 'Yes';
     }
+    Logger.log('sessionsToday = ' + sessionsToday);
+    Logger.log('isLate = ' + isLate);
+    Logger.log([
+      'ATT-' + epochTimestamp,
+      empId,
+      todayStr,
+      String(epochTimestamp),
+      "",
+      "",
+      'Present',
+      isLate
+    ]);
 
     sheet.appendRow([
       'ATT-' + epochTimestamp,
