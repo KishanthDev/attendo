@@ -210,6 +210,17 @@
             class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-brand-500/30 transition-all">Secure
             Sign In</button>
         </form>
+        <div class="text-center mt-6">
+          <p class="text-xs text-gray-400 mb-2">For testing purposes:</p>
+          <div class="flex items-center justify-center gap-2">
+            <button onclick="App.actions.quickLogin('admin')"
+              class="text-xs bg-gray-100 dark:bg-slate-700 px-4 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">Login
+              as Admin</button>
+            <button onclick="App.actions.quickLogin('employee')"
+              class="text-xs bg-gray-100 dark:bg-slate-700 px-4 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">Login
+              as Employee</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -727,6 +738,18 @@
           } catch (e) { console.error(e); }
         },
 
+        quickLogin: (role) => {
+          if (role === 'admin') {
+            document.getElementById('login-email').value = 'admin@company.com';
+            document.getElementById('login-password').value = 'admin123';
+          } else {
+            document.getElementById('login-email').value = 'john@company.com';
+            document.getElementById('login-password').value = 'john123';
+          }
+          document.getElementById('login-remember').checked = true;
+          App.actions.login();
+        },
+
         logout: () => {
           // Proper Logout Flow
           localStorage.removeItem('hrms_session');
@@ -912,9 +935,18 @@
           document.getElementById('set-late-time').value = App.state.data.settings?.LateArrivalTime || "09:15";
         },
         attendance: async () => {
+
+          const liveCard = document.getElementById('att-live-card');
+
+          // Hide by default
+          liveCard.classList.add('hidden');
+          liveCard.innerHTML = '';
+
           const isEmp = App.state.user.Role === 'EMPLOYEE';
+
           const filterId = isEmp ? App.state.user.EmpID : null;
           const data = await App.api('getAttendanceSummary', filterId);
+
 
           // Handle Holiday View
           if (App.state.data.todayHoliday) {
@@ -932,6 +964,7 @@
           }
 
           if (isEmp) {
+            liveCard.classList.remove('hidden');
             const now = new Date();
 
             const todayStr =
