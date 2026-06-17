@@ -238,6 +238,21 @@ function logAudit(userEmail, action, details) {
   sheet.appendRow([Utilities.getUuid(), new Date().toISOString(), userEmail, action, details]);
 }
 
+/**
+ * Reusable helper to check if a given date is a holiday or a weekend (Sunday).
+ * @param {Date} date The date to check.
+ * @param {Array<Object>} holidays An array of holiday objects from the sheet.
+ * @returns {Object|null} The holiday object if it's a holiday/weekend, otherwise null.
+ */
+function isDateHoliday(date, holidays) {
+  if (!date || !(date instanceof Date)) return null;
+  if (date.getDay() === 0) { // Sunday is a weekend
+    return { Name: 'Weekend', Type: 'Weekend', Description: 'Sunday Weekend' };
+  }
+  const dateStr = Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  return holidays.find(h => h.Date === dateStr) || null;
+}
+
 // ==========================================
 // SETTINGS
 // ==========================================
@@ -319,18 +334,36 @@ function loginUser(email, password) {
 // ==========================================
 
 function getDashboardData() {
+  const todayDate = new Date();
+  const todayStr = Utilities.formatDate(todayDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+
   const emps = getSheetDataAsJSON(SHEETS.EMP);
   const atts = getSheetDataAsJSON(SHEETS.ATT);
   const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
   const hols = getSheetDataAsJSON(SHEETS.HOL);
 
-  const todayDate = new Date();
-  const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+  // --- Holiday Calculations ---
+  const todayHoliday = isDateHoliday(todayDate, hols);
+  const upcomingHolidays = hols
+    .filter(h => h.Date >= todayStr)
+    .sort((a, b) => a.Date > b.Date ? 1 : -1)
+    .map(h => {
+      const holDate = new Date(h.Date);
+      // Adjust for timezone differences when calculating days
+      const todayMidnight = new Date(todayStr);
+      const holMidnight = new Date(holDate.getFullYear(), holDate.getMonth(), holDate.getDate());
+      const diffTime = holMidnight.getTime() - todayMidnight.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      h.daysLeft = diffDays;
+      return h;
+    });
 
+  const nextHoliday = upcomingHolidays.find(h => h.Type !== 'Weekend') || null;
+
+  // --- Attendance Calculations ---
   const activeEmployees = emps.filter(e => e.Status === 'Active' && e.Role === 'EMPLOYEE');
   const activeEmpIds = activeEmployees.map(e => e.EmpID);
 
-  // Create a Set of unique employees who have at least one check-in today
   const presentSet = new Set();
   atts.forEach(a => {
     if (a.CheckIn && activeEmpIds.includes(a.EmpID)) {
@@ -339,18 +372,24 @@ function getDashboardData() {
     }
   });
 
-  const leavesToday = leaves.filter(l => l.Status === 'Approved' && l.StartDate <= todayStr && l.EndDate >= todayStr && activeEmpIds.includes(l.EmpID)).length;
-  const presentToday = presentSet.size;
-  const absentToday = activeEmployees.length - presentToday - leavesToday;
+  const leavesTodayCount = leaves.filter(l => l.Status === 'Approved' && l.StartDate <= todayStr && l.EndDate >= todayStr && activeEmpIds.includes(l.EmpID)).length;
+
+  // Don't count attendance metrics if it's a holiday
+  const presentToday = todayHoliday ? 0 : presentSet.size;
+  const absentToday = todayHoliday ? 0 : (activeEmployees.length - presentToday - leavesTodayCount);
 
   return {
     totalEmployees: activeEmployees.length,
     presentToday: presentToday,
     absentToday: absentToday < 0 ? 0 : absentToday,
-    onLeaveToday: leavesToday,
+    onLeaveToday: leavesTodayCount,
     pendingLeaves: leaves.filter(l => l.Status === 'Pending').length,
     announcements: getSheetDataAsJSON(SHEETS.ANN).filter(a => a.Status === 'Active').slice(-5).reverse(),
-    upcomingHolidays: hols.filter(h => h.Date >= todayStr).sort((a, b) => a.Date > b.Date ? 1 : -1).slice(0, 3)
+
+    // New & Enhanced Holiday Data
+    todayHoliday: todayHoliday,
+    nextHoliday: nextHoliday,
+    upcomingHolidays: upcomingHolidays.slice(0, 3) // Keep it to 3 for the widget
   };
 }
 
@@ -394,6 +433,7 @@ function getAttendanceSummary(empIdFilter = null) {
   const rawData = getSheetDataAsJSON(SHEETS.ATT);
   const settings = getAppSettings();
   const reqHours = Number(settings.DailyWorkingHours) || 8;
+  const holidays = getSheetDataAsJSON(SHEETS.HOL); // Get all holidays
 
   let filtered = rawData;
   if (empIdFilter) {

@@ -115,6 +115,14 @@
       color: #94a3b8;
     }
 
+    .cal-cell.is-weekend {
+      background: #f8fafc;
+    }
+
+    .dark .cal-cell.is-weekend {
+      background: #1a2436;
+    }
+
     .cal-cell.is-holiday {
       background: #eff6ff;
     }
@@ -264,6 +272,17 @@
       <main class="flex-1 overflow-y-auto p-4 sm:p-6" id="views-container">
 
         <div id="view-dashboard" class="view-section space-y-6">
+          <div id="today-holiday-banner"
+            class="hidden bg-gradient-to-r from-brand-500 to-indigo-600 text-white rounded-2xl p-6 border border-brand-600 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="text-4xl">🎉</div>
+              <div>
+                <h3 class="font-bold text-xl" id="banner-hol-name">Holiday Name</h3>
+                <p class="text-sm text-indigo-200" id="banner-hol-type">Public Holiday</p>
+              </div>
+            </div>
+            <div class="bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-full">Office Closed Today</div>
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6" id="dash-kpis">
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -369,7 +388,16 @@
             </div>
             <div class="cal-grid mt-[1px]" id="cal-days-grid"></div>
             <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
-              <p id="cal-helper-text"></p>
+              <div id="calendar-legend" class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                <div class="flex items-center gap-2"><span
+                    class="w-3 h-3 rounded-full bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-700"></span>Public/Company
+                </div>
+                <div class="flex items-center gap-2"><span
+                    class="w-3 h-3 rounded-full bg-gray-200 dark:bg-slate-700"></span>Weekend</div>
+                <div class="flex items-center gap-2"><span
+                    class="w-3 h-3 rounded-full ring-2 ring-brand-500"></span>Today</div>
+              </div>
+              <p id="cal-helper-text" class="text-xs text-right"></p>
             </div>
           </div>
         </div>
@@ -518,13 +546,54 @@
     </div>
   </div>
 
+  <div id="holiday-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+      <div
+        class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold" id="hol-modal-title">Add Holiday</h3><button
+          onclick="App.ui.modals.close('holiday-modal')"
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><svg class="w-5 h-5" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg></button>
+      </div>
+      <form id="holiday-form" onsubmit="event.preventDefault(); App.actions.saveHoliday();" class="p-6 space-y-4">
+        <input type="hidden" id="hol-id">
+        <input type="hidden" id="hol-date">
+        <div><label class="block text-sm font-medium mb-1">Holiday Name</label><input type="text" id="hol-name" required
+            class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+        </div>
+        <div><label class="block text-sm font-medium mb-1">Type</label><select id="hol-type"
+            class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+            <option>Public</option>
+            <option>Restricted</option>
+            <option>Company</option>
+          </select></div>
+        <div><label class="block text-sm font-medium mb-1">Description (Optional)</label><textarea id="hol-desc"
+            class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none"
+            rows="2"></textarea></div>
+        <div class="pt-4 flex justify-between items-center"><button type="button" id="hol-delete-btn"
+            onclick="App.actions.deleteHoliday(document.getElementById('hol-id').value)"
+            class="px-5 py-2.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-xl transition-colors">Delete</button>
+          <div class="flex gap-3"><button type="button" onclick="App.ui.modals.close('holiday-modal')"
+              class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancel</button><button
+              type="submit"
+              class="px-5 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-xl hover:bg-brand-500 shadow-lg transition-all">Save
+              Holiday</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const App = {
       state: {
         user: null,
         currentView: '',
         theme: 'light',
-        data: { employees: [], settings: null },
+        data: { employees: [], settings: null, todayHoliday: null, nextHoliday: null },
         cache: { employees: null, holidays: null, announcements: null, settings: null },
         calDate: new Date()
       },
@@ -726,26 +795,30 @@
           }
         },
 
-        addHoliday: async (dateStr) => {
-          if (App.state.user.Role !== 'ADMIN') return;
-          const { value: formValues } = await Swal.fire({
-            title: 'Add Holiday', html: `<input id="swal-input1" class="swal2-input" placeholder="Holiday Name"><select id="swal-input2" class="swal2-input"><option>Public</option><option>Restricted</option><option>Company</option></select><input id="swal-input3" class="swal2-input" placeholder="Description">`,
-            focusConfirm: false, preConfirm: () => [document.getElementById('swal-input1').value, document.getElementById('swal-input2').value, document.getElementById('swal-input3').value]
-          });
-          if (formValues && formValues[0]) {
-            const res = await App.api('saveHoliday', { Name: formValues[0], Date: dateStr, Type: formValues[1], Description: formValues[2] });
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
-            App.loadData.holidays();
-            App.loadData.dashboard();
-          }
+        saveHoliday: async () => {
+          const data = {
+            HolID: document.getElementById('hol-id').value,
+            Date: document.getElementById('hol-date').value,
+            Name: document.getElementById('hol-name').value,
+            Type: document.getElementById('hol-type').value,
+            Description: document.getElementById('hol-desc').value
+          };
+          const res = await App.api('saveHoliday', data);
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+          App.ui.modals.close('holiday-modal');
+          App.state.cache.holidays = null; // Invalidate cache
+          App.loadData.holidays(true);
+          App.loadData.dashboard();
         },
         deleteHoliday: async (id) => {
           if (App.state.user.Role !== 'ADMIN') return;
           const confirm = await Swal.fire({ title: 'Remove Holiday?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete' });
           if (confirm.isConfirmed) {
             const res = await App.api('deleteHoliday', id);
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
-            App.loadData.holidays();
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+            App.ui.modals.close('holiday-modal');
+            App.state.cache.holidays = null; // Invalidate cache
+            App.loadData.holidays(true);
             App.loadData.dashboard();
           }
         },
@@ -762,18 +835,49 @@
       loadData: {
         dashboard: async () => {
           const data = await App.api('getDashboardData');
+          App.state.data.todayHoliday = data.todayHoliday; // Cache for other views
+          App.state.data.nextHoliday = data.nextHoliday;
+
+          // Today's Holiday Banner
+          const banner = document.getElementById('today-holiday-banner');
+          if (data.todayHoliday && data.todayHoliday.Type !== 'Weekend') {
+            document.getElementById('banner-hol-name').innerText = data.todayHoliday.Name;
+            document.getElementById('banner-hol-type').innerText = data.todayHoliday.Type + ' Holiday';
+            banner.classList.remove('hidden');
+          } else {
+            banner.classList.add('hidden');
+          }
+
           const isAdmin = App.state.user.Role === 'ADMIN';
           const kpi = (t, v, icon, color) => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between group hover:-translate-y-1 transition-transform"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${t}</span><span class="p-2 rounded-lg bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 group-hover:scale-110 transition-transform">${icon}</span></div><div class="text-3xl font-bold mt-2 text-gray-800 dark:text-white">${v}</div></div>`;
+          const kpiSub = (t, v, sub, icon, color) => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between group hover:-translate-y-1 transition-transform"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${t}</span><span class="p-2 rounded-lg bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 group-hover:scale-110 transition-transform">${icon}</span></div><div><div class="text-2xl font-bold mt-2 text-gray-800 dark:text-white truncate">${v}</div><div class="text-xs font-medium text-gray-400">${sub}</div></div></div>`;
           const iconP = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
           const iconH = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
+
+          let nextHolName = 'N/A', nextHolSub = 'No upcoming holidays';
+          if (data.nextHoliday) {
+            nextHolName = data.nextHoliday.Name;
+            if (data.nextHoliday.daysLeft === 0) nextHolSub = 'Today';
+            else if (data.nextHoliday.daysLeft === 1) nextHolSub = 'Tomorrow';
+            else nextHolSub = `${data.nextHoliday.daysLeft} days left`;
+          }
 
           document.getElementById('dash-kpis').innerHTML = isAdmin ?
             kpi('Active Emp.', data.totalEmployees, iconP, 'brand') + kpi('Present', data.presentToday, iconP, 'green') +
             kpi('Absent', data.absentToday, iconP, 'red') + kpi('On Leave', data.onLeaveToday, iconH, 'orange') +
-            kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow') + kpi('Upcoming Hols.', data.upcomingHolidays.length, iconH, 'purple') :
-            kpi('My Status', 'Active', iconP, 'green') + kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow') + kpi('Upcoming Hols.', data.upcomingHolidays.length, iconH, 'brand');
+            kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow') :
+            kpiSub('Next Holiday', nextHolName, nextHolSub, iconH, 'purple') +
+            kpi('My Status', data.todayHoliday ? 'Holiday' : 'Active', iconP, 'green') + kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow');
 
-          document.getElementById('dash-holidays').innerHTML = data.upcomingHolidays.length ? data.upcomingHolidays.map(h => `<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700"><div class="flex flex-col"><span class="font-semibold text-sm">${h.Name}</span><span class="text-xs text-gray-500">${h.Type}</span></div><span class="text-xs font-medium px-2 py-1 bg-white dark:bg-dark-card rounded-lg border dark:border-slate-600">${h.Date.split('T')[0]}</span></div>`).join('') : '<p class="text-sm text-gray-500">No upcoming holidays.</p>';
+          document.getElementById('dash-holidays').innerHTML = data.upcomingHolidays.length ? data.upcomingHolidays.map(h => {
+            let daysText = '';
+            if (h.daysLeft === 0) daysText = 'Today';
+            else if (h.daysLeft === 1) daysText = 'Tomorrow';
+            else daysText = `${h.daysLeft} days left`;
+            const date = new Date(h.Date.replace(/-/g, '/'));
+            const formattedDate = `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+            return `<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700"><div class="flex flex-col"><span class="font-semibold text-sm">${h.Name}</span><span class="text-xs text-gray-500">${h.Type} Holiday</span></div><div class="text-right"><div class="text-xs font-bold text-brand-600 dark:text-brand-400">${daysText}</div><div class="text-[10px] text-gray-400">${formattedDate}</div></div></div>`
+          }).join('') : '<p class="text-sm text-gray-500">No upcoming holidays.</p>';
           document.getElementById('dash-announcements').innerHTML = data.announcements.length ? data.announcements.map(a => `<div class="p-4 bg-brand-50 dark:bg-brand-900/20 rounded-xl border border-brand-100 dark:border-brand-800/50"><h4 class="font-semibold text-sm text-brand-800 dark:text-brand-300">${a.Title}</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-2">${a.Content}</p><span class="text-[10px] text-gray-400 mt-2 block">${a.Date.split('T')[0]}</span></div>`).join('') : '<p class="text-sm text-gray-500">No recent announcements.</p>';
 
           const ctx = document.getElementById('dashChart').getContext('2d');
@@ -811,6 +915,21 @@
           const isEmp = App.state.user.Role === 'EMPLOYEE';
           const filterId = isEmp ? App.state.user.EmpID : null;
           const data = await App.api('getAttendanceSummary', filterId);
+
+          // Handle Holiday View
+          if (App.state.data.todayHoliday) {
+            const holCard = document.getElementById('att-live-card');
+            holCard.innerHTML = `
+              <div class="text-center">
+                <div class="text-4xl mb-2">🎉</div>
+                <h3 class="text-xl font-bold">Today is a Holiday</h3>
+                <p class="text-gray-500 mt-1">${App.state.data.todayHoliday.Name} (${App.state.data.todayHoliday.Type})</p>
+                <p class="text-sm font-semibold text-brand-600 dark:text-brand-400 mt-4">Attendance is disabled.</p>
+              </div>`;
+            holCard.classList.remove('hidden');
+            document.getElementById('attendance-summary-table').innerHTML = '';
+            return;
+          }
 
           if (isEmp) {
             const now = new Date();
@@ -884,6 +1003,7 @@
               if (group.Status === 'Completed') clr = 'bg-green-100 text-green-700';
               else if (group.Status === 'Half Day') clr = 'bg-orange-100 text-orange-700';
               else if (group.Status === 'Present') clr = 'bg-blue-100 text-blue-700';
+              else if (group.Status === 'Holiday') clr = 'bg-purple-100 text-purple-700';
 
               tableHtml += `
                 <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-colors" onclick="document.getElementById('child-row-${i}').classList.toggle('hidden')">
@@ -894,7 +1014,7 @@
                   <td class="px-4 py-3 font-semibold">${hrs}h ${mins}m</td>
                   <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${clr} dark:bg-opacity-20">${group.Status}</span></td>
                 </tr>
-                <tr id="child-row-${i}" class="hidden bg-gray-50/30 dark:bg-slate-800/20 border-b border-gray-100 dark:border-slate-700">
+                <tr id="child-row-${i}" class="hidden bg-gray-50/30 dark:bg-slate-800/20 border-b border-gray-100 dark:border-slate-700 ${group.Sessions.length === 0 ? 'hidden' : ''}">
                   <td colspan="${!isEmp ? '6' : '5'}" class="p-0">
                     <div class="px-10 py-4">
                       <table class="w-full text-xs text-left">
@@ -943,7 +1063,7 @@
         },
         holidays: async (force = false) => {
           if (!force && App.state.cache.holidays) {
-            App.state.data.holidays = App.state.cache.holidays;
+            // Data is already in cache, just render
             return App.ui.calendar.render();
           }
           App.state.data.holidays = await App.api('getHolidays');
@@ -971,6 +1091,24 @@
         modals: {
           open: (id) => document.getElementById(id).classList.remove('hidden'),
           close: (id) => { document.getElementById(id).classList.add('hidden'); document.querySelector(`#${id} form`)?.reset(); },
+          openHoliday: (dateStr, hol = null) => {
+            if (App.state.user.Role !== 'ADMIN') return;
+            document.getElementById('holiday-form').reset();
+            if (hol) { // Editing
+              document.getElementById('hol-modal-title').innerText = 'Edit Holiday';
+              document.getElementById('hol-id').value = hol.HolID;
+              document.getElementById('hol-date').value = hol.Date;
+              document.getElementById('hol-name').value = hol.Name;
+              document.getElementById('hol-type').value = hol.Type;
+              document.getElementById('hol-desc').value = hol.Description;
+              document.getElementById('hol-delete-btn').classList.remove('hidden');
+            } else { // Adding
+              document.getElementById('hol-modal-title').innerText = 'Add Holiday';
+              document.getElementById('hol-date').value = dateStr;
+              document.getElementById('hol-delete-btn').classList.add('hidden');
+            }
+            App.ui.modals.open('holiday-modal');
+          },
           openEmployee: (id) => {
             document.getElementById('employee-form').reset();
             document.getElementById('emp-id').value = '';
@@ -1055,23 +1193,40 @@
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             document.getElementById('cal-month-title').innerText = `${monthNames[month]} ${year}`;
             const isAdmin = App.state.user.Role === 'ADMIN';
-            document.getElementById('cal-helper-text').innerText = isAdmin ? "Click any day cell to add a holiday." : "Company Holidays overview.";
+            document.getElementById('cal-helper-text').innerText = isAdmin ? "Click a day to add/edit a holiday." : "";
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
             let html = '';
             for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell bg-gray-50/50 dark:bg-slate-800/30 opacity-40"></div>`;
             for (let i = 1; i <= daysInMonth; i++) {
+              const d = new Date(year, month, i);
+              const isSunday = d.getDay() === 0;
               const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
               const hol = (App.state.data.holidays || []).find(h => h.Date.startsWith(dateStr));
               const isToday = dateStr === todayStr;
-              let holHtml = '';
+              let contentHtml = '';
+
               if (hol) {
-                holHtml = `<div class="mt-2 text-xs bg-brand-50 border border-brand-100 dark:bg-brand-900/40 dark:border-brand-800/50 p-1.5 rounded-lg flex flex-col group relative z-10"><span class="font-bold text-brand-700 dark:text-brand-300 truncate">${hol.Name}</span><span class="text-[10px] text-brand-600/70 dark:text-brand-400/70 truncate">${hol.Type}</span>${isAdmin ? `<button onclick="event.stopPropagation(); App.actions.deleteHoliday('${hol.HolID}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-red-100 text-red-600 rounded-full w-4 h-4 flex items-center justify-center font-bold shadow-sm transition-opacity">&times;</button>` : ''}</div>`;
+                contentHtml = `<div class="mt-2 text-xs bg-brand-50 border border-brand-100 dark:bg-brand-900/40 dark:border-brand-800/50 p-1.5 rounded-lg flex items-center gap-1.5 z-10 overflow-hidden">
+                  <span class="hidden sm:inline">🎉</span>
+                  <div class="flex flex-col overflow-hidden">
+                    <span class="font-bold text-brand-700 dark:text-brand-300 truncate hidden sm:block">${hol.Name}</span>
+                    <span class="font-bold text-brand-700 dark:text-brand-300 truncate sm:hidden">${hol.Name}</span>
+                    <span class="text-[10px] text-brand-600/70 dark:text-brand-400/70 truncate hidden sm:block">${hol.Type} Holiday</span>
+                  </div>
+                </div>`;
+              } else if (isSunday) {
+                contentHtml = `<div class="mt-2 text-xs text-gray-400 font-semibold">Weekend</div>`;
               }
-              const clickAction = isAdmin && !hol ? `onclick="App.actions.addHoliday('${dateStr}')"` : '';
-              const classes = `cal-cell flex flex-col ${hol ? 'is-holiday' : ''} ${isAdmin && !hol ? 'is-admin' : ''} ${isToday ? 'is-today' : ''}`;
-              html += `<div class="${classes}" ${clickAction}><span class="text-sm font-semibold ${hol ? 'text-brand-600 dark:text-brand-400' : (isToday ? 'text-brand-500' : 'text-gray-600 dark:text-gray-300')}">${i}</span>${holHtml}</div>`;
+
+              const clickAction = isAdmin ? `onclick='App.ui.modals.openHoliday("${dateStr}", ${JSON.stringify(hol || null)})'` : '';
+              const classes = `cal-cell flex flex-col 
+                ${hol ? 'is-holiday' : ''} 
+                ${isSunday && !hol ? 'is-weekend' : ''} 
+                ${isAdmin ? 'is-admin' : ''} 
+                ${isToday ? 'is-today' : ''}`;
+              html += `<div class="${classes}" ${clickAction}><span class="text-sm font-semibold ${hol ? 'text-brand-600 dark:text-brand-400' : (isToday ? 'text-brand-500' : 'text-gray-600 dark:text-gray-300')}">${i}</span>${contentHtml}</div>`;
             }
             document.getElementById('cal-days-grid').innerHTML = html;
           }
