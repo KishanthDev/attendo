@@ -674,19 +674,25 @@
           if (activeStart > 0) {
             currentTotal += (Date.now() - activeStart) / 3600000;
           }
+          const totalSeconds = Math.floor(currentTotal * 3600);
 
-          const hrs = Math.floor(currentTotal);
-          const mins = Math.floor((currentTotal % 1) * 60);
+          const hrs = Math.floor(totalSeconds / 3600);
+          const mins = Math.floor((totalSeconds % 3600) / 60);
+          const secs = totalSeconds % 60;
 
           let rem = reqH - currentTotal;
           if (rem < 0) rem = 0;
-          const rHrs = Math.floor(rem);
-          const rMins = Math.floor((rem % 1) * 60);
+
+          const remSeconds = Math.floor(rem * 3600);
+          const rHrs = Math.floor(remSeconds / 3600);
+          const rMins = Math.floor((remSeconds % 3600) / 60);
+          const rSecs = remSeconds % 60;
 
           let pct = (currentTotal / reqH) * 100;
           if (pct > 100) pct = 100;
 
-          document.getElementById('att-worked-text').innerText = `${hrs}h ${mins}m / ${reqH}h`;
+          document.getElementById('att-worked-text').innerText =
+            `${hrs}h ${mins}m ${secs}s / ${reqH}h`;
 
           if (currentTotal > reqH) {
             const over = currentTotal - reqH;
