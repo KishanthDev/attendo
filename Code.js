@@ -45,7 +45,7 @@ function setupSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   const schemas = {
-    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Password', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate'],
+    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Password', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate', 'ExitDate'],
     [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status', 'LateArrival'],
     [SHEETS.LEAVE]: ['LeaveID', 'EmpID', 'Type', 'StartDate', 'EndDate', 'Days', 'Status', 'Remarks'],
     [SHEETS.HOL]: ['HolID', 'Name', 'Date', 'Type', 'Description'],
@@ -233,6 +233,31 @@ function deleteRowFromSheet(sheetName, keyField, keyValue) {
   return false;
 }
 
+function updateRowByKey(sheetName, keyField, keyValue, updateData) {
+  const sheet = getDb().getSheetByName(sheetName);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const keyColIndex = headers.indexOf(keyField);
+  if (keyColIndex === -1) {
+    throw new Error(`Key field "${keyField}" not found in sheet "${sheetName}".`);
+  }
+
+  const rowIndex = data.findIndex(row => row[keyColIndex] == keyValue);
+
+  if (rowIndex > 0) { // rowIndex is 0-based for array, but we skip header (index 0)
+    for (const [updateKey, updateValue] of Object.entries(updateData)) {
+      const colIndex = headers.indexOf(updateKey);
+      if (colIndex > -1) {
+        // sheet ranges are 1-based, rowIndex is 0-based for array
+        sheet.getRange(rowIndex + 1, colIndex + 1).setValue(updateValue);
+      }
+    }
+    return true;
+  }
+  return false; // Row not found
+}
+
 function logAudit(userEmail, action, details) {
   const sheet = getDb().getSheetByName(SHEETS.AUDIT);
   sheet.appendRow([Utilities.getUuid(), new Date().toISOString(), userEmail, action, details]);
@@ -397,6 +422,7 @@ function getDashboardData() {
 // EMPLOYEE APIs
 // ==========================================
 
+// Updated Backend Code
 function getEmployees() {
   return getSheetDataAsJSON(SHEETS.EMP).filter(e => e.Role === 'EMPLOYEE');
 }
@@ -418,11 +444,31 @@ function saveEmployee(empData) {
   return { status: 'Success', message: isNew ? 'Employee successfully added.' : 'Employee details updated.' };
 }
 
-function deleteEmployee(empID) {
+function updateEmployeeStatus(empID, status) {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
-  deleteRowFromSheet(SHEETS.EMP, 'EmpID', empID);
-  logAudit(currentUser, 'DELETE_EMP', `Deleted Employee ID: ${empID}`);
-  return { status: 'Success', message: 'Employee successfully removed.' };
+
+  updateRowByKey(
+    SHEETS.EMP,
+    'EmpID',
+    empID,
+    {
+      Status: status,
+      ExitDate: ['Resigned', 'Terminated', 'Retired'].includes(status)
+        ? new Date()
+        : ''
+    }
+  );
+
+  logAudit(
+    currentUser,
+    'UPDATE_EMP_STATUS',
+    `Employee ${empID} status changed to ${status}`
+  );
+
+  return {
+    status: 'Success',
+    message: `Employee marked as ${status}.`
+  };
 }
 
 // ==========================================

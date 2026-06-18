@@ -271,6 +271,21 @@
           <h2 class="text-xl font-semibold text-gray-800 dark:text-white" id="header-title">Dashboard</h2>
         </div>
         <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 text-xs text-gray-500">
+            <span id="last-updated">
+              Updated just now
+            </span>
+
+            <button onclick="App.refreshData()"
+              class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              title="Refresh Data">
+              <svg id="refresh-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                </path>
+              </svg>
+            </button>
+          </div>
           <button onclick="App.toggleTheme()"
             class="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"><svg
               class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -606,18 +621,64 @@
         theme: 'light',
         data: { employees: [], settings: null, todayHoliday: null, nextHoliday: null },
         cache: { employees: null, holidays: null, announcements: null, settings: null },
-        calDate: new Date()
+        calDate: new Date(),
+        isSilentRefresh: false
+      },
+      refreshCurrentView: async () => {
+
+        switch (App.state.currentView) {
+
+          case 'dashboard':
+            await App.loadData.dashboard();
+            break;
+
+          case 'employees':
+            App.state.cache.employees = null;
+            await App.loadData.employees(true);
+            break;
+
+          case 'attendance':
+            await App.loadData.attendance();
+            break;
+
+          case 'leaves':
+            await App.loadData.leaves();
+            break;
+
+          case 'holidays':
+            App.state.cache.holidays = null;
+            await App.loadData.holidays(true);
+            break;
+
+          case 'announcements':
+            await App.loadData.announcements();
+            break;
+
+          case 'settings':
+            App.state.cache.settings = null;
+            await App.loadData.settings(true);
+            break;
+        }
+
       },
       api: async (method, ...args) => {
         return new Promise((resolve, reject) => {
-          document.getElementById('global-loader').classList.remove('hidden');
+          // Only show loader if it's NOT a silent refresh
+          if (!App.state.isSilentRefresh) {
+            document.getElementById('global-loader').classList.remove('hidden');
+          }
+
           google.script.run
             .withSuccessHandler((res) => {
-              document.getElementById('global-loader').classList.add('hidden');
+              if (!App.state.isSilentRefresh) {
+                document.getElementById('global-loader').classList.add('hidden');
+              }
               resolve(res);
             })
             .withFailureHandler((err) => {
-              document.getElementById('global-loader').classList.add('hidden');
+              if (!App.state.isSilentRefresh) {
+                document.getElementById('global-loader').classList.add('hidden');
+              }
               Swal.fire({ icon: 'error', title: 'System Error', text: err.message });
               reject(err);
             })
@@ -657,7 +718,15 @@
 
         document.getElementById('emp-search').addEventListener('keyup', (e) => {
           const term = e.target.value.toLowerCase();
-          const filtered = App.state.data.employees.filter(emp => emp.Name.toLowerCase().includes(term) || emp.Email.toLowerCase().includes(term) || emp.Department.toLowerCase().includes(term) || emp.EmpID.toLowerCase().includes(term));
+
+          const filtered = App.state.data.employees.filter(emp =>
+            emp.Role !== 'ADMIN' && (
+              emp.Name.toLowerCase().includes(term) ||
+              emp.Email.toLowerCase().includes(term) ||
+              emp.Department.toLowerCase().includes(term) ||
+              emp.EmpID.toLowerCase().includes(term)
+            ));
+
           App.ui.render.employeeTable(filtered);
         });
 
@@ -707,12 +776,58 @@
           document.getElementById('att-prog-fill').style.width = `${pct}%`;
 
         }, 1000);
+
+        setInterval(async () => {
+          if (!App.state.user) return;
+
+          // Turn on silent mode to bypass the UI loader
+          App.state.isSilentRefresh = true;
+
+          // Silently refresh ONLY the dashboard
+          await App.loadData.dashboard();
+
+          // Turn silent mode back off
+          App.state.isSilentRefresh = false;
+
+        }, 30000);
+
       },
 
       toggleTheme: () => {
         document.documentElement.classList.toggle('dark');
         App.state.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-        if (App.state.currentView === 'dashboard') App.loadData.dashboard();
+        if (App.state.currentView === 'dashboard') {
+          App.ui.render.dashboardChart();
+        }
+      },
+
+      refreshData: async () => {
+        const icon = document.getElementById('refresh-icon');
+        if (icon) icon.classList.add('animate-spin'); // Start spinning
+
+        try {
+          App.state.isSilentRefresh = false;
+
+          // Clear existing caches to force a fresh pull
+          App.state.cache = { employees: null, holidays: null, announcements: null, settings: null };
+
+          // Fetch all data from the sheet simultaneously
+          await Promise.all([
+            App.loadData.dashboard(),
+            App.loadData.employees(true),
+            App.loadData.attendance(),
+            App.loadData.leaves(),
+            App.loadData.holidays(true),
+            App.loadData.announcements(true),
+            App.loadData.settings(true)
+          ]);
+
+          App.ui.updateTimestamp(); // Update the UI text
+        } catch (e) {
+          console.error("Refresh failed:", e);
+        } finally {
+          if (icon) icon.classList.remove('animate-spin'); // Stop spinning
+        }
       },
 
       actions: {
@@ -786,10 +901,24 @@
           App.loadData.dashboard();
         },
         deleteEmployee: async (id) => {
-          const confirm = await Swal.fire({ title: 'Delete Employee?', text: "This cannot be undone.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete!' });
-          if (confirm.isConfirmed) {
-            const res = await App.api('deleteEmployee', id);
-            Swal.fire({ icon: 'success', title: 'Deleted', text: res.message, timer: 2000, showConfirmButton: false });
+          const { value: status } = await Swal.fire({
+            title: 'Deactivate Employee',
+            text: "This will mark the employee as inactive and they will no longer be able to log in.",
+            input: 'select',
+            inputOptions: {
+              'Terminated': 'Terminated',
+              'Resigned': 'Resigned',
+              'Retired': 'Retired'
+            },
+            inputPlaceholder: 'Select a deactivation reason',
+            showCancelButton: true,
+            confirmButtonText: 'Deactivate Employee',
+            confirmButtonColor: '#d33',
+          });
+
+          if (status) {
+            const res = await App.api('updateEmployeeStatus', id, status);
+            Swal.fire({ icon: 'success', title: 'Deactivated!', text: res.message, timer: 3000, showConfirmButton: false });
             App.state.cache.employees = null;
             App.loadData.employees(true);
             App.loadData.dashboard();
@@ -909,27 +1038,27 @@
           }).join('') : '<p class="text-sm text-gray-500">No upcoming holidays.</p>';
           document.getElementById('dash-announcements').innerHTML = data.announcements.length ? data.announcements.map(a => `<div class="p-4 bg-brand-50 dark:bg-brand-900/20 rounded-xl border border-brand-100 dark:border-brand-800/50"><h4 class="font-semibold text-sm text-brand-800 dark:text-brand-300">${a.Title}</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-2">${a.Content}</p><span class="text-[10px] text-gray-400 mt-2 block">${a.Date.split('T')[0]}</span></div>`).join('') : '<p class="text-sm text-gray-500">No recent announcements.</p>';
 
-          const ctx = document.getElementById('dashChart').getContext('2d');
-          if (window.dashChartInst) window.dashChartInst.destroy();
-          const gridColor = App.state.theme === 'dark' ? '#334155' : '#e2e8f0';
-          const textColor = App.state.theme === 'dark' ? '#94a3b8' : '#64748b';
-          window.dashChartInst = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'Attendance %', data: [95, 92, 88, 96, 90], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } } });
+          App.ui.render.dashboardChart();
         },
         employees: async (force = false) => {
-
           if (!force && App.state.cache.employees) {
             App.state.data.employees = App.state.cache.employees;
-            App.ui.render.employeeTable(App.state.data.employees);
+
+            // Filter out admins before rendering
+            const displayData = App.state.data.employees.filter(emp => emp.Role !== 'ADMIN');
+            App.ui.render.employeeTable(displayData);
             return;
           }
 
           const data = await App.api('getEmployees');
-
           App.state.cache.employees = data;
           App.state.data.employees = data;
 
-          App.ui.render.employeeTable(data);
+          // Filter out admins before rendering
+          const displayData = data.filter(emp => emp.Role !== 'ADMIN');
+          App.ui.render.employeeTable(displayData);
         },
+
         settings: async (force = false) => {
           if (!force && App.state.cache.settings) {
             App.state.data.settings = App.state.cache.settings;
@@ -1123,6 +1252,11 @@
       },
 
       ui: {
+        updateTimestamp: () => {
+          const now = new Date();
+          const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+          document.getElementById('last-updated').innerText = `Updated at ${timeString}`;
+        },
         toggleSidebar: () => {
           document.getElementById('sidebar').classList.toggle('-translate-x-full');
           document.getElementById('sidebar-overlay').classList.toggle('hidden');
@@ -1220,7 +1354,39 @@
             document.getElementById(id).innerHTML = `<thead class="text-xs text-gray-500 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700"><tr>${headers.map(h => `<th class="px-4 py-3.5 tracking-wider">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">${data.length ? data.map(rowRenderer).join('') : `<tr><td colspan="${headers.length}" class="px-4 py-8 text-center text-gray-500 bg-gray-50/20 dark:bg-transparent">No records found.</td></tr>`}</tbody>`;
           },
           employeeTable: (data) => {
-            App.ui.render.table('employees-table', ['ID', 'Employee Info', 'Department', 'Role', 'Status', 'Actions'], data, row => `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group"><td class="px-4 py-3 font-medium">${row.EmpID}</td><td class="px-4 py-3"><div class="flex flex-col"><span class="font-semibold text-gray-800 dark:text-gray-200">${row.Name}</span><span class="text-xs text-gray-500">${row.Email}</span></div></td><td class="px-4 py-3"><div class="flex flex-col"><span class="text-gray-700 dark:text-gray-300">${row.Department}</span><span class="text-xs text-gray-400">${row.Designation}</span></div></td><td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">${row.Role}</span></td><td class="px-4 py-3"><span class="flex items-center gap-1.5 text-xs font-medium text-green-600"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>${row.Status}</span></td><td class="px-4 py-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2"><button onclick="App.ui.modals.openEmployee('${row.EmpID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="App.actions.deleteEmployee('${row.EmpID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`);
+            App.ui.render.table('employees-table', ['ID', 'Employee Info', 'Department', 'Role', 'Status', 'Actions'], data, row => {
+
+              // Dynamic status colors
+              let statusColor = 'text-green-600';
+              let dotColor = 'bg-green-500';
+
+              if (row.Status === 'Terminated' || row.Status === 'Inactive') {
+                statusColor = 'text-red-600';
+                dotColor = 'bg-red-500';
+              } else if (row.Status === 'Resigned' || row.Status === 'Retired') {
+                statusColor = 'text-orange-600';
+                dotColor = 'bg-orange-500';
+              }
+
+              return `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group">
+                <td class="px-4 py-3 font-medium">${row.EmpID}</td>
+                <td class="px-4 py-3"><div class="flex flex-col"><span class="font-semibold text-gray-800 dark:text-gray-200">${row.Name}</span><span class="text-xs text-gray-500">${row.Email}</span></div></td>
+                <td class="px-4 py-3"><div class="flex flex-col"><span class="text-gray-700 dark:text-gray-300">${row.Department}</span><span class="text-xs text-gray-400">${row.Designation}</span></div></td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">${row.Role}</span></td>
+                <td class="px-4 py-3"><span class="flex items-center gap-1.5 text-xs font-medium ${statusColor}"><span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>${row.Status}</span></td>
+                <td class="px-4 py-3 flex gap-2">
+                  <button onclick="App.ui.modals.openEmployee('${row.EmpID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                  <button onclick="App.actions.deleteEmployee('${row.EmpID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                </td>
+              </tr>`;
+            });
+          },
+          dashboardChart: () => {
+            const ctx = document.getElementById('dashChart').getContext('2d');
+            if (window.dashChartInst) window.dashChartInst.destroy();
+            const gridColor = App.state.theme === 'dark' ? '#334155' : '#e2e8f0';
+            const textColor = App.state.theme === 'dark' ? '#94a3b8' : '#64748b';
+            window.dashChartInst = new Chart(ctx, { type: 'line', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'Attendance %', data: [95, 92, 88, 96, 90], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } } });
           }
         },
         calendar: {
