@@ -45,7 +45,7 @@ function setupSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   const schemas = {
-    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Password', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate', 'ExitDate'],
+    [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Password', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate', 'ExitDate', 'MustChangePassword'],
     [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status', 'LateArrival'],
     [SHEETS.LEAVE]: ['LeaveID', 'EmpID', 'Type', 'StartDate', 'EndDate', 'Days', 'Status', 'Remarks'],
     [SHEETS.HOL]: ['HolID', 'Name', 'Date', 'Type', 'Description'],
@@ -88,7 +88,8 @@ function setupSystem() {
       'Administrator',
       'ADMIN',
       'Active',
-      new Date()
+      new Date(),
+      '', false
     ]);
 
     empSheet.appendRow([
@@ -100,7 +101,8 @@ function setupSystem() {
       'Software Engineer',
       'EMPLOYEE',
       'Active',
-      new Date()
+      new Date(),
+      '', false
     ]);
 
     empSheet.appendRow([
@@ -112,7 +114,8 @@ function setupSystem() {
       'HR Executive',
       'EMPLOYEE',
       'Active',
-      new Date()
+      new Date(),
+      '', false
     ]);
   }
   return "Setup successful.";
@@ -344,7 +347,13 @@ function loginUser(email, password) {
   }
 
   if (user.Status !== 'Active') {
-    return { status: 'Error', message: 'Your account is inactive.' };
+    return { status: 'Error', message: `Your account is inactive. Status: ${user.Status}.` };
+  }
+
+  // New: Check if password change is required
+  if (user.MustChangePassword === true || user.MustChangePassword === 'TRUE') {
+    delete user.Password;
+    return { status: 'PASSWORD_CHANGE_REQUIRED', user: user };
   }
 
   // Strip password before returning to client for security
@@ -430,10 +439,15 @@ function getEmployees() {
 function saveEmployee(empData) {
   const isNew = !empData.EmpID;
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  let message = isNew ? 'Employee successfully added.' : 'Employee details updated.';
 
   if (isNew) {
     empData.EmpID = 'EMP-' + Math.floor(100000 + Math.random() * 900000);
     empData.JoiningDate = new Date().toISOString().split('T')[0];
+    // New onboarding logic
+    empData.Password = 'Welcome@123';
+    empData.MustChangePassword = true;
+    message = 'Employee created successfully.\nTemporary Password: Welcome@123';
   }
 
   empData.Role = 'EMPLOYEE';
@@ -441,7 +455,7 @@ function saveEmployee(empData) {
 
   saveRowToSheet(SHEETS.EMP, empData, 'EmpID');
   logAudit(currentUser, isNew ? 'CREATE_EMP' : 'UPDATE_EMP', `Employee ID: ${empData.EmpID}`);
-  return { status: 'Success', message: isNew ? 'Employee successfully added.' : 'Employee details updated.' };
+  return { status: 'Success', message: message };
 }
 
 function updateEmployeeStatus(empID, status) {
@@ -468,6 +482,59 @@ function updateEmployeeStatus(empID, status) {
   return {
     status: 'Success',
     message: `Employee marked as ${status}.`
+  };
+}
+
+function changePassword(email, currentPassword, newPassword) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+  const user = employees.find(e => e.Email.toLowerCase() === email.trim().toLowerCase());
+
+  if (!user) {
+    return { status: 'Error', message: 'User not found.' };
+  }
+
+  if (user.Password !== currentPassword) {
+    return { status: 'Error', message: 'Your current password does not match.' };
+  }
+
+  updateRowByKey(
+    SHEETS.EMP,
+    'EmpID',
+    user.EmpID,
+    {
+      Password: newPassword,
+      MustChangePassword: false
+    }
+  );
+
+  logAudit(email, 'CHANGE_PASSWORD', `User ${email} changed their password.`);
+  return { status: 'Success', message: 'Password changed successfully.' };
+}
+
+function resetEmployeePassword(email) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+  const user = employees.find(e => e.Email.toLowerCase() === email.trim().toLowerCase());
+
+  if (!user) {
+    return { status: 'Error', message: 'User not found.' };
+  }
+
+  updateRowByKey(
+    SHEETS.EMP,
+    'EmpID',
+    user.EmpID,
+    {
+      Password: 'Welcome@123',
+      MustChangePassword: true
+    }
+  );
+
+  logAudit(currentUser, 'RESET_PASSWORD', `Password reset for user ${email}.`);
+  return {
+    status: 'Success',
+    message: `Password for ${email} has been reset to "Welcome@123".`
   };
 }
 

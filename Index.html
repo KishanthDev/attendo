@@ -613,6 +613,39 @@
     </div>
   </div>
 
+  <div id="change-password-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold">Create New Password</h3>
+        <p class="text-sm text-gray-500">For security, you must change your temporary password.</p>
+      </div>
+      <form id="change-password-form" onsubmit="event.preventDefault(); App.actions.changePassword();"
+        class="p-6 space-y-4">
+        <input type="hidden" id="cp-email">
+        <div>
+          <label class="block text-sm font-medium mb-1">Current Password</label>
+          <input type="password" id="cp-current" required
+            class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">New Password</label>
+          <input type="password" id="cp-new" required
+            class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Confirm New Password</label>
+          <input type="password" id="cp-confirm" required
+            class="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+        </div>
+        <div class="pt-4 flex justify-end gap-3"><button type="submit"
+            class="px-5 py-2.5 text-sm font-medium bg-brand-600 text-white rounded-xl hover:bg-brand-500 shadow-lg transition-all">Update
+            Password &amp; Login</button></div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const App = {
       state: {
@@ -844,6 +877,14 @@
               return;
             }
 
+            // ADD THIS BLOCK: Intercept forced password changes
+            if (res.status === 'PASSWORD_CHANGE_REQUIRED') {
+              document.getElementById('cp-email').value = email;
+              document.getElementById('cp-current').value = password; // Auto-fill current pass for better UX
+              App.ui.modals.open('change-password-modal');
+              return; // Halt the login process
+            }
+
             App.state.user = res.user;
             localStorage.setItem('hrms_session', JSON.stringify(App.state.user));
 
@@ -855,6 +896,7 @@
             App.ui.setupNavigation();
             App.ui.setupProfile();
             App.ui.switchView('dashboard');
+            App.ui.updateTimestamp();
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Welcome back, ${App.state.user.Name}`, showConfirmButton: false, timer: 3000 });
           } catch (e) { console.error(e); }
         },
@@ -868,6 +910,38 @@
             document.getElementById('login-password').value = 'john123';
           }
           document.getElementById('login-remember').checked = true;
+          App.actions.login();
+        },
+        changePassword: async () => {
+          const email = document.getElementById('cp-email').value;
+          const currentPass = document.getElementById('cp-current').value;
+          const newPass = document.getElementById('cp-new').value;
+          const confirmPass = document.getElementById('cp-confirm').value;
+
+          if (newPass !== confirmPass) {
+            Swal.fire({ icon: 'error', title: 'Mismatch', text: 'New passwords do not match.' });
+            return;
+          }
+
+          if (newPass.length < 6) {
+            Swal.fire({ icon: 'error', title: 'Weak Password', text: 'Password must be at least 6 characters.' });
+            return;
+          }
+
+          const res = await App.api('changePassword', email, currentPass, newPass);
+
+          if (res.status === 'Error') {
+            Swal.fire({ icon: 'error', title: 'Update Failed', text: res.message });
+            return;
+          }
+
+          // Success! Close modal, update the main login input, and trigger login
+          App.ui.modals.close('change-password-modal');
+          document.getElementById('login-password').value = newPass;
+
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+
+          // Re-attempt login with the new password
           App.actions.login();
         },
 
