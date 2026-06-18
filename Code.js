@@ -9,7 +9,8 @@ const SHEETS = {
   HOL: 'Holidays',
   SET: 'Settings',
   AUDIT: 'AuditLogs',
-  ANN: 'Announcements'
+  ANN: 'Announcements',
+  DOCUMENTS: 'Documents'
 };
 
 function debugTodaySummary() {
@@ -51,7 +52,8 @@ function setupSystem() {
     [SHEETS.HOL]: ['HolID', 'Name', 'Date', 'Type', 'Description'],
     [SHEETS.SET]: ['Key', 'Value'],
     [SHEETS.AUDIT]: ['LogID', 'Timestamp', 'User', 'Action', 'Details'],
-    [SHEETS.ANN]: ['AnnID', 'Date', 'Title', 'Content', 'Status']
+    [SHEETS.ANN]: ['AnnID', 'Date', 'Title', 'Content', 'Status'],
+    [SHEETS.DOCUMENTS]: ['DocID', 'EmpID', 'FileName', 'DocumentType', 'Month', 'Year', 'DriveFileID', 'UploadDate', 'UploadedBy']
   };
 
   for (const [sheetName, headers] of Object.entries(schemas)) {
@@ -279,6 +281,14 @@ function isDateHoliday(date, holidays) {
   }
   const dateStr = Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
   return holidays.find(h => h.Date === dateStr) || null;
+}
+
+function getOrCreateFolder(parentFolder, folderName) {
+  const folders = parentFolder.getFoldersByName(folderName);
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+  return parentFolder.createFolder(folderName);
 }
 
 // ==========================================
@@ -783,4 +793,106 @@ function saveAnnouncement(annData) {
 function deleteAnnouncement(annId) {
   deleteRowFromSheet(SHEETS.ANN, 'AnnID', annId);
   return { status: 'Success', message: 'Announcement deleted.' };
+}
+
+// ==========================================
+// DOCUMENT APIs
+// ==========================================
+
+function uploadEmployeeDocument(fileData, docInfo, requestingEmail) {
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+  const adminUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+
+  if (!adminUser || adminUser.Role !== 'ADMIN') {
+    throw new Error('Permission Denied: Only administrators can upload documents.');
+  }
+
+  const { base64, mimeType, fileName } = fileData;
+  const { empId, docType, month, year } = docInfo;
+
+  const rootFolders = DriveApp.getFoldersByName('HRMS Documents');
+  const rootFolder = rootFolders.hasNext() ? rootFolders.next() : DriveApp.createFolder('HRMS Documents');
+  const empFolder = getOrCreateFolder(rootFolder, empId);
+
+  const decoded = Utilities.base64Decode(base64);
+  const blob = Utilities.newBlob(decoded, mimeType, fileName);
+  const driveFile = empFolder.createFile(blob);
+
+  const docId = 'DOC-' + Date.now();
+  const docSheet = getDb().getSheetByName(SHEETS.DOCUMENTS);
+  docSheet.appendRow([
+    docId, empId, fileName, docType,
+    month || '', year || '',
+    driveFile.getId(), new Date().toISOString(), requestingEmail
+  ]);
+
+  logAudit(requestingEmail, 'UPLOAD_DOCUMENT', `Uploaded '${fileName}' for employee ${empId}.`);
+  return { status: 'Success', message: 'Document uploaded successfully.' };
+}
+
+function getEmployeeDocuments(requestingEmail) {
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+  const currentUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+
+  if (!currentUser) {
+    throw new Error('Access Denied: User not found.');
+  }
+
+  const allDocuments = getSheetDataAsJSON(SHEETS.DOCUMENTS);
+
+  if (currentUser.Role === 'ADMIN') {
+    return allDocuments.sort((a, b) => new Date(b.UploadDate) - new Date(a.UploadDate));
+  } else {
+    return allDocuments.filter(doc => doc.EmpID === currentUser.EmpID).sort((a, b) => new Date(b.UploadDate) - new Date(a.UploadDate));
+  }
+}
+
+function getDocumentForDownload(docId, requestingEmail) {
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+  const currentUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+
+  const documents = getSheetDataAsJSON(SHEETS.DOCUMENTS);
+  const docMeta = documents.find(d => d.DocID === docId);
+
+  if (!docMeta) { throw new Error('Document not found.'); }
+
+  if (currentUser.Role !== 'ADMIN' && currentUser.EmpID !== docMeta.EmpID) {
+    throw new Error('Access Denied: You do not have permission to download this file.');
+  }
+
+  try {
+    const file = DriveApp.getFileById(docMeta.DriveFileID);
+    const blob = file.getBlob();
+    const base64 = Utilities.base64Encode(blob.getBytes());
+
+    logAudit(requestingEmail, 'DOWNLOAD_DOCUMENT', `User downloaded document ${docId} (${docMeta.FileName}).`);
+
+    return { base64: base64, fileName: docMeta.FileName, mimeType: blob.getContentType() };
+  } catch (e) {
+    throw new Error('File not found in Google Drive. It may have been deleted.');
+  }
+}
+
+function deleteEmployeeDocument(docId, requestingEmail) {
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+  const currentUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+
+  if (!currentUser || currentUser.Role !== 'ADMIN') {
+    throw new Error('Permission Denied: Only administrators can delete documents.');
+  }
+
+  const documents = getSheetDataAsJSON(SHEETS.DOCUMENTS);
+  const docMeta = documents.find(d => d.DocID === docId);
+
+  if (!docMeta) { throw new Error('Document metadata not found.'); }
+
+  try {
+    DriveApp.getFileById(docMeta.DriveFileID).setTrashed(true);
+  } catch (e) {
+    Logger.log(`Could not find file ${docMeta.DriveFileID} in Drive to delete. It may already be gone.`);
+  }
+
+  deleteRowFromSheet(SHEETS.DOCUMENTS, 'DocID', docId);
+  logAudit(requestingEmail, 'DELETE_DOCUMENT', `Deleted document ${docId} (${docMeta.FileName}) for ${docMeta.EmpID}.`);
+  return { status: 'Success', message: 'Document deleted successfully.' };
 }
