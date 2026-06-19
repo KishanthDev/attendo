@@ -409,7 +409,7 @@ function loginUser(loginId, password) {
 // DASHBOARD
 // ==========================================
 
-function getDashboardData() {
+function getDashboardData(currentUserEmpID, currentUserRole) {
   const todayDate = new Date();
   const todayStr = Utilities.formatDate(todayDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
 
@@ -425,12 +425,10 @@ function getDashboardData() {
     .sort((a, b) => a.Date > b.Date ? 1 : -1)
     .map(h => {
       const holDate = new Date(h.Date);
-      // Adjust for timezone differences when calculating days
       const todayMidnight = new Date(todayStr);
       const holMidnight = new Date(holDate.getFullYear(), holDate.getMonth(), holDate.getDate());
       const diffTime = holMidnight.getTime() - todayMidnight.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-      h.daysLeft = diffDays;
+      h.daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
       return h;
     });
 
@@ -450,10 +448,49 @@ function getDashboardData() {
 
   const leavesTodayCount = leaves.filter(l => l.Status === 'Approved' && l.StartDate <= todayStr && l.EndDate >= todayStr && activeEmpIds.includes(l.EmpID)).length;
 
-  // Don't count attendance metrics if it's a holiday
   const presentToday = todayHoliday ? 0 : presentSet.size;
   const absentToday = todayHoliday ? 0 : (activeEmployees.length - presentToday - leavesTodayCount);
 
+  // --- ROLE-BASED ATTENDANCE TREND (Last 5 Days) ---
+  const trendLabels = [];
+  const trendData = [];
+
+  for (let i = 4; i >= 0; i--) {
+    const d = new Date(todayDate.getTime() - (i * 24 * 60 * 60 * 1000));
+    const dStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    const shortDay = Utilities.formatDate(d, Session.getScriptTimeZone(), "EEE");
+
+    trendLabels.push(shortDay);
+
+    if (currentUserRole === 'ADMIN') {
+      // ADMIN VIEW: Company-wide attendance percentage
+      const presentOnDate = new Set();
+      atts.forEach(a => {
+        if (a.CheckIn && activeEmpIds.includes(a.EmpID)) {
+          let rStr = String(a.Date).split('T')[0];
+          if (rStr === dStr) presentOnDate.add(a.EmpID);
+        }
+      });
+
+      const totalActive = activeEmployees.length;
+      trendData.push(totalActive > 0 ? Math.round((presentOnDate.size / totalActive) * 100) : 0);
+
+    } else {
+      // EMPLOYEE VIEW: Personal total hours worked
+      let dailyHours = 0;
+      atts.forEach(a => {
+        if (a.EmpID === currentUserEmpID) {
+          let rStr = String(a.Date).split('T')[0];
+          if (rStr === dStr && a.Hours) {
+            dailyHours += Number(a.Hours);
+          }
+        }
+      });
+      trendData.push(Number(dailyHours.toFixed(2))); // Keep to 2 decimal places
+    }
+  }
+
+  // --- Return Data Payload ---
   return {
     totalEmployees: activeEmployees.length,
     presentToday: presentToday,
@@ -462,10 +499,14 @@ function getDashboardData() {
     pendingLeaves: leaves.filter(l => l.Status === 'Pending').length,
     announcements: getSheetDataAsJSON(SHEETS.ANN).filter(a => a.Status === 'Active').slice(-5).reverse(),
 
-    // New & Enhanced Holiday Data
     todayHoliday: todayHoliday,
     nextHoliday: nextHoliday,
-    upcomingHolidays: upcomingHolidays.slice(0, 3) // Keep it to 3 for the widget
+    upcomingHolidays: upcomingHolidays.slice(0, 3),
+
+    attendanceTrend: {
+      labels: trendLabels,
+      data: trendData
+    }
   };
 }
 
