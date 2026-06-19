@@ -340,37 +340,65 @@ function saveAppSettings(settingsData) {
 // AUTHENTICATION
 // ==========================================
 
-function loginUser(email, password) {
-  if (!email || !password) {
-    return { status: 'Error', message: 'Email and password are required.' };
+function loginUser(loginId, password) {
+
+  if (!loginId || !password) {
+    return {
+      status: 'Error',
+      message: 'Login ID and password are required.'
+    };
   }
 
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-  let user = employees.find(e => e.Email.toLowerCase() === email.trim().toLowerCase());
+
+  const credential = loginId.trim().toLowerCase();
+
+  const user = employees.find(e =>
+    (e.Email && e.Email.toLowerCase() === credential) ||
+    String(e.EmpID).toLowerCase() === credential
+  );
 
   if (!user) {
-    return { status: 'Error', message: 'Account not found.' };
+    return {
+      status: 'Error',
+      message: 'Account not found.'
+    };
   }
 
   if (user.Password !== password) {
-    return { status: 'Error', message: 'Invalid credentials.' };
+    return {
+      status: 'Error',
+      message: 'Invalid credentials.'
+    };
   }
 
   if (user.Status !== 'Active') {
-    return { status: 'Error', message: `Your account is inactive. Status: ${user.Status}.` };
+    return {
+      status: 'Error',
+      message: `Your account is inactive. Status: ${user.Status}.`
+    };
   }
 
-  // New: Check if password change is required
   if (user.MustChangePassword === true || user.MustChangePassword === 'TRUE') {
     delete user.Password;
-    return { status: 'PASSWORD_CHANGE_REQUIRED', user: user };
+    return {
+      status: 'PASSWORD_CHANGE_REQUIRED',
+      user: user
+    };
   }
 
-  // Strip password before returning to client for security
   delete user.Password;
 
-  logAudit(email, 'LOGIN', 'User accessed the portal.');
-  return { status: 'Success', user: user };
+  logAudit(
+    user.Email,
+    'LOGIN',
+    `User logged in using ${credential}`
+  );
+
+  return {
+    status: 'Success',
+    user: user
+  };
 }
 
 // ==========================================
@@ -446,18 +474,30 @@ function getEmployees() {
   return getSheetDataAsJSON(SHEETS.EMP).filter(e => e.Role === 'EMPLOYEE');
 }
 
+function generateEmpId() {
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+
+  let id;
+
+  do {
+    id = 'EMP-' + Math.floor(100000 + Math.random() * 900000);
+  } while (employees.some(e => e.EmpID === id));
+
+  return id;
+}
+
 function saveEmployee(empData) {
   const isNew = !empData.EmpID;
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   let message = isNew ? 'Employee successfully added.' : 'Employee details updated.';
 
+  const tempPassword = 'Welcome@123';
+
   if (isNew) {
-    empData.EmpID = 'EMP-' + Math.floor(100000 + Math.random() * 900000);
+    empData.EmpID = generateEmpId();
     empData.JoiningDate = new Date().toISOString().split('T')[0];
-    // New onboarding logic
-    empData.Password = 'Welcome@123';
+    empData.Password = tempPassword;
     empData.MustChangePassword = true;
-    message = 'Employee created successfully.\nTemporary Password: Welcome@123';
   }
 
   empData.Role = 'EMPLOYEE';
@@ -465,7 +505,12 @@ function saveEmployee(empData) {
 
   saveRowToSheet(SHEETS.EMP, empData, 'EmpID');
   logAudit(currentUser, isNew ? 'CREATE_EMP' : 'UPDATE_EMP', `Employee ID: ${empData.EmpID}`);
-  return { status: 'Success', message: message };
+  return {
+    status: 'Success',
+    message,
+    empId: empData.EmpID,
+    password: isNew ? tempPassword : null
+  };
 }
 
 function updateEmployeeStatus(empID, status) {
@@ -491,21 +536,35 @@ function updateEmployeeStatus(empID, status) {
 
   return {
     status: 'Success',
-    message: `Employee marked as ${status}.`
+    message,
+    empId: empData.EmpID,
+    password: isNew ? tempPassword : null
   };
 }
 
-function changePassword(email, currentPassword, newPassword) {
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+function changePassword(loginId, currentPassword, newPassword) {
+
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-  const user = employees.find(e => e.Email.toLowerCase() === email.trim().toLowerCase());
+
+  const credential = String(loginId).trim().toLowerCase();
+
+  const user = employees.find(e =>
+    (e.Email && e.Email.toLowerCase() === credential) ||
+    String(e.EmpID).toLowerCase() === credential
+  );
 
   if (!user) {
-    return { status: 'Error', message: 'User not found.' };
+    return {
+      status: 'Error',
+      message: 'User not found.'
+    };
   }
 
   if (user.Password !== currentPassword) {
-    return { status: 'Error', message: 'Your current password does not match.' };
+    return {
+      status: 'Error',
+      message: 'Current password does not match.'
+    };
   }
 
   updateRowByKey(
@@ -518,17 +577,30 @@ function changePassword(email, currentPassword, newPassword) {
     }
   );
 
-  logAudit(email, 'CHANGE_PASSWORD', `User ${email} changed their password.`);
-  return { status: 'Success', message: 'Password changed successfully.' };
+  return {
+    status: 'Success',
+    message: 'Password changed successfully.'
+  };
 }
 
-function resetEmployeePassword(email) {
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
-  const employees = getSheetDataAsJSON(SHEETS.EMP);
-  const user = employees.find(e => e.Email.toLowerCase() === email.trim().toLowerCase());
+function resetEmployeePassword(empId) {
+
+  const currentUser =
+    Session.getActiveUser().getEmail() || 'Admin';
+
+  const employees =
+    getSheetDataAsJSON(SHEETS.EMP);
+
+  const user = employees.find(
+    e => String(e.EmpID).toLowerCase() ===
+      String(empId).trim().toLowerCase()
+  );
 
   if (!user) {
-    return { status: 'Error', message: 'User not found.' };
+    return {
+      status: 'Error',
+      message: 'Employee not found.'
+    };
   }
 
   updateRowByKey(
@@ -541,10 +613,17 @@ function resetEmployeePassword(email) {
     }
   );
 
-  logAudit(currentUser, 'RESET_PASSWORD', `Password reset for user ${email}.`);
+  logAudit(
+    currentUser,
+    'RESET_PASSWORD',
+    `Password reset for ${user.EmpID}`
+  );
+
   return {
     status: 'Success',
-    message: `Password for ${email} has been reset to "Welcome@123".`
+    message: `Password reset successfully.`,
+    empId: user.EmpID,
+    password: 'Welcome@123'
   };
 }
 
