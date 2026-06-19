@@ -430,6 +430,91 @@
           </div>
         </div>
 
+        <div id="view-clients" class="view-section space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex gap-4 w-full sm:w-auto flex-1">
+              <div class="relative w-full max-w-xs">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 dark:text-gray-300">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </span>
+                <input type="text" id="client-search" placeholder="Search clients..."
+                  class="w-full bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+              </div>
+              <select id="client-filter" onchange="App.loadData.clients()"
+                class="bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="All">All Status</option>
+                <option value="Active" selected>Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <button onclick="App.ui.modals.openClient(null)"
+              class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all">+
+              Add Client</button>
+          </div>
+          <div
+            class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container">
+            <table class="w-full text-sm text-left whitespace-nowrap" id="clients-table"></table>
+          </div>
+        </div>
+
+        <div id="view-client-details" class="view-section space-y-6">
+          <button onclick="App.ui.switchView('clients')"
+            class="flex items-center text-sm font-medium text-gray-500 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400 transition-colors">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+              </path>
+            </svg> Back to Clients
+          </button>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div
+              class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-center">
+              <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Client Details</h3>
+              <div id="cd-name" class="text-2xl font-bold text-gray-800 dark:text-white">...</div>
+              <div id="cd-tech" class="text-sm font-medium text-brand-600 dark:text-brand-400 mt-1">...</div>
+            </div>
+            <div
+              class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
+              <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Assigned Devs</h3>
+              <div id="cd-dev-count" class="text-3xl font-bold text-gray-800 dark:text-white">0</div>
+            </div>
+            <div
+              class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
+              <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Dev Leaves (This Month)</h3>
+              <div id="cd-leaves" class="text-3xl font-bold text-orange-600 dark:text-orange-400">0</div>
+            </div>
+            <div
+              class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
+              <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Upcoming Holidays</h3>
+              <div id="cd-holidays" class="text-3xl font-bold text-purple-600 dark:text-purple-400">0</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-slate-800/50">
+                <h3 class="font-bold dark:text-white">Assigned Team</h3>
+              </div>
+              <div class="p-4">
+                <table class="w-full text-sm text-left whitespace-nowrap" id="cd-team-table"></table>
+              </div>
+            </div>
+            <div
+              class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-slate-800/50">
+                <h3 class="font-bold dark:text-white">Team Leaves</h3>
+              </div>
+              <div class="p-4">
+                <table class="w-full text-sm text-left whitespace-nowrap" id="cd-leaves-table"></table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="view-holidays" class="view-section space-y-4">
           <div
             class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm p-4 sm:p-6">
@@ -651,6 +736,93 @@
     </div>
   </div>
 
+  <div id="client-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div
+        class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold dark:text-white" id="client-modal-title">Add Client</h3>
+        <button onclick="App.ui.modals.close('client-modal')"
+          class="text-gray-400 hover:text-gray-600 dark:text-gray-300"><svg class="w-5 h-5" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg></button>
+      </div>
+      <form id="client-form" onsubmit="event.preventDefault(); App.actions.saveClient();" class="p-6 space-y-4">
+        <input type="hidden" id="cl-id">
+        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Client Name</label><input type="text"
+            id="cl-name" required
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-brand-500">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Working Hours</label><input
+              type="number" id="cl-hours" required value="8"
+              class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none">
+          </div>
+          <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Status</label><select id="cl-status"
+              class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none">
+              <option>Active</option>
+              <option>Inactive</option>
+            </select></div>
+        </div>
+        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Technologies</label><input type="text"
+            id="cl-tech" placeholder="e.g., React, Node, AWS" required
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Start Date</label><input type="date"
+              id="cl-start" required
+              class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none">
+          </div>
+          <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">End Date</label><input type="date"
+              id="cl-end"
+              class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none">
+          </div>
+        </div>
+        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Description</label><textarea id="cl-desc"
+            rows="2"
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none"></textarea>
+        </div>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="App.ui.modals.close('client-modal')"
+            class="px-5 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 text-sm font-medium bg-brand-600 text-white rounded-xl shadow-lg">Save
+            Client</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="assign-dev-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div
+        class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold dark:text-white">Assign Developers</h3>
+        <button onclick="App.ui.modals.close('assign-dev-modal')"
+          class="text-gray-400 hover:text-gray-600 dark:text-gray-300"><svg class="w-5 h-5" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg></button>
+      </div>
+      <form id="assign-dev-form" onsubmit="event.preventDefault(); App.actions.saveAssignments();"
+        class="p-6 space-y-4">
+        <input type="hidden" id="assign-client-id">
+        <p class="text-sm font-medium dark:text-white mb-2" id="assign-client-name"></p>
+        <div
+          class="max-h-60 overflow-y-auto space-y-2 border border-gray-100 dark:border-slate-700 p-3 rounded-xl bg-gray-50 dark:bg-slate-800"
+          id="dev-checkbox-list">
+        </div>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="App.ui.modals.close('assign-dev-modal')"
+            class="px-5 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 text-sm font-medium bg-brand-600 text-white rounded-xl shadow-lg">Save
+            Assignments</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="leave-modal"
     class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div
@@ -804,8 +976,7 @@
         currentView: '',
         theme: 'light',
         data: { employees: [], settings: null, todayHoliday: null, nextHoliday: null },
-        cache: { employees: null, holidays: null, announcements: null, settings: null },
-        calDate: new Date(),
+        cache: { employees: null, holidays: null, announcements: null, settings: null, clients: null, assignments: null }, calDate: new Date(),
         isSilentRefresh: false,
         activeLoaders: 0
       },
@@ -820,6 +991,8 @@
           case 'documents': await App.loadData.documents(); break;
           case 'settings': App.state.cache.settings = null; await App.loadData.settings(true); break;
           case 'profile': await App.loadData.profile(); break;
+          case 'clients': App.state.cache.clients = null; await App.loadData.clients(true); break;
+          case 'client-details': await App.loadData['client-details'](); break;
         }
       },
       api: async (method, ...args) => {
@@ -1172,6 +1345,49 @@ Password: ${res.password}`
             App.loadData.dashboard();
           }
         },
+        saveClient: async () => {
+          const data = {
+            ClientID: document.getElementById('cl-id').value,
+            ClientName: document.getElementById('cl-name').value,
+            WorkingHours: document.getElementById('cl-hours').value,
+            Status: document.getElementById('cl-status').value,
+            Technologies: document.getElementById('cl-tech').value,
+            StartDate: document.getElementById('cl-start').value,
+            EndDate: document.getElementById('cl-end').value,
+            Description: document.getElementById('cl-desc').value
+          };
+
+          App.ui.modals.close('client-modal');
+          const res = await App.api('saveClient', data);
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
+          App.state.cache.clients = null;
+          App.loadData.clients(true);
+        },
+
+        deleteClient: async (id) => {
+          const confirm = await Swal.fire({ title: 'Delete Client?', text: "This will remove the client and clear all developer assignments. Cannot be undone.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete it!' });
+          if (confirm.isConfirmed) {
+            const res = await App.api('deleteClient', id);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+            App.state.cache.clients = null;
+            App.state.cache.assignments = null;
+            App.loadData.clients(true);
+          }
+        },
+
+        saveAssignments: async () => {
+          const clientId = document.getElementById('assign-client-id').value;
+          const checkboxes = document.querySelectorAll('input[name="assign-emp"]:checked');
+          const empIds = Array.from(checkboxes).map(cb => cb.value);
+
+          App.ui.modals.close('assign-dev-modal');
+          const res = await App.api('assignDevelopers', clientId, empIds);
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
+          App.state.cache.assignments = null;
+          App.loadData.clients(true);
+        },
 
         applyLeave: async () => {
           const data = { EmpID: App.state.user.EmpID, Type: document.getElementById('leave-type').value, Date: document.getElementById('leave-date').value, Remarks: document.getElementById('leave-remarks').value };
@@ -1429,6 +1645,57 @@ Password: ${res.password}`
           document.getElementById('profile-email').value =
             user.Email || '';
         },
+        clients: async (force = false) => {
+          if (!force && App.state.cache.clients && App.state.cache.assignments) {
+            App.ui.render.clientTable();
+            return;
+          }
+
+          const [clientsData, assignmentsData] = await Promise.all([
+            App.api('getClients'),
+            App.api('getClientAssignments')
+          ]);
+
+          App.state.data.clients = clientsData;
+          App.state.cache.clients = clientsData;
+          App.state.data.assignments = assignmentsData;
+          App.state.cache.assignments = assignmentsData;
+
+          App.ui.render.clientTable();
+        },
+
+        'client-details': async () => {
+          const clientId = App.state.activeClientId;
+          const client = App.state.data.clients.find(c => c.ClientID === clientId);
+          if (!client) return App.ui.switchView('clients');
+
+          document.getElementById('cd-name').innerText = client.ClientName;
+          document.getElementById('cd-tech').innerText = client.Technologies;
+
+          const data = await App.api('getClientDashboardData', clientId);
+          const assignments = data.assignments || [];
+
+          document.getElementById('cd-dev-count').innerText = assignments.length;
+          document.getElementById('cd-leaves').innerText = data.leaves.filter(l => l.Status === 'Approved').length;
+          document.getElementById('cd-holidays').innerText = data.holidays.filter(h => new Date(h.Date) > new Date()).length;
+
+          App.ui.render.table('cd-team-table', ['Employee ID', 'Name', 'Assigned Date'], assignments, row =>
+            `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+      <td class="px-4 py-3 text-gray-500 dark:text-gray-300">${row.EmpID}</td>
+      <td class="px-4 py-3 font-semibold dark:text-white">${row.EmployeeName}</td>
+      <td class="px-4 py-3 text-xs">${row.AssignedDate.split('T')[0]}</td>
+    </tr>`
+          );
+
+          App.ui.render.table('cd-leaves-table', ['Employee', 'Type', 'Date', 'Status'], data.leaves, row =>
+            `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+      <td class="px-4 py-3 font-semibold dark:text-white">${row.EmpID}</td>
+      <td class="px-4 py-3">${row.Type}</td>
+      <td class="px-4 py-3 text-xs">${row.StartDate.split('T')[0]}</td>
+      <td class="px-4 py-3 font-bold ${row.Status === 'Approved' ? 'text-green-600' : 'text-orange-600'}">${row.Status}</td>
+    </tr>`
+          );
+        },
         attendance: async () => {
           const liveCard = document.getElementById('att-live-card');
           liveCard.classList.add('hidden');
@@ -1595,7 +1862,7 @@ Password: ${res.password}`
             App.state.cache.announcements = data;
           }
           if (App.state.user.Role === 'ADMIN') document.getElementById('btn-add-ann').classList.remove('hidden');
-          document.getElementById('announcements-grid').innerHTML = data.length ? data.reverse().map(a => `<div class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between"><div><h4 class="font-bold text-lg mb-2 dark:text-white">${a.Title}</h4><p class="text-sm text-gray-600 dark:text-gray-200 mb-4">${a.Content}</p></div><div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-slate-700/50"><span class="text-xs text-gray-400 dark:text-gray-300 font-medium">${a.Date.split('T')[0]}</span>${App.state.user.Role === 'ADMIN' ? `<button onclick="App.api('deleteAnnouncement', '${a.AnnID}').then(()=>{App.loadData.announcements();App.loadData.dashboard();})" class="text-red-500 dark:text-red-400 text-xs font-semibold hover:underline">Delete</button>` : ''}</div></div>`).join('') : '<p class="text-gray-500 dark:text-gray-300 col-span-full text-center py-8">No announcements found.</p>';
+          document.getElementById('announcements-grid').innerHTML = data.length ? data.reverse().map(a => `<div class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between"><div><h4 class="font-bold text-lg mb-2 dark:text-white">${a.Title}</h4><p class="text-sm text-gray-600 dark:text-gray-200 mb-4">${a.Content}</p></div><div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-slate-700/50"><span class="text-xs text-gray-400 dark:text-gray-300 font-medium">${a.Date.split('T')[0]}</span>${App.state.user.Role === 'ADMIN' ? `<button onclick="App.api('deleteAnnouncement', '${a.AnnID}').then(()=>{ App.state.cache.announcements = null; App.loadData.announcements(true); App.loadData.dashboard(); })" class="text-red-500 dark:text-red-400 text-xs font-semibold hover:underline">Delete</button>` : ''}</div></div>`).join('') : '<p class="text-gray-500 dark:text-gray-300 col-span-full text-center py-8">No announcements found.</p>';
         },
         documents: async () => {
           if (!App.state.data.employees || App.state.data.employees.length === 0) {
@@ -1664,6 +1931,52 @@ Password: ${res.password}`
           document.getElementById('sidebar-overlay').classList.toggle('hidden');
         },
         modals: {
+          openClient: (id) => {
+            document.getElementById('client-form').reset();
+            document.getElementById('cl-id').value = '';
+            document.getElementById('client-modal-title').innerText = 'Add Client';
+
+            if (id) {
+              const cl = App.state.data.clients.find(c => c.ClientID === id);
+              if (cl) {
+                document.getElementById('cl-id').value = cl.ClientID;
+                document.getElementById('cl-name').value = cl.ClientName;
+                document.getElementById('cl-hours').value = cl.WorkingHours;
+                document.getElementById('cl-status').value = cl.Status;
+                document.getElementById('cl-tech').value = cl.Technologies;
+                document.getElementById('cl-start').value = cl.StartDate.split('T')[0];
+                if (cl.EndDate) document.getElementById('cl-end').value = cl.EndDate.split('T')[0];
+                document.getElementById('cl-desc').value = cl.Description || '';
+                document.getElementById('client-modal-title').innerText = 'Edit Client';
+              }
+            }
+            App.ui.modals.open('client-modal');
+          },
+
+          openAssignDevs: async (id) => {
+            // FIX: Explicitly check for an empty array
+            if (!App.state.data.employees || App.state.data.employees.length === 0) {
+              await App.loadData.employees(true);
+            }
+
+            const cl = App.state.data.clients.find(c => c.ClientID === id);
+            const currentAssigned = App.state.data.assignments.filter(a => a.ClientID === id).map(a => a.EmpID);
+
+            document.getElementById('assign-client-id').value = id;
+            document.getElementById('assign-client-name').innerText = `Assigning to: ${cl.ClientName}`;
+
+            const devListHtml = App.state.data.employees
+              .filter(e => e.Role !== 'ADMIN' && e.Status === 'Active')
+              .map(e => `
+      <label class="flex items-center space-x-3 p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors">
+        <input type="checkbox" name="assign-emp" value="${e.EmpID}" ${currentAssigned.includes(e.EmpID) ? 'checked' : ''} class="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500">
+        <div class="flex flex-col"><span class="text-sm font-semibold dark:text-white">${e.Name}</span><span class="text-xs text-gray-500">${e.Designation}</span></div>
+      </label>
+    `).join('');
+
+            document.getElementById('dev-checkbox-list').innerHTML = devListHtml;
+            App.ui.modals.open('assign-dev-modal');
+          },
           open: (id) => document.getElementById(id).classList.remove('hidden'),
           close: (id) => { document.getElementById(id).classList.add('hidden'); document.querySelector(`#${id} form`)?.reset(); },
           openHoliday: (dateStr, hol = null) => {
@@ -1712,12 +2025,16 @@ Password: ${res.password}`
             { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'employees', label: 'Directory', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['ADMIN'] },
             { id: 'attendance', label: 'Attendance', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'clients', label: 'Clients', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', roles: ['ADMIN'] },
             { id: 'leaves', label: 'Leaves', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'holidays', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', roles: ['ADMIN', 'EMPLOYEE'] },
-            { id: 'announcements', label: 'Newsboard', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'documents', label: 'Documents', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'profile', label: 'My Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'announcements', label: 'Newsboard', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'settings', label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', roles: ['ADMIN'] },
-            { id: 'profile', label: 'My Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', roles: ['ADMIN', 'EMPLOYEE'] },];
+          ];
+
+          // Now we execute the mapping logic AFTER the array is fully defined
           document.getElementById('nav-menu').innerHTML = items.filter(i => i.roles.includes(App.state.user.Role)).map(i => `<button onclick="App.ui.switchView('${i.id}'); if(window.innerWidth < 768) App.ui.toggleSidebar();" id="nav-${i.id}" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-100 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-slate-800 dark:hover:text-white transition-all group"><svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${i.icon}"></path></svg> ${i.label}</button>`).join('');
         },
         switchView: (viewId) => {
@@ -1755,6 +2072,37 @@ Password: ${res.password}`
         render: {
           table: (id, headers, data, rowRenderer) => {
             document.getElementById(id).innerHTML = `<thead class="text-xs text-gray-500 dark:text-gray-300 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700"><tr>${headers.map(h => `<th class="px-4 py-3.5 tracking-wider">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">${data.length ? data.map(rowRenderer).join('') : `<tr><td colspan="${headers.length}" class="px-4 py-8 text-center text-gray-500 dark:text-gray-300 bg-gray-50/20 dark:bg-transparent">No records found.</td></tr>`}</tbody>`;
+          },
+          clientTable: () => {
+            const searchTerm = (document.getElementById('client-search')?.value || '').toLowerCase();
+            const filterStatus = document.getElementById('client-filter')?.value || 'All';
+
+            let filtered = App.state.data.clients;
+            if (filterStatus !== 'All') {
+              filtered = filtered.filter(c => c.Status === filterStatus);
+            }
+            if (searchTerm) {
+              filtered = filtered.filter(c => c.ClientName.toLowerCase().includes(searchTerm) || c.Technologies.toLowerCase().includes(searchTerm));
+            }
+
+            App.ui.render.table('clients-table', ['ID', 'Client Name', 'Tech Stack', 'Devs', 'Status', 'Actions'], filtered, row => {
+              const devsCount = App.state.data.assignments.filter(a => a.ClientID === row.ClientID).length;
+              const statusClr = row.Status === 'Active' ? 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400' : 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400';
+
+              return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+      <td class="px-4 py-3 font-medium dark:text-white">${row.ClientID}</td>
+      <td class="px-4 py-3"><div class="font-bold text-gray-800 dark:text-white">${row.ClientName}</div><div class="text-xs text-gray-500">${row.WorkingHours} hrs/day</div></td>
+      <td class="px-4 py-3 dark:text-gray-200 text-xs">${row.Technologies}</td>
+      <td class="px-4 py-3 font-bold dark:text-white">${devsCount}</td>
+      <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${statusClr}">${row.Status}</span></td>
+      <td class="px-4 py-3 flex gap-2">
+        <button onclick="App.state.activeClientId = '${row.ClientID}'; App.ui.switchView('client-details');" class="p-1.5 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-900/30 rounded-lg" title="View Details"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
+        <button onclick="App.ui.modals.openClient('${row.ClientID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+        <button onclick="App.ui.modals.openAssignDevs('${row.ClientID}')" class="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 dark:text-purple-300 dark:bg-purple-900/30 rounded-lg" title="Assign Devs"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></button>
+        <button onclick="App.actions.deleteClient('${row.ClientID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 rounded-lg" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+      </td>
+    </tr>`;
+            });
           },
           employeeTable: (data) => {
             App.ui.render.table('employees-table', ['ID', 'Employee Info', 'Department', 'Role', 'Status', 'Actions'], data, row => {

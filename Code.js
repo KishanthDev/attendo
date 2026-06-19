@@ -10,7 +10,9 @@ const SHEETS = {
   SET: 'Settings',
   AUDIT: 'AuditLogs',
   ANN: 'Announcements',
-  DOCUMENTS: 'Documents'
+  DOCUMENTS: 'Documents',
+  CLIENTS: 'Clients',
+  CLIENT_ASSIGNMENTS: 'ClientAssignments'
 };
 
 function debugTodaySummary() {
@@ -53,7 +55,9 @@ function setupSystem() {
     [SHEETS.SET]: ['Key', 'Value'],
     [SHEETS.AUDIT]: ['LogID', 'Timestamp', 'User', 'Action', 'Details'],
     [SHEETS.ANN]: ['AnnID', 'Date', 'Title', 'Content', 'Status'],
-    [SHEETS.DOCUMENTS]: ['DocID', 'EmpID', 'FileName', 'DocumentType', 'Month', 'Year', 'DriveFileID', 'UploadDate', 'UploadedBy']
+    [SHEETS.DOCUMENTS]: ['DocID', 'EmpID', 'FileName', 'DocumentType', 'Month', 'Year', 'DriveFileID', 'UploadDate', 'UploadedBy'],
+    [SHEETS.CLIENTS]: ['ClientID', 'ClientName', 'WorkingHours', 'Technologies', 'Status', 'StartDate', 'EndDate', 'Description', 'CreatedAt'],
+    [SHEETS.CLIENT_ASSIGNMENTS]: ['AssignmentID', 'ClientID', 'EmpID', 'EmployeeName', 'AssignedDate', 'Status']
   };
 
   for (const [sheetName, headers] of Object.entries(schemas)) {
@@ -1022,4 +1026,93 @@ function deleteEmployeeDocument(docId, requestingEmail) {
   deleteRowFromSheet(SHEETS.DOCUMENTS, 'DocID', docId);
   logAudit(requestingEmail, 'DELETE_DOCUMENT', `Deleted document ${docId} (${docMeta.FileName}) for ${docMeta.EmpID}.`);
   return { status: 'Success', message: 'Document deleted successfully.' };
+}
+
+// ==========================================
+// CLIENT APIs
+// ==========================================
+
+function getClients() {
+  return getSheetDataAsJSON(SHEETS.CLIENTS);
+}
+
+function saveClient(clientData) {
+  const isNew = !clientData.ClientID;
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+
+  if (isNew) {
+    clientData.ClientID = 'CL-' + Math.floor(100000 + Math.random() * 900000);
+    clientData.CreatedAt = new Date().toISOString();
+  }
+
+  saveRowToSheet(SHEETS.CLIENTS, clientData, 'ClientID');
+  logAudit(currentUser, isNew ? 'CREATE_CLIENT' : 'UPDATE_CLIENT', `Client: ${clientData.ClientName}`);
+
+  return { status: 'Success', message: 'Client details saved successfully.' };
+}
+
+function deleteClient(clientId) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  deleteRowFromSheet(SHEETS.CLIENTS, 'ClientID', clientId);
+
+  // Clean up assignments
+  const assignmentsSheet = getDb().getSheetByName(SHEETS.CLIENT_ASSIGNMENTS);
+  const data = assignmentsSheet.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === clientId) assignmentsSheet.deleteRow(i + 1);
+  }
+
+  logAudit(currentUser, 'DELETE_CLIENT', `Removed Client ID: ${clientId}`);
+  return { status: 'Success', message: 'Client deleted successfully.' };
+}
+
+function getClientAssignments() {
+  return getSheetDataAsJSON(SHEETS.CLIENT_ASSIGNMENTS);
+}
+
+function assignDevelopers(clientId, empIds) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const sheet = getDb().getSheetByName(SHEETS.CLIENT_ASSIGNMENTS);
+  const data = sheet.getDataRange().getValues();
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+
+  // Remove old assignments for this client
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === clientId) sheet.deleteRow(i + 1);
+  }
+
+  // Add new assignments
+  const today = new Date().toISOString().split('T')[0];
+  empIds.forEach(empId => {
+    const emp = employees.find(e => e.EmpID === empId);
+    if (emp) {
+      sheet.appendRow([
+        'ASN-' + Math.floor(100000 + Math.random() * 900000),
+        clientId,
+        empId,
+        emp.Name,
+        today,
+        'Active'
+      ]);
+    }
+  });
+
+  logAudit(currentUser, 'ASSIGN_DEVELOPERS', `Assigned ${empIds.length} developers to Client ${clientId}`);
+  return { status: 'Success', message: 'Developers assigned successfully.' };
+}
+
+function getClientDashboardData(clientId) {
+  const assignments = getSheetDataAsJSON(SHEETS.CLIENT_ASSIGNMENTS).filter(a => a.ClientID === clientId);
+  const assignedEmpIds = assignments.map(a => a.EmpID);
+
+  const leaves = getSheetDataAsJSON(SHEETS.LEAVE).filter(l => assignedEmpIds.includes(l.EmpID));
+  const attendance = getSheetDataAsJSON(SHEETS.ATT).filter(a => assignedEmpIds.includes(a.EmpID));
+  const holidays = getSheetDataAsJSON(SHEETS.HOL);
+
+  return {
+    assignments,
+    leaves,
+    attendance,
+    holidays
+  };
 }
