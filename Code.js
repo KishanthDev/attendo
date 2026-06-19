@@ -628,6 +628,54 @@ function resetEmployeePassword(empId) {
 }
 
 // ==========================================
+// PROFILE APIs
+// ==========================================
+
+function updateMyProfile(empId, profileData) {
+  const currentUser = Session.getActiveUser().getEmail() || empId;
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+
+  // 1. Basic validation: Check if the user exists
+  const user = employees.find(e => e.EmpID === empId);
+  if (!user) {
+    return { status: 'Error', message: 'Employee not found.' };
+  }
+
+  // 2. Email uniqueness validation: Ensure the new email isn't already taken by someone else
+  if (profileData.Email && profileData.Email.toLowerCase() !== user.Email.toLowerCase()) {
+    const emailTaken = employees.find(e => e.Email.toLowerCase() === profileData.Email.toLowerCase());
+    if (emailTaken) {
+      return { status: 'Error', message: 'This email address is already in use.' };
+    }
+  }
+
+  // 3. Update the specific row using your existing helper
+  const isUpdated = updateRowByKey(
+    SHEETS.EMP,
+    'EmpID',
+    empId,
+    {
+      Name: profileData.Name,
+      Email: profileData.Email
+    }
+  );
+
+  // 4. Return success/error and log the audit
+  if (isUpdated) {
+    logAudit(currentUser, 'UPDATE_PROFILE', `User ${empId} updated their profile Name/Email.`);
+    return {
+      status: 'Success',
+      message: 'Profile updated successfully!'
+    };
+  } else {
+    return {
+      status: 'Error',
+      message: 'Could not update the database.'
+    };
+  }
+}
+
+// ==========================================
 // ATTENDANCE APIs (RE-ENGINEERED)
 // ==========================================
 
