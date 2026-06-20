@@ -74,9 +74,9 @@ function setupSystem() {
   if (setSheet.getLastRow() === 1) {
     setSheet.appendRow(['DailyWorkingHours', '8']);
     setSheet.appendRow(['LateArrivalTime', '09:15']);
-    setSheet.appendRow(['SickLeaveQuota', '10']);
     setSheet.appendRow(['CasualLeaveQuota', '10']);
-    setSheet.appendRow(['AnnualLeaveQuota', '15']);
+    setSheet.appendRow(['AnnualHolidayQuota', '15']);
+    setSheet.appendRow(['OptionalLeaveQuota', '15']);
   }
 
   // Sample Users
@@ -309,26 +309,22 @@ function getAppSettings() {
   let settings = {
     DailyWorkingHours: 8,
     LateArrivalTime: "09:15",
-    SickLeaveQuota: 10,
     CasualLeaveQuota: 10,
-    AnnualLeaveQuota: 15
+    AnnualHolidayQuota: 15,
+    OptionalLeaveQuota: 15
   };
 
   data.forEach(row => {
     const key = String(row.Key).trim();
 
     if (key === 'DailyWorkingHours') settings.DailyWorkingHours = Number(row.Value);
-    if (key === 'SickLeaveQuota') settings.SickLeaveQuota = Number(row.Value);
     if (key === 'CasualLeaveQuota') settings.CasualLeaveQuota = Number(row.Value);
-    if (key === 'AnnualLeaveQuota') settings.AnnualLeaveQuota = Number(row.Value);
+    if (key === 'AnnualHolidayQuota') settings.AnnualHolidayQuota = Number(row.Value);
+    if (key === 'OptionalLeaveQuota') settings.OptionalLeaveQuota = Number(row.Value);
 
     if (key === 'LateArrivalTime') {
       if (row.Value instanceof Date) {
-        settings.LateArrivalTime = Utilities.formatDate(
-          row.Value,
-          Session.getScriptTimeZone(),
-          'HH:mm'
-        );
+        settings.LateArrivalTime = Utilities.formatDate(row.Value, Session.getScriptTimeZone(), 'HH:mm');
       } else {
         settings.LateArrivalTime = String(row.Value).trim();
       }
@@ -342,11 +338,11 @@ function saveAppSettings(settingsData) {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   saveRowToSheet(SHEETS.SET, { Key: 'DailyWorkingHours', Value: settingsData.DailyWorkingHours }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'LateArrivalTime', Value: settingsData.LateArrivalTime }, 'Key');
-  saveRowToSheet(SHEETS.SET, { Key: 'SickLeaveQuota', Value: settingsData.SickLeaveQuota }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'CasualLeaveQuota', Value: settingsData.CasualLeaveQuota }, 'Key');
-  saveRowToSheet(SHEETS.SET, { Key: 'AnnualLeaveQuota', Value: settingsData.AnnualLeaveQuota }, 'Key');
-  
-  logAudit(currentUser, 'UPDATE_SETTINGS', `Updated System Settings & Leave Quotas`);
+  saveRowToSheet(SHEETS.SET, { Key: 'AnnualHolidayQuota', Value: settingsData.AnnualHolidayQuota }, 'Key');
+  saveRowToSheet(SHEETS.SET, { Key: 'OptionalLeaveQuota', Value: settingsData.OptionalLeaveQuota }, 'Key');
+
+  logAudit(currentUser, 'UPDATE_SETTINGS', `Updated System Settings & Quotas`);
   return { status: 'Success', message: 'Settings updated successfully!' };
 }
 
@@ -909,12 +905,38 @@ function getLeaves() { return getSheetDataAsJSON(SHEETS.LEAVE); }
 
 function applyLeave(leaveData) {
   const currentUser = Session.getActiveUser().getEmail() || leaveData.EmpID;
+
+  if (leaveData.Type === 'Optional Leave') {
+    const holidays = getSheetDataAsJSON(SHEETS.HOL);
+    const isOptHol = holidays.find(h => h.Date === leaveData.Date && h.Type === 'Optional');
+
+    if (!isOptHol) {
+      return { status: 'Error', message: 'The selected date is not marked as an Optional Holiday.' };
+    }
+
+    const month = leaveData.Date.substring(0, 7); // Gets 'YYYY-MM'
+    const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
+
+    // Check if employee already has an optional leave this month (Pending or Approved)
+    const existingOpt = leaves.find(l =>
+      l.EmpID === leaveData.EmpID &&
+      l.Type === 'Optional Leave' &&
+      l.StartDate.substring(0, 7) === month &&
+      l.Status !== 'Rejected'
+    );
+
+    if (existingOpt) {
+      return { status: 'Error', message: 'You have already selected an Optional Leave for this month.' };
+    }
+  }
+
   leaveData.LeaveID = 'LV-' + Math.floor(100000 + Math.random() * 900000);
   leaveData.Status = 'Pending';
   leaveData.StartDate = leaveData.Date;
   leaveData.EndDate = leaveData.Date;
   leaveData.Days = 1;
   saveRowToSheet(SHEETS.LEAVE, leaveData, 'LeaveID');
+
   logAudit(currentUser, 'APPLY_LEAVE', `Applied for ${leaveData.Days} day of ${leaveData.Type}`);
   return { status: 'Success', message: 'Leave request successfully submitted!' };
 }

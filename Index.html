@@ -294,6 +294,7 @@
       <main class="flex-1 overflow-y-auto p-4 sm:p-6" id="views-container">
 
         <div id="view-dashboard" class="view-section space-y-6">
+
           <div id="today-holiday-banner"
             class="hidden bg-gradient-to-r from-brand-500 to-indigo-600 text-white rounded-2xl p-6 border border-brand-600 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
@@ -324,6 +325,52 @@
                 <h3 class="text-base font-semibold mb-4 dark:text-white">Announcements</h3>
                 <div id="dash-announcements" class="space-y-3"></div>
               </div>
+            </div>
+          </div>
+
+          <!-- Holidays Panel -->
+
+          <div
+            class="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+              <div class="flex items-center gap-3">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                  Holiday Calendar
+                </h3>
+                <span id="total-holidays-badge"
+                  class="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">0
+                  Holidays</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button id="prevBtn" onclick="changeHolidayYear(-1)"
+                  class="px-3 py-1 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-200 transition-colors">
+                  ←
+                </button>
+
+                <span id="holidayYear" class="font-medium dark:text-white"></span>
+
+                <button id="nextBtn" onclick="changeHolidayYear(1)"
+                  class="px-3 py-1 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-200 transition-colors">
+                  →
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto table-container">
+              <table class="w-full text-sm text-left whitespace-nowrap">
+                <thead
+                  class="text-xs text-gray-500 dark:text-gray-300 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700">
+                  <tr>
+                    <th class="px-4 py-3 tracking-wider">Holiday</th>
+                    <th class="px-4 py-3 tracking-wider">Date</th>
+                    <th class="px-4 py-3 tracking-wider">Type</th>
+                    <th class="px-4 py-3 tracking-wider">Description</th>
+                  </tr>
+                </thead>
+                <tbody id="holidayTableBody" class="divide-y divide-gray-50 dark:divide-slate-700/50">
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -364,7 +411,7 @@
           <div id="leave-balances-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden"></div>
           <div class="flex justify-between items-center">
             <h3 class="font-semibold text-lg dark:text-white">Leave Requests</h3>
-            <button onclick="App.ui.modals.open('leave-modal')"
+            <button onclick="App.ui.openLeaveModal()"
               class="bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all hidden"
               id="btn-apply-leave">Apply Leave</button>
           </div>
@@ -596,20 +643,20 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">First check-in after this time will be flagged
                   as Late.</p>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-                <div>
-                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Sick Leave Quota</label>
-                  <input type="number" id="set-sick-leave" required
-                    class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
-                </div>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-100 dark:border-slate-700">
                 <div>
                   <label class="block text-sm font-medium mb-1 dark:text-gray-200">Casual Leave Quota</label>
                   <input type="number" id="set-casual-leave" required
                     class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
                 </div>
                 <div>
-                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Annual Leave Quota</label>
+                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Annual Holiday Quota</label>
                   <input type="number" id="set-annual-leave" required
+                    class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Optional Leave Quota</label>
+                  <input type="number" id="set-optional-leave" required
                     class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
                 </div>
               </div>
@@ -856,15 +903,21 @@
           </svg></button>
       </div>
       <form id="leave-form" onsubmit="event.preventDefault(); App.actions.applyLeave();" class="p-6 space-y-4">
-        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Leave Type</label><select id="leave-type"
+        <div>
+          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Leave Type</label>
+          <select id="leave-type" onchange="App.ui.handleLeaveTypeChange(this.value)"
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
-            <option>Casual Leave</option>
-            <option>Sick Leave</option>
-            <option>Annual Leave</option>
-          </select></div>
-        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Date of Leave</label><input type="date"
-            id="leave-date" required
+            <option value="Casual Leave">Casual Leave</option>
+            <option value="Optional Leave">Optional Leave</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Date of Leave</label>
+          <input type="date" id="leave-date" required
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none">
+          <select id="leave-date-opt" disabled
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none hidden">
+          </select>
         </div>
         <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Remarks / Reason</label><textarea
             id="leave-remarks"
@@ -937,6 +990,7 @@
             <option>Public</option>
             <option>Restricted</option>
             <option>Company</option>
+            <option>Optional</option>
           </select></div>
         <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Description (Optional)</label><textarea
             id="hol-desc"
@@ -1272,9 +1326,9 @@
           const data = {
             DailyWorkingHours: document.getElementById('set-daily-hours').value,
             LateArrivalTime: document.getElementById('set-late-time').value,
-            SickLeaveQuota: document.getElementById('set-sick-leave').value,
             CasualLeaveQuota: document.getElementById('set-casual-leave').value,
-            AnnualLeaveQuota: document.getElementById('set-annual-leave').value
+            AnnualHolidayQuota: document.getElementById('set-annual-leave').value,
+            OptionalLeaveQuota: document.getElementById('set-optional-leave').value
           };
           const res = await App.api('saveAppSettings', data);
           App.state.data.settings = await App.api('getAppSettings');
@@ -1416,29 +1470,42 @@ Password: ${res.password}`
 
         applyLeave: async () => {
           const leaveType = document.getElementById('leave-type').value;
-          
-          // Validate the leave balance before proceeding
-          if (App.state.data.leaveBalances && App.state.data.leaveBalances[leaveType] <= 0) {
-            Swal.fire({ 
-              icon: 'error', 
-              title: 'Insufficient Balance', 
-              text: `You do not have any ${leaveType} balance left.` 
-            });
+
+          // Map Optional Leave to check against the Annual Holiday balance
+          const balanceKey = leaveType === 'Optional Leave' ? 'Annual Holiday' : leaveType;
+
+          if (App.state.data.leaveBalances && App.state.data.leaveBalances[balanceKey] <= 0) {
+            Swal.fire({ icon: 'error', title: 'Insufficient Balance', text: `You do not have any ${balanceKey} balance left. You have reached your limit.` });
             return;
           }
 
-          const data = { 
-            EmpID: App.state.user.EmpID, 
-            Type: leaveType, 
-            Date: document.getElementById('leave-date').value, 
-            Remarks: document.getElementById('leave-remarks').value 
+          const selectedDate = leaveType === 'Optional Leave'
+            ? document.getElementById('leave-date-opt').value
+            : document.getElementById('leave-date').value;
+
+          if (!selectedDate) {
+            Swal.fire({ icon: 'error', title: 'Invalid Date', text: 'Please select a valid date.' });
+            return;
+          }
+
+          const data = {
+            EmpID: App.state.user.EmpID,
+            Type: leaveType,
+            Date: selectedDate,
+            Remarks: document.getElementById('leave-remarks').value
           };
-          
+
           App.ui.modals.close('leave-modal');
           const res = await App.api('applyLeave', data);
-          Swal.fire({ icon: 'success', title: 'Requested', text: res.message });
-          App.loadData.leaves();
+
+          if (res.status === 'Error') {
+            Swal.fire({ icon: 'error', title: 'Request Failed', text: res.message });
+          } else {
+            Swal.fire({ icon: 'success', title: 'Requested', text: res.message });
+            App.loadData.leaves();
+          }
         },
+
 
         updateLeave: async (id, status) => {
           const { value: remarks } = await Swal.fire({ title: `${status} Leave`, input: 'text', inputLabel: 'Optional Remarks', showCancelButton: true });
@@ -1643,7 +1710,11 @@ Password: ${res.password}`
             else daysText = `${h.daysLeft} days left`;
             const date = new Date(h.Date.replace(/-/g, '/'));
             const formattedDate = `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
-            return `<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700"><div class="flex flex-col"><span class="font-semibold text-sm dark:text-white">${h.Name}</span><span class="text-xs text-gray-500 dark:text-gray-300">${h.Type} Holiday</span></div><div class="text-right"><div class="text-xs font-bold text-brand-600 dark:text-brand-400">${daysText}</div><div class="text-[10px] text-gray-400 dark:text-gray-200">${formattedDate}</div></div></div>`
+
+            // Allow Admins to edit directly from dashboard
+            const clickAction = isAdmin ? `onclick='App.ui.modals.openHoliday("${h.Date}", ${JSON.stringify(h).replace(/'/g, "\\'")})' class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 cursor-pointer hover:border-brand-400 dark:hover:border-brand-500 transition-colors"` : `class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700"`;
+
+            return `<div ${clickAction}><div class="flex flex-col"><span class="font-semibold text-sm dark:text-white">${h.Name}</span><span class="text-xs text-gray-500 dark:text-gray-300">${h.Type} Holiday</span></div><div class="text-right"><div class="text-xs font-bold text-brand-600 dark:text-brand-400">${daysText}</div><div class="text-[10px] text-gray-400 dark:text-gray-200">${formattedDate}</div></div></div>`
           }).join('') : '<p class="text-sm text-gray-500 dark:text-gray-300">No upcoming holidays.</p>';
           document.getElementById('dash-announcements').innerHTML = data.announcements.length ? data.announcements.map(a => `<div class="p-4 bg-brand-50 dark:bg-brand-900/20 rounded-xl border border-brand-100 dark:border-brand-800/50"><h4 class="font-semibold text-sm text-brand-800 dark:text-brand-300">${a.Title}</h4><p class="text-xs text-gray-600 dark:text-gray-200 mt-2">${a.Content}</p><span class="text-[10px] text-gray-400 dark:text-gray-300 mt-2 block">${a.Date.split('T')[0]}</span></div>`).join('') : '<p class="text-sm text-gray-500 dark:text-gray-300">No recent announcements.</p>';
 
@@ -1674,9 +1745,9 @@ Password: ${res.password}`
           }
           document.getElementById('set-daily-hours').value = App.state.data.settings?.DailyWorkingHours || 8;
           document.getElementById('set-late-time').value = App.state.data.settings?.LateArrivalTime || "09:15";
-          document.getElementById('set-sick-leave').value = App.state.data.settings?.SickLeaveQuota || 10;
           document.getElementById('set-casual-leave').value = App.state.data.settings?.CasualLeaveQuota || 10;
-          document.getElementById('set-annual-leave').value = App.state.data.settings?.AnnualLeaveQuota || 15;
+          document.getElementById('set-annual-leave').value = App.state.data.settings?.AnnualHolidayQuota || 15;
+          document.getElementById('set-optional-leave').value = App.state.data.settings?.OptionalLeaveQuota || 5;
         },
         profile: async () => {
 
@@ -1880,31 +1951,56 @@ Password: ${res.password}`
           const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
 
           if (isEmp) {
-            const quotas = { 
-              'Sick Leave': Number(App.state.data.settings?.SickLeaveQuota || 10), 
-              'Casual Leave': Number(App.state.data.settings?.CasualLeaveQuota || 10), 
-              'Annual Leave': Number(App.state.data.settings?.AnnualLeaveQuota || 15) 
+            // Ensure holidays are loaded to calculate public holidays
+            if (!App.state.cache.holidays) {
+              App.state.data.holidays = await App.api('getHolidays');
+              App.state.cache.holidays = App.state.data.holidays;
+            }
+
+            const quotas = {
+              'Casual Leave': Number(App.state.data.settings?.CasualLeaveQuota || 10),
+              'Optional Leave': Number(App.state.data.settings?.OptionalLeaveQuota || 2),
+              'Annual Holiday': Number(App.state.data.settings?.AnnualHolidayQuota || 15)
             };
-            const used = { 'Sick Leave': 0, 'Casual Leave': 0, 'Annual Leave': 0 };
-            
-            // Include both Approved and Pending so they can't overdraw while waiting for approval
-            filtered.filter(l => l.Status === 'Approved' || l.Status === 'Pending').forEach(l => { 
-              if (used[l.Type] !== undefined) used[l.Type] += Number(l.Days || 1); 
+            const used = { 'Casual Leave': 0, 'Optional Leave': 0, 'Annual Holiday': 0 };
+
+            // 1. Calculate Leaves Taken
+            filtered.filter(l => l.Status === 'Approved' || l.Status === 'Pending').forEach(l => {
+              if (l.Type === 'Casual Leave') used['Casual Leave'] += Number(l.Days || 1);
+              if (l.Type === 'Optional Leave') {
+                used['Optional Leave'] += Number(l.Days || 1);
+                if (l.Status === 'Approved') {
+                  used['Annual Holiday'] += Number(l.Days || 1); // Only confirmed optional leaves drop the annual quota
+                }
+              }
             });
+
+            // 2. Add passed/current Public Holidays to the Annual Holiday deduction
+            const todayStr = new Date().toISOString().split('T')[0];
+            const currentYear = todayStr.substring(0, 4);
+
+            const passedPublicHols = App.state.data.holidays.filter(h =>
+              h.Type === 'Public' &&
+              h.Date.startsWith(currentYear) &&
+              h.Date <= todayStr // Only count holidays that have already passed or are today
+            ).length;
+
+            used['Annual Holiday'] += passedPublicHols;
 
             App.state.data.leaveBalances = {}; // Store for validation
 
             document.getElementById('leave-balances-container').innerHTML = Object.keys(quotas).map(type => {
               const remain = quotas[type] - used[type];
-              App.state.data.leaveBalances[type] = remain; // Save to state
-              
-              const pct = (used[type] / quotas[type]) * 100;
+              App.state.data.leaveBalances[type] = remain;
+
+              let pct = (used[type] / quotas[type]) * 100;
+              if (pct > 100) pct = 100;
+
               return `<div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm"><h4 class="font-semibold text-gray-700 dark:text-gray-100 mb-1">${type}</h4><div class="flex justify-between items-end mb-3"><span class="text-3xl font-bold dark:text-white">${remain} <span class="text-sm font-normal text-gray-500 dark:text-gray-300">left</span></span><span class="text-xs font-medium text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">${used[type]} used</span></div><div class="w-full bg-gray-100 rounded-full h-1.5 dark:bg-slate-700 overflow-hidden"><div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div></div></div>`;
             }).join('');
             document.getElementById('leave-balances-container').classList.remove('hidden');
             document.getElementById('btn-apply-leave').classList.remove('hidden');
           } else {
-            // Explicitly hide these elements for Admins
             document.getElementById('leave-balances-container').classList.add('hidden');
             document.getElementById('btn-apply-leave').classList.add('hidden');
           }
@@ -1922,7 +2018,7 @@ Password: ${res.password}`
               const dStr = row.StartDate.split('T')[0];
               const parts = dStr.split('-');
               const niceDate = parts.length === 3 ? `${parts[1]}-${parts[2]}-${parts[0]}` : dStr;
-              
+
               // Map ID to Name
               const emp = App.state.data.employees.find(e => e.EmpID === row.EmpID);
               const empName = emp ? emp.Name : row.EmpID;
@@ -2015,6 +2111,46 @@ Password: ${res.password}`
         }
       },
       ui: {
+        openLeaveModal: async () => {
+          if (!App.state.data.holidays) {
+            App.state.data.holidays = await App.api('getHolidays');
+            App.state.cache.holidays = App.state.data.holidays;
+          }
+          document.getElementById('leave-form').reset();
+          App.ui.handleLeaveTypeChange(document.getElementById('leave-type').value);
+          App.ui.modals.open('leave-modal');
+        },
+        handleLeaveTypeChange: (type) => {
+          const dateInput = document.getElementById('leave-date');
+          const optSelect = document.getElementById('leave-date-opt');
+
+          if (type === 'Optional Leave') {
+            dateInput.classList.add('hidden');
+            dateInput.disabled = true;
+            optSelect.classList.remove('hidden');
+            optSelect.disabled = false;
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const currentYear = todayStr.substring(0, 4); // Gets "2026"
+
+            const optHols = (App.state.data.holidays || []).filter(h =>
+              h.Type === 'Optional' &&
+              h.Date.startsWith(currentYear) && // Strictly limit to this year's holidays
+              h.Date >= todayStr                // Only show upcoming or today's holidays
+            );
+
+            if (optHols.length === 0) {
+              optSelect.innerHTML = `<option value="">No upcoming Optional Holidays available</option>`;
+            } else {
+              optSelect.innerHTML = optHols.map(h => `<option value="${h.Date}">${h.Name} (${h.Date})</option>`).join('');
+            }
+          } else {
+            dateInput.classList.remove('hidden');
+            dateInput.disabled = false;
+            optSelect.classList.add('hidden');
+            optSelect.disabled = true;
+          }
+        },
         updateTimestamp: () => {
           const now = new Date();
           const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
@@ -2362,6 +2498,147 @@ Password: ${res.password}`
       }
     };
     window.onload = App.init;
+  </script>
+  <script>
+    let allHolidays = [];
+    let availableYears = [];
+    let currentYearIndex = 0;
+
+    function loadHolidays() {
+      google.script.run
+        .withSuccessHandler(function (data) {
+
+          allHolidays = data || [];
+
+          availableYears = [...new Set(
+            allHolidays
+              .filter(h => h.Date)
+              .map(h => new Date(h.Date).getFullYear())
+          )].sort((a, b) => a - b);
+
+          const currentYear = new Date().getFullYear();
+
+          currentYearIndex = availableYears.indexOf(currentYear);
+
+          // If current year not found, use latest available year
+          if (currentYearIndex === -1) {
+            currentYearIndex = availableYears.length - 1;
+          }
+
+          renderHolidays();
+        })
+        .getHolidays();
+    }
+
+    function changeHolidayYear(direction) {
+
+      const nextIndex = currentYearIndex + direction;
+
+      // Prevent going outside available years
+      if (nextIndex < 0 || nextIndex >= availableYears.length) {
+        return;
+      }
+
+      currentYearIndex = nextIndex;
+      renderHolidays();
+    }
+
+    function renderHolidays() {
+
+      const selectedHolidayYear =
+        availableYears[currentYearIndex];
+
+      document.getElementById('holidayYear').textContent =
+        selectedHolidayYear;
+
+      // Disable previous button if first year
+      const prevBtn = document.getElementById('prevBtn');
+      if (prevBtn) {
+        prevBtn.disabled = currentYearIndex === 0;
+        prevBtn.classList.toggle(
+          'opacity-50',
+          currentYearIndex === 0
+        );
+      }
+
+      // Disable next button if last year
+      const nextBtn = document.getElementById('nextBtn');
+      if (nextBtn) {
+        nextBtn.disabled =
+          currentYearIndex === availableYears.length - 1;
+
+        nextBtn.classList.toggle(
+          'opacity-50',
+          currentYearIndex === availableYears.length - 1
+        );
+      }
+
+      const holidays = allHolidays
+        .filter(h =>
+          h.Date &&
+          new Date(h.Date).getFullYear() === selectedHolidayYear
+        )
+        .sort((a, b) =>
+          new Date(a.Date) - new Date(b.Date)
+        );
+
+      const totalBadge = document.getElementById('total-holidays-badge');
+      if (totalBadge) {
+        totalBadge.textContent = `${holidays.length} Holidays`;
+      }
+
+      const tbody =
+        document.getElementById('holidayTableBody');
+
+      if (!holidays.length) {
+        tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50/20 dark:bg-transparent">
+            No holidays found for ${selectedHolidayYear}
+          </td>
+        </tr>
+      `;
+        return;
+      }
+
+      tbody.innerHTML = holidays.map(h => `
+      <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+        <td class="px-4 py-3 font-medium dark:text-white">
+          ${h.Name}
+        </td>
+
+        <td class="px-4 py-3 text-gray-600 dark:text-gray-200">
+          ${formatDate(h.Date)}
+        </td>
+
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-300">
+            ${h.Type || 'Public'}
+          </span>
+        </td>
+
+        <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title="${h.Description || ''}">
+          ${h.Description || '-'}
+        </td>
+      </tr>
+    `).join('');
+    }
+
+    function formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString(
+        'en-IN',
+        {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }
+      );
+    }
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      loadHolidays
+    );
   </script>
 </body>
 
