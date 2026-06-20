@@ -178,39 +178,29 @@
       </div>
       <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
         <h3 class="text-2xl font-bold mb-2 dark:text-white">Welcome Back</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-300 mb-8">
-          Sign in using your Email Address or Employee ID.
-        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-300 mb-8">Sign in using your Email Address or Employee ID.</p>
         <form onsubmit="event.preventDefault(); App.actions.login();" class="space-y-5">
-          <div>
-            <label class="block text-sm font-medium mb-1 dark:text-gray-200">
-              Email or Employee ID
-            </label> <input type="text" id="login-credential" required placeholder="Enter Email or Employee ID"
+          <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Email or Employee ID</label> <input
+              type="text" id="login-credential" required placeholder="Enter Email or Employee ID"
               class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-shadow">
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1 dark:text-gray-200">Password</label>
-            <div class="relative">
-              <input type="password" id="login-password" required
-                class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-shadow">
-              <button type="button"
+          <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Password</label>
+            <div class="relative"><input type="password" id="login-password" required
+                class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-shadow"><button
+                type="button"
                 onclick="const p = document.getElementById('login-password'); p.type = p.type === 'password' ? 'text' : 'password';"
-                class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"><svg
+                  class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
                   </path>
-                </svg>
-              </button>
-            </div>
+                </svg></button></div>
           </div>
-          <div class="flex items-center">
-            <input type="checkbox" id="login-remember"
-              class="w-4 h-4 text-brand-600 rounded border-gray-300 dark:border-gray-600 dark:bg-slate-700 focus:ring-brand-500">
-            <label for="login-remember" class="ml-2 text-sm text-gray-600 dark:text-gray-200">Remember Me</label>
-          </div>
+          <div class="flex items-center"><input type="checkbox" id="login-remember"
+              class="w-4 h-4 text-brand-600 rounded border-gray-300 dark:border-gray-600 dark:bg-slate-700 focus:ring-brand-500"><label
+              for="login-remember" class="ml-2 text-sm text-gray-600 dark:text-gray-200">Remember Me</label></div>
           <button type="submit" id="btn-login"
             class="w-full bg-brand-600 hover:bg-brand-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-brand-500/30 transition-all">Secure
             Sign In</button>
@@ -268,19 +258,15 @@
         </div>
         <div class="flex items-center gap-3">
           <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-300">
-            <span id="last-updated">
-              Updated just now
-            </span>
-
+            <span id="last-updated">Updated just now</span>
             <button onclick="App.refreshData()"
               class="p-2 rounded-lg text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              title="Refresh Data">
-              <svg id="refresh-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              title="Refresh Data"><svg id="refresh-icon" class="w-5 h-5" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                 </path>
-              </svg>
-            </button>
+              </svg></button>
           </div>
           <button onclick="App.toggleTheme()"
             class="p-2 rounded-full text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"><svg
@@ -294,7 +280,6 @@
       <main class="flex-1 overflow-y-auto p-4 sm:p-6" id="views-container">
 
         <div id="view-dashboard" class="view-section space-y-6">
-
           <div id="today-holiday-banner"
             class="hidden bg-gradient-to-r from-brand-500 to-indigo-600 text-white rounded-2xl p-6 border border-brand-600 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
@@ -314,49 +299,38 @@
               <h3 class="text-base font-semibold mb-4 dark:text-white">Attendance Trend</h3>
               <div class="relative h-64 w-full"><canvas id="dashChart"></canvas></div>
             </div>
-            <div class="space-y-6">
-              <div
-                class="bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm">
-                <h3 class="text-base font-semibold mb-4 dark:text-white">Upcoming Holidays</h3>
-                <div id="dash-holidays" class="space-y-3"></div>
-              </div>
-              <div
-                class="bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm">
-                <h3 class="text-base font-semibold mb-4 dark:text-white">Announcements</h3>
-                <div id="dash-announcements" class="space-y-3"></div>
-              </div>
+            <div
+              class="bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm h-full">
+              <h3 class="text-base font-semibold mb-4 dark:text-white">Upcoming Holidays</h3>
+              <div id="dash-holidays" class="space-y-3 overflow-y-auto custom-scrollbar pr-1 max-h-64"></div>
             </div>
           </div>
 
-          <!-- Holidays Panel -->
+          <!-- Full-Width Announcements Section (Hidden if empty) -->
+          <div id="dash-announcements-container"
+            class="hidden bg-white dark:bg-dark-card rounded-2xl p-5 border border-gray-100 dark:border-dark-border shadow-sm">
+            <h3 class="text-base font-semibold mb-4 dark:text-white">Recent Announcements</h3>
+            <div id="dash-announcements"
+              class="grid gap-4 grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))]"></div>
+          </div>
 
           <div
             class="bg-white dark:bg-dark-card rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border p-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div class="flex items-center gap-3">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-                  Holiday Calendar
-                </h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Holiday Calendar</h3>
                 <span id="total-holidays-badge"
                   class="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">0
                   Holidays</span>
               </div>
-
               <div class="flex items-center gap-3">
                 <button id="prevBtn" onclick="changeHolidayYear(-1)"
-                  class="px-3 py-1 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-200 transition-colors">
-                  ←
-                </button>
-
+                  class="px-3 py-1 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-200 transition-colors">←</button>
                 <span id="holidayYear" class="font-medium dark:text-white"></span>
-
                 <button id="nextBtn" onclick="changeHolidayYear(1)"
-                  class="px-3 py-1 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-200 transition-colors">
-                  →
-                </button>
+                  class="px-3 py-1 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-gray-200 transition-colors">→</button>
               </div>
             </div>
-
             <div class="overflow-x-auto table-container">
               <table class="w-full text-sm text-left whitespace-nowrap">
                 <thead
@@ -368,11 +342,56 @@
                     <th class="px-4 py-3 tracking-wider">Description</th>
                   </tr>
                 </thead>
-                <tbody id="holidayTableBody" class="divide-y divide-gray-50 dark:divide-slate-700/50">
-                </tbody>
+                <tbody id="holidayTableBody" class="divide-y divide-gray-50 dark:divide-slate-700/50"></tbody>
               </table>
             </div>
           </div>
+        </div>
+
+        <div id="view-skills-master" class="view-section space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
+              <h3 class="font-semibold text-lg dark:text-white hidden sm:block">Skill Directory</h3>
+              <select id="skill-filter" onchange="App.loadData['skills-master']()"
+                class="w-full sm:w-64 bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                <option value="All">All Categories</option>
+                <option value="Languages">Languages</option>
+                <option value="Frameworks">Frameworks</option>
+                <option value="DevOps">DevOps</option>
+                <option value="Cloud">Cloud</option>
+                <option value="AI">AI</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <button onclick="App.ui.modals.openSkill(null)"
+              class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all">+
+              Add Skill</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" id="skills-kpis"></div>
+          <div
+            class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container mt-4">
+            <table class="w-full text-sm text-left whitespace-nowrap" id="skills-table"></table>
+          </div>
+        </div>
+
+        <div id="view-my-skills" class="view-section space-y-6">
+          <div
+            class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 class="text-xl font-bold dark:text-white">My Skill Portfolio</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-300 mt-1">Select the technologies and skills you are
+                proficient in.</p>
+            </div>
+            <div class="flex items-center gap-4 w-full sm:w-auto">
+              <span
+                class="px-3 py-1.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 rounded-lg text-sm font-bold border border-brand-100 dark:border-brand-800/50"
+                id="my-skills-count">0 Selected</span>
+              <button onclick="App.actions.saveMySkills()"
+                class="flex-1 sm:flex-none bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all">Save
+                Skills</button>
+            </div>
+          </div>
+          <div id="my-skills-container" class="space-y-6"></div>
         </div>
 
         <div id="view-employees" class="view-section space-y-4">
@@ -400,7 +419,6 @@
           <div id="att-live-card"
             class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm hidden">
           </div>
-
           <div
             class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container">
             <table class="w-full text-sm text-left whitespace-nowrap" id="attendance-summary-table"></table>
@@ -408,7 +426,7 @@
         </div>
 
         <div id="view-leaves" class="view-section space-y-6">
-          <div id="leave-balances-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden"></div>
+          <div id="leave-balances-container" class="hidden"></div>
           <div class="flex justify-between items-center">
             <h3 class="font-semibold text-lg dark:text-white">Leave Requests</h3>
             <button onclick="App.ui.openLeaveModal()"
@@ -428,9 +446,8 @@
             <form id="doc-upload-form" onsubmit="event.preventDefault(); App.actions.uploadDocument()"
               class="space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Select Employee</label>
-                  <select id="doc-emp-id" required
+                <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Select Employee</label><select
+                    id="doc-emp-id" required
                     class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500"></select>
                 </div>
                 <div>
@@ -449,27 +466,22 @@
                 </div>
               </div>
               <div id="salary-slip-fields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Salary Month</label>
-                  <select id="doc-month"
+                <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Salary Month</label><select
+                    id="doc-month"
                     class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500"></select>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Salary Year</label>
-                  <input type="number" id="doc-year" placeholder="e.g., 2026"
+                <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Salary Year</label><input
+                    type="number" id="doc-year" placeholder="e.g., 2026"
                     class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
                 </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium mb-1 dark:text-gray-200">Select File</label>
-                <input type="file" id="doc-file" required
+              <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Select File</label><input
+                  type="file" id="doc-file" required
                   class="w-full text-sm text-gray-500 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-600 hover:file:bg-brand-100 dark:file:bg-slate-700 dark:file:text-gray-100 dark:hover:file:bg-slate-600">
               </div>
-              <div class="pt-2 flex justify-end">
-                <button type="submit"
+              <div class="pt-2 flex justify-end"><button type="submit"
                   class="bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 text-white font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all">Upload
-                  Document</button>
-              </div>
+                  Document</button></div>
             </form>
           </div>
           <div id="documents-container"
@@ -481,12 +493,11 @@
           <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex gap-4 w-full sm:w-auto flex-1">
               <div class="relative w-full max-w-xs">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 dark:text-gray-300">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 dark:text-gray-300"><svg
+                    class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                  </svg>
-                </span>
+                  </svg></span>
                 <input type="text" id="client-search" placeholder="Search clients..."
                   class="w-full bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
               </div>
@@ -509,13 +520,11 @@
 
         <div id="view-client-details" class="view-section space-y-6">
           <button onclick="App.ui.switchView('clients')"
-            class="flex items-center text-sm font-medium text-gray-500 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400 transition-colors">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="flex items-center text-sm font-medium text-gray-500 hover:text-brand-600 dark:text-gray-300 dark:hover:text-brand-400 transition-colors"><svg
+              class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
               </path>
-            </svg> Back to Clients
-          </button>
-
+            </svg> Back to Clients</button>
           <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div
               class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-center">
@@ -541,7 +550,6 @@
               <div id="cd-holidays" class="text-3xl font-bold text-purple-600 dark:text-purple-400">0</div>
             </div>
           </div>
-
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div
               class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm overflow-hidden">
@@ -663,95 +671,91 @@
         </div>
 
         <div id="view-profile" class="view-section space-y-6">
-
           <div
             class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm">
-
-            <h3 class="text-xl font-bold mb-6 dark:text-white">
-              My Profile
-            </h3>
-
+            <h3 class="text-xl font-bold mb-6 dark:text-white">My Profile</h3>
             <form id="profile-form" onsubmit="event.preventDefault(); App.actions.updateProfile();" class="space-y-4">
-
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                <div>
-                  <label class="block text-sm font-medium mb-1">
-                    Employee ID
-                  </label>
-
-                  <input id="profile-empid" readonly
-                    class="w-full bg-gray-100 dark:bg-slate-700 rounded-xl px-4 py-2.5 text-sm">
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium mb-1">
-                    Role
-                  </label>
-
-                  <input id="profile-role" readonly
-                    class="w-full bg-gray-100 dark:bg-slate-700 rounded-xl px-4 py-2.5 text-sm">
-                </div>
-
+                <div><label class="block text-sm font-medium mb-1">Employee ID</label><input id="profile-empid" readonly
+                    class="w-full bg-gray-100 dark:bg-slate-700 rounded-xl px-4 py-2.5 text-sm"></div>
+                <div><label class="block text-sm font-medium mb-1">Role</label><input id="profile-role" readonly
+                    class="w-full bg-gray-100 dark:bg-slate-700 rounded-xl px-4 py-2.5 text-sm"></div>
               </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-1">
-                  Full Name
-                </label>
-
-                <input id="profile-name" required
-                  class="w-full bg-gray-50 dark:bg-slate-800 border rounded-xl px-4 py-2.5 text-sm">
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-1">
-                  Email Address
-                </label>
-
-                <input id="profile-email" type="email"
-                  class="w-full bg-gray-50 dark:bg-slate-800 border rounded-xl px-4 py-2.5 text-sm">
-              </div>
-
-              <div class="pt-2">
-                <button type="submit" class="bg-brand-600 text-white px-6 py-2.5 rounded-xl">
-                  Save Profile
-                </button>
-              </div>
-
+              <div><label class="block text-sm font-medium mb-1">Full Name</label><input id="profile-name" required
+                  class="w-full bg-gray-50 dark:bg-slate-800 border rounded-xl px-4 py-2.5 text-sm"></div>
+              <div><label class="block text-sm font-medium mb-1">Email Address</label><input id="profile-email"
+                  type="email" class="w-full bg-gray-50 dark:bg-slate-800 border rounded-xl px-4 py-2.5 text-sm"></div>
+              <div class="pt-2"><button type="submit" class="bg-brand-600 text-white px-6 py-2.5 rounded-xl">Save
+                  Profile</button></div>
             </form>
-
           </div>
-
           <div
             class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm">
-
-            <h3 class="text-xl font-bold mb-6 dark:text-white">
-              Change Password
-            </h3>
-
+            <h3 class="text-xl font-bold mb-6 dark:text-white">Change Password</h3>
             <form onsubmit="event.preventDefault(); App.actions.updateMyPassword();" class="space-y-4">
-
               <input type="password" id="profile-current-pass" placeholder="Current Password" required
                 class="w-full bg-gray-50 dark:bg-slate-800 border rounded-xl px-4 py-2.5 text-sm">
-
               <input type="password" id="profile-new-pass" placeholder="New Password" required
                 class="w-full bg-gray-50 dark:bg-slate-800 border rounded-xl px-4 py-2.5 text-sm">
-
               <input type="password" id="profile-confirm-pass" placeholder="Confirm New Password" required
                 class="w-full bg-gray-50 dark:bg-slate-800 border rounded-xl px-4 py-2.5 text-sm">
-
-              <button type="submit" class="bg-brand-600 text-white px-6 py-2.5 rounded-xl">
-                Update Password
-              </button>
-
+              <button type="submit" class="bg-brand-600 text-white px-6 py-2.5 rounded-xl">Update Password</button>
             </form>
-
           </div>
-
         </div>
 
       </main>
+    </div>
+  </div>
+
+  <div id="skill-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+      <div
+        class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="text-lg font-bold dark:text-white" id="skill-modal-title">Add Skill</h3><button
+          onclick="App.ui.modals.close('skill-modal')"
+          class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white"><svg class="w-5 h-5"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg></button>
+      </div>
+      <form id="skill-form" onsubmit="event.preventDefault(); App.actions.saveSkill();" class="p-6 space-y-4">
+        <input type="hidden" id="skill-id">
+        <div>
+          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Category</label>
+          <select id="skill-cat" required
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+            <option>Languages</option>
+            <option>Frameworks</option>
+            <option>DevOps</option>
+            <option>Cloud</option>
+            <option>AI</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Skill Name</label>
+          <input type="text" id="skill-name" required placeholder="e.g., JavaScript"
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Status</label>
+          <select id="skill-status"
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="App.ui.modals.close('skill-modal')"
+            class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancel</button>
+          <button type="submit"
+            class="px-5 py-2.5 text-sm font-medium bg-brand-600 dark:bg-brand-500 dark:hover:bg-brand-400 text-white rounded-xl shadow-lg transition-all">Save
+            Skill</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -854,6 +858,29 @@
     </div>
   </div>
 
+  <div id="view-skill-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh]">
+      <div
+        class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50 shrink-0">
+        <h3 class="text-lg font-bold dark:text-white">Employees with this Skill</h3>
+        <button onclick="App.ui.modals.close('view-skill-modal')"
+          class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 border-b border-gray-100 dark:border-dark-border shrink-0 bg-brand-50/50 dark:bg-brand-900/10">
+        <h4 id="view-skill-name" class="font-bold text-xl dark:text-white">Skill: -</h4>
+        <p id="view-skill-cat" class="text-sm font-medium text-brand-600 dark:text-brand-400 mt-1">Category: -</p>
+      </div>
+      <div id="skill-employees-list" class="overflow-y-auto p-2 custom-scrollbar">
+      </div>
+    </div>
+  </div>
+
   <div id="assign-dev-modal"
     class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -872,8 +899,7 @@
         <p class="text-sm font-medium dark:text-white mb-2" id="assign-client-name"></p>
         <div
           class="max-h-60 overflow-y-auto space-y-2 border border-gray-100 dark:border-slate-700 p-3 rounded-xl bg-gray-50 dark:bg-slate-800"
-          id="dev-checkbox-list">
-        </div>
+          id="dev-checkbox-list"></div>
         <div class="pt-4 flex justify-end gap-3">
           <button type="button" onclick="App.ui.modals.close('assign-dev-modal')"
             class="px-5 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-xl">Cancel</button>
@@ -911,8 +937,7 @@
           <input type="date" id="leave-date" required
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none">
           <select id="leave-date-opt" disabled
-            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none hidden">
-          </select>
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none hidden"></select>
         </div>
         <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Remarks / Reason</label><textarea
             id="leave-remarks"
@@ -1015,19 +1040,16 @@
       <form id="change-password-form" onsubmit="event.preventDefault(); App.actions.changePassword();"
         class="p-6 space-y-4">
         <input type="hidden" id="cp-email">
-        <div>
-          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Current Password</label>
-          <input type="password" id="cp-current" required
+        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Current Password</label><input
+            type="password" id="cp-current" required
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 dark:text-gray-200">New Password</label>
-          <input type="password" id="cp-new" required
+        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">New Password</label><input type="password"
+            id="cp-new" required
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Confirm New Password</label>
-          <input type="password" id="cp-confirm" required
+        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Confirm New Password</label><input
+            type="password" id="cp-confirm" required
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
         </div>
         <div class="pt-4 flex justify-end gap-3"><button type="submit"
@@ -1043,8 +1065,8 @@
         user: null,
         currentView: '',
         theme: 'light',
-        data: { employees: [], settings: null, todayHoliday: null, nextHoliday: null, attendanceTrend: null },
-        cache: { employees: null, holidays: null, announcements: null, settings: null, clients: null, assignments: null }, calDate: new Date(),
+        data: { employees: [], settings: null, todayHoliday: null, nextHoliday: null, attendanceTrend: null, skills: [], mySkills: [] },
+        cache: { employees: null, holidays: null, announcements: null, settings: null, clients: null, assignments: null, skills: null, mySkills: null }, calDate: new Date(),
         isSilentRefresh: false,
         activeLoaders: 0
       },
@@ -1061,17 +1083,17 @@
           case 'profile': await App.loadData.profile(); break;
           case 'clients': App.state.cache.clients = null; await App.loadData.clients(true); break;
           case 'client-details': await App.loadData['client-details'](); break;
+          case 'skills-master': App.state.cache.skills = null; await App.loadData['skills-master'](true); break;
+          case 'my-skills': App.state.cache.mySkills = null; App.state.cache.skills = null; await App.loadData['my-skills'](true); break;
         }
       },
       api: async (method, ...args) => {
         return new Promise((resolve, reject) => {
           const isSilent = App.state.isSilentRefresh;
-
           if (!isSilent) {
             App.state.activeLoaders++;
             document.getElementById('global-loader').classList.remove('hidden');
           }
-
           google.script.run
             .withSuccessHandler((res) => {
               if (!isSilent) {
@@ -1100,22 +1122,16 @@
 
       init: async () => {
         const savedSession = localStorage.getItem('hrms_session');
-
         if (savedSession) {
           try {
             App.state.user = JSON.parse(savedSession);
-
             document.getElementById('view-login').classList.add('hidden');
-
             document.getElementById('main-layout').classList.remove('hidden');
             document.getElementById('main-layout').classList.add('flex');
-
             App.ui.setupNavigation();
             App.ui.setupProfile();
-
             await App.loadData.settings();
             App.ui.switchView('dashboard');
-
           } catch (e) {
             localStorage.removeItem('hrms_session');
             document.getElementById('view-login').classList.remove('hidden');
@@ -1130,7 +1146,6 @@
 
         document.getElementById('emp-search').addEventListener('keyup', (e) => {
           const term = e.target.value.toLowerCase();
-
           const filtered = App.state.data.employees.filter(emp =>
             emp.Role !== 'ADMIN' && (
               emp.Name.toLowerCase().includes(term) ||
@@ -1138,31 +1153,24 @@
               emp.Department.toLowerCase().includes(term) ||
               emp.EmpID.toLowerCase().includes(term)
             ));
-
           App.ui.render.employeeTable(filtered);
         });
 
         setInterval(() => {
           const card = document.getElementById('att-live-card');
           if (!card || card.classList.contains('hidden')) return;
-
           const activeStart = Number(card.getAttribute('data-active-start'));
           const completedH = Number(card.getAttribute('data-completed-hours'));
           const reqH = Number(card.getAttribute('data-req-hours'));
 
           let currentTotal = completedH;
-          if (activeStart > 0) {
-            currentTotal += (Date.now() - activeStart) / 3600000;
-          }
+          if (activeStart > 0) currentTotal += (Date.now() - activeStart) / 3600000;
           const totalSeconds = Math.floor(currentTotal * 3600);
-
           const hrs = Math.floor(totalSeconds / 3600);
           const mins = Math.floor((totalSeconds % 3600) / 60);
           const secs = totalSeconds % 60;
-
           let rem = reqH - currentTotal;
           if (rem < 0) rem = 0;
-
           const remSeconds = Math.floor(rem * 3600);
           const rHrs = Math.floor(remSeconds / 3600);
           const rMins = Math.floor((remSeconds % 3600) / 60);
@@ -1171,9 +1179,7 @@
           let pct = (currentTotal / reqH) * 100;
           if (pct > 100) pct = 100;
 
-          document.getElementById('att-worked-text').innerText =
-            `${hrs}h ${mins}m ${secs}s / ${reqH}h`;
-
+          document.getElementById('att-worked-text').innerText = `${hrs}h ${mins}m ${secs}s / ${reqH}h`;
           if (currentTotal > reqH) {
             const over = currentTotal - reqH;
             document.getElementById('att-rem-label').innerText = 'Overtime:';
@@ -1182,10 +1188,8 @@
             document.getElementById('att-rem-label').innerText = 'Remaining:';
             document.getElementById('att-rem-text').innerText = `${rHrs}h ${rMins}m`;
           }
-
           document.getElementById('att-prog-text').innerText = `${Math.floor(pct)}%`;
           document.getElementById('att-prog-fill').style.width = `${pct}%`;
-
         }, 1000);
 
         setInterval(async () => {
@@ -1194,7 +1198,6 @@
           await App.loadData.dashboard();
           App.state.isSilentRefresh = false;
         }, 30000);
-
       },
 
       toggleTheme: () => {
@@ -1211,7 +1214,7 @@
 
         try {
           App.state.isSilentRefresh = false;
-          App.state.cache = { employees: null, holidays: null, announcements: null, settings: null };
+          App.state.cache = { employees: null, holidays: null, announcements: null, settings: null, clients: null, assignments: null, skills: null, mySkills: null };
 
           await Promise.all([
             App.loadData.dashboard(),
@@ -1223,6 +1226,11 @@
             App.loadData.documents(),
             App.loadData.settings(true)
           ]);
+
+          if (App.state.currentView === 'skills-master') await App.loadData['skills-master'](true);
+          if (App.state.currentView === 'my-skills') await App.loadData['my-skills'](true);
+          if (App.state.currentView === 'clients') await App.loadData.clients(true);
+          if (App.state.currentView === 'client-details') await App.loadData['client-details']();
 
           App.ui.updateTimestamp();
         } catch (e) {
@@ -1237,8 +1245,6 @@
           try {
             const email = document.getElementById('login-credential').value;
             const password = document.getElementById('login-password').value;
-            const remember = document.getElementById('login-remember').checked;
-
             const res = await App.api('loginUser', email, password);
 
             if (res.status === 'Error') {
@@ -1255,7 +1261,6 @@
 
             App.state.user = res.user;
             localStorage.setItem('hrms_session', JSON.stringify(App.state.user));
-
             App.state.data.settings = await App.api('getAppSettings');
 
             document.getElementById('view-login').classList.add('hidden');
@@ -1274,10 +1279,7 @@
           const newPass = document.getElementById('cp-new').value;
 
           if (!passwordRegex.test(newPass)) {
-            Swal.fire({
-              icon: 'error', title: 'Weak Password',
-              html: 'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.'
-            });
+            Swal.fire({ icon: 'error', title: 'Weak Password', html: 'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.' });
             return;
           }
 
@@ -1291,7 +1293,6 @@
           }
 
           const res = await App.api('changePassword', email, currentPass, newPass);
-
           if (res.status === 'Error') {
             Swal.fire({ icon: 'error', title: 'Update Failed', text: res.message });
             return;
@@ -1299,16 +1300,14 @@
 
           App.ui.modals.close('change-password-modal');
           document.getElementById('login-password').value = newPass;
-
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
-
           App.actions.login();
         },
 
         logout: () => {
           localStorage.removeItem('hrms_session');
           App.state.user = null;
-          App.state.cache = { employees: null, holidays: null, announcements: null, settings: null };
+          App.state.cache = { employees: null, holidays: null, announcements: null, settings: null, skills: null, mySkills: null };
           App.state.currentView = '';
 
           document.getElementById('main-layout').classList.add('hidden');
@@ -1334,60 +1333,19 @@
           App.ui.modals.close('employee-modal');
           const res = await App.api('saveEmployee', data);
           if (!data.EmpID) {
-
-            Swal.fire({
-              icon: 'success',
-              title: 'Employee Created',
-              html: `
-      <div class="text-left">
-        <p><b>Employee ID:</b> ${res.empId}</p>
-        <p><b>Password:</b> ${res.password}</p>
-      </div>
-    `,
-              showCancelButton: true,
-              confirmButtonText: 'Copy Credentials',
-              cancelButtonText: 'Close'
-            }).then(result => {
-
+            Swal.fire({ icon: 'success', title: 'Employee Created', html: `<div class="text-left"><p><b>Employee ID:</b> ${res.empId}</p><p><b>Password:</b> ${res.password}</p></div>`, showCancelButton: true, confirmButtonText: 'Copy Credentials', cancelButtonText: 'Close' }).then(result => {
               if (result.isConfirmed) {
-
-                navigator.clipboard.writeText(
-                  `Employee ID: ${res.empId}
-Password: ${res.password}`
-                );
-
-                Swal.fire({
-                  toast: true,
-                  position: 'top-end',
-                  icon: 'success',
-                  title: 'Credentials copied',
-                  showConfirmButton: false,
-                  timer: 2000
-                });
+                navigator.clipboard.writeText(`Employee ID: ${res.empId}\nPassword: ${res.password}`);
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Credentials copied', showConfirmButton: false, timer: 2000 });
               }
             });
-
           }
           App.state.cache.employees = null;
           App.loadData.employees(true);
           App.loadData.dashboard();
         },
         deleteEmployee: async (id) => {
-          const { value: status } = await Swal.fire({
-            title: 'Deactivate Employee',
-            text: "This will mark the employee as inactive and they will no longer be able to log in.",
-            input: 'select',
-            inputOptions: {
-              'Terminated': 'Terminated',
-              'Resigned': 'Resigned',
-              'Retired': 'Retired'
-            },
-            inputPlaceholder: 'Select a deactivation reason',
-            showCancelButton: true,
-            confirmButtonText: 'Deactivate Employee',
-            confirmButtonColor: '#d33',
-          });
-
+          const { value: status } = await Swal.fire({ title: 'Deactivate Employee', text: "This will mark the employee as inactive.", input: 'select', inputOptions: { 'Terminated': 'Terminated', 'Resigned': 'Resigned', 'Retired': 'Retired' }, inputPlaceholder: 'Select a deactivation reason', showCancelButton: true, confirmButtonText: 'Deactivate Employee', confirmButtonColor: '#d33' });
           if (status) {
             const res = await App.api('updateEmployeeStatus', id, status);
             Swal.fire({ icon: 'success', title: 'Deactivated!', text: res.message, timer: 3000, showConfirmButton: false });
@@ -1397,14 +1355,27 @@ Password: ${res.password}`
           }
         },
         resetPassword: async (empId) => {
-          const confirm = await Swal.fire({
-            title: 'Reset Password?',
-            text: `This will reset the password for ${empId} to the default temporary password.`,
-            icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, reset it!', confirmButtonColor: '#f59e0b'
-          });
+          const confirm = await Swal.fire({ title: 'Reset Password?', text: `This will reset the password for ${empId} to the default temporary password.`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, reset it!', confirmButtonColor: '#f59e0b' });
           if (confirm.isConfirmed) {
             const res = await App.api('resetEmployeePassword', empId);
-            Swal.fire({ icon: 'success', title: 'Password Reset', text: res.message });
+
+            if (res.status === 'Success') {
+              Swal.fire({
+                icon: 'success',
+                title: 'Password Reset',
+                html: `<div class="text-left"><p><b>Employee ID:</b> ${res.empId}</p><p><b>New Password:</b> ${res.password}</p></div>`,
+                showCancelButton: true,
+                confirmButtonText: 'Copy Credentials',
+                cancelButtonText: 'Close'
+              }).then(result => {
+                if (result.isConfirmed) {
+                  navigator.clipboard.writeText(`Employee ID: ${res.empId}\nPassword: ${res.password}`);
+                  Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Credentials copied', showConfirmButton: false, timer: 2000 });
+                }
+              });
+            } else {
+              Swal.fire({ icon: 'error', title: 'Reset Failed', text: res.message });
+            }
           }
         },
 
@@ -1418,28 +1389,18 @@ Password: ${res.password}`
             App.loadData.dashboard();
           }
         },
-        saveClient: async () => {
-          const data = {
-            ClientID: document.getElementById('cl-id').value,
-            ClientName: document.getElementById('cl-name').value,
-            WorkingHours: document.getElementById('cl-hours').value,
-            Status: document.getElementById('cl-status').value,
-            Technologies: document.getElementById('cl-tech').value,
-            StartDate: document.getElementById('cl-start').value,
-            EndDate: document.getElementById('cl-end').value,
-            Description: document.getElementById('cl-desc').value
-          };
 
+        saveClient: async () => {
+          const data = { ClientID: document.getElementById('cl-id').value, ClientName: document.getElementById('cl-name').value, WorkingHours: document.getElementById('cl-hours').value, Status: document.getElementById('cl-status').value, Technologies: document.getElementById('cl-tech').value, StartDate: document.getElementById('cl-start').value, EndDate: document.getElementById('cl-end').value, Description: document.getElementById('cl-desc').value };
           App.ui.modals.close('client-modal');
           const res = await App.api('saveClient', data);
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
-
           App.state.cache.clients = null;
           App.loadData.clients(true);
         },
 
         deleteClient: async (id) => {
-          const confirm = await Swal.fire({ title: 'Delete Client?', text: "This will remove the client and clear all developer assignments. Cannot be undone.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete it!' });
+          const confirm = await Swal.fire({ title: 'Delete Client?', text: "This will remove the client and clear all developer assignments.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete it!' });
           if (confirm.isConfirmed) {
             const res = await App.api('deleteClient', id);
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
@@ -1453,11 +1414,9 @@ Password: ${res.password}`
           const clientId = document.getElementById('assign-client-id').value;
           const checkboxes = document.querySelectorAll('input[name="assign-emp"]:checked');
           const empIds = Array.from(checkboxes).map(cb => cb.value);
-
           App.ui.modals.close('assign-dev-modal');
           const res = await App.api('assignDevelopers', clientId, empIds);
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
-
           App.state.cache.assignments = null;
           App.loadData.clients(true);
         },
@@ -1466,7 +1425,7 @@ Password: ${res.password}`
           const leaveType = document.getElementById('leave-type').value;
 
           if (App.state.data.leaveBalances && App.state.data.leaveBalances[leaveType] <= 0) {
-            Swal.fire({ icon: 'error', title: 'Insufficient Balance', text: `You do not have any ${leaveType} balance left. You have reached your limit.` });
+            Swal.fire({ icon: 'error', title: 'Insufficient Balance', text: `You do not have any ${leaveType} balance left.` });
             return;
           }
 
@@ -1479,13 +1438,7 @@ Password: ${res.password}`
             return;
           }
 
-          const data = {
-            EmpID: App.state.user.EmpID,
-            Type: leaveType,
-            Date: selectedDate,
-            Remarks: document.getElementById('leave-remarks').value
-          };
-
+          const data = { EmpID: App.state.user.EmpID, Type: leaveType, Date: selectedDate, Remarks: document.getElementById('leave-remarks').value };
           App.ui.modals.close('leave-modal');
           const res = await App.api('applyLeave', data);
 
@@ -1496,7 +1449,6 @@ Password: ${res.password}`
             App.loadData.leaves();
           }
         },
-
 
         updateLeave: async (id, status) => {
           const { value: remarks } = await Swal.fire({ title: `${status} Leave`, input: 'text', inputLabel: 'Optional Remarks', showCancelButton: true });
@@ -1509,13 +1461,7 @@ Password: ${res.password}`
         },
 
         saveHoliday: async () => {
-          const data = {
-            HolID: document.getElementById('hol-id').value,
-            Date: document.getElementById('hol-date').value,
-            Name: document.getElementById('hol-name').value,
-            Type: document.getElementById('hol-type').value,
-            Description: document.getElementById('hol-desc').value
-          };
+          const data = { HolID: document.getElementById('hol-id').value, Date: document.getElementById('hol-date').value, Name: document.getElementById('hol-name').value, Type: document.getElementById('hol-type').value, Description: document.getElementById('hol-desc').value };
           const res = await App.api('saveHoliday', data);
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
           App.ui.modals.close('holiday-modal');
@@ -1540,7 +1486,10 @@ Password: ${res.password}`
           App.ui.modals.close('announcement-modal');
           const res = await App.api('saveAnnouncement', data);
           Swal.fire({ icon: 'success', title: 'Published', text: res.message });
-          App.loadData.announcements();
+
+          // Clear the cache and force a fresh fetch
+          App.state.cache.announcements = null;
+          App.loadData.announcements(true);
           App.loadData.dashboard();
         },
 
@@ -1556,13 +1505,7 @@ Password: ${res.password}`
           reader.onload = async () => {
             const base64 = reader.result.split(',')[1];
             const fileData = { base64, mimeType: file.type, fileName: file.name };
-            const docInfo = {
-              empId: document.getElementById('doc-emp-id').value,
-              docType: document.getElementById('doc-type').value,
-              month: document.getElementById('doc-month').value,
-              year: document.getElementById('doc-year').value
-            };
-
+            const docInfo = { empId: document.getElementById('doc-emp-id').value, docType: document.getElementById('doc-type').value, month: document.getElementById('doc-month').value, year: document.getElementById('doc-year').value };
             const res = await App.api('uploadEmployeeDocument', fileData, docInfo, App.state.user.Email);
             Swal.fire({ icon: 'success', title: 'Uploaded', text: res.message });
             document.getElementById('doc-upload-form').reset();
@@ -1582,68 +1525,38 @@ Password: ${res.password}`
 
           const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
           if (!passwordRegex.test(newPass)) {
-            Swal.fire({
-              icon: 'error', title: 'Weak Password',
-              html: 'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.'
-            });
+            Swal.fire({ icon: 'error', title: 'Weak Password', html: 'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.' });
             return;
           }
 
-          // Assuming your Apps Script has a 'changePassword' endpoint matching your modal logic
           const res = await App.api('changePassword', App.state.user.Email, currentPass, newPass);
-
           if (res.status === 'Error') {
             Swal.fire({ icon: 'error', title: 'Update Failed', text: res.message });
             return;
           }
 
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Password updated successfully', showConfirmButton: false, timer: 2000 });
-
-          // Clear the fields after success
           document.getElementById('profile-current-pass').value = '';
           document.getElementById('profile-new-pass').value = '';
           document.getElementById('profile-confirm-pass').value = '';
         },
 
         updateProfile: async () => {
-
-          const data = {
-            Name: document.getElementById('profile-name').value,
-            Email: document.getElementById('profile-email').value
-          };
-
-          const res = await App.api(
-            'updateMyProfile',
-            App.state.user.EmpID,
-            data
-          );
-
+          const data = { Name: document.getElementById('profile-name').value, Email: document.getElementById('profile-email').value };
+          const res = await App.api('updateMyProfile', App.state.user.EmpID, data);
           if (res.status === 'Success') {
-
             App.state.user.Name = data.Name;
             App.state.user.Email = data.Email;
-
-            localStorage.setItem(
-              'hrms_session',
-              JSON.stringify(App.state.user)
-            );
-
+            localStorage.setItem('hrms_session', JSON.stringify(App.state.user));
             App.ui.setupProfile();
-
-            Swal.fire({
-              icon: 'success',
-              title: 'Profile Updated',
-              text: res.message
-            });
+            Swal.fire({ icon: 'success', title: 'Profile Updated', text: res.message });
           }
         },
+
         downloadDocument: async (docId) => {
           const helper = (b64, name, type) => { const l = document.createElement('a'); l.href = `data:${type};base64,${b64}`; l.download = name; document.body.appendChild(l); l.click(); document.body.removeChild(l); };
-
           const res = await App.api('getDocumentForDownload', docId, App.state.user.Email);
-          if (res.base64) {
-            helper(res.base64, res.fileName, res.mimeType);
-          }
+          if (res.base64) helper(res.base64, res.fileName, res.mimeType);
         },
 
         deleteDocument: async (docId) => {
@@ -1653,434 +1566,48 @@ Password: ${res.password}`
             Swal.fire({ icon: 'success', title: 'Deleted', text: res.message });
             App.loadData.documents();
           }
-        }
-
-      },
-
-      loadData: {
-        dashboard: async () => {
-          // Pass the ID and Role to the backend
-          const data = await App.api('getDashboardData', App.state.user.EmpID, App.state.user.Role);
-          App.state.data.todayHoliday = data.todayHoliday;
-          App.state.data.nextHoliday = data.nextHoliday;
-
-          const banner = document.getElementById('today-holiday-banner');
-          if (data.todayHoliday && data.todayHoliday.Type !== 'Weekend') {
-            document.getElementById('banner-hol-name').innerText = data.todayHoliday.Name;
-            document.getElementById('banner-hol-type').innerText = data.todayHoliday.Type + ' Holiday';
-            banner.classList.remove('hidden');
-          } else {
-            banner.classList.add('hidden');
-          }
-
-          const isAdmin = App.state.user.Role === 'ADMIN';
-          const kpi = (t, v, icon, color) => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between group hover:-translate-y-1 transition-transform"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">${t}</span><span class="p-2 rounded-lg bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 dark:text-${color}-400 group-hover:scale-110 transition-transform">${icon}</span></div><div class="text-3xl font-bold mt-2 text-gray-800 dark:text-white">${v}</div></div>`;
-          const kpiSub = (t, v, sub, icon, color) => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between group hover:-translate-y-1 transition-transform"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">${t}</span><span class="p-2 rounded-lg bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 dark:text-${color}-400 group-hover:scale-110 transition-transform">${icon}</span></div><div><div class="text-2xl font-bold mt-2 text-gray-800 dark:text-white truncate">${v}</div><div class="text-xs font-medium text-gray-400 dark:text-gray-200">${sub}</div></div></div>`;
-          const iconP = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
-          const iconH = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
-
-          let nextHolName = 'N/A', nextHolSub = 'No upcoming holidays';
-          if (data.nextHoliday) {
-            nextHolName = data.nextHoliday.Name;
-            if (data.nextHoliday.daysLeft === 0) nextHolSub = 'Today';
-            else if (data.nextHoliday.daysLeft === 1) nextHolSub = 'Tomorrow';
-            else nextHolSub = `${data.nextHoliday.daysLeft} days left`;
-          }
-
-          document.getElementById('dash-kpis').innerHTML = isAdmin ?
-            kpi('Active Emp.', data.totalEmployees, iconP, 'brand') + kpi('Present', data.presentToday, iconP, 'green') +
-            kpi('Absent', data.absentToday, iconP, 'red') + kpi('On Leave', data.onLeaveToday, iconH, 'orange') +
-            kpi('Pending Leaves Approval', data.pendingLeaves, iconH, 'yellow') :
-            kpiSub('Next Holiday', nextHolName, nextHolSub, iconH, 'purple') +
-            kpi('My Status', data.todayHoliday ? 'Holiday' : 'Active', iconP, 'green') + kpi('Pending Leaves Approval', data.pendingLeaves, iconH, 'yellow');
-
-          document.getElementById('dash-holidays').innerHTML = data.upcomingHolidays.length ? data.upcomingHolidays.map(h => {
-            let daysText = '';
-            if (h.daysLeft === 0) daysText = 'Today';
-            else if (h.daysLeft === 1) daysText = 'Tomorrow';
-            else daysText = `${h.daysLeft} days left`;
-            const date = new Date(h.Date.replace(/-/g, '/'));
-            const formattedDate = `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
-
-            // Allow Admins to edit directly from dashboard
-            const clickAction = isAdmin ? `onclick='App.ui.modals.openHoliday("${h.Date}", ${JSON.stringify(h).replace(/'/g, "\\'")})' class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 cursor-pointer hover:border-brand-400 dark:hover:border-brand-500 transition-colors"` : `class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700"`;
-
-            return `<div ${clickAction}><div class="flex flex-col"><span class="font-semibold text-sm dark:text-white">${h.Name}</span><span class="text-xs text-gray-500 dark:text-gray-300">${h.Type} Holiday</span></div><div class="text-right"><div class="text-xs font-bold text-brand-600 dark:text-brand-400">${daysText}</div><div class="text-[10px] text-gray-400 dark:text-gray-200">${formattedDate}</div></div></div>`
-          }).join('') : '<p class="text-sm text-gray-500 dark:text-gray-300">No upcoming holidays.</p>';
-          document.getElementById('dash-announcements').innerHTML = data.announcements.length ? data.announcements.map(a => `<div class="p-4 bg-brand-50 dark:bg-brand-900/20 rounded-xl border border-brand-100 dark:border-brand-800/50"><h4 class="font-semibold text-sm text-brand-800 dark:text-brand-300">${a.Title}</h4><p class="text-xs text-gray-600 dark:text-gray-200 mt-2">${a.Content}</p><span class="text-[10px] text-gray-400 dark:text-gray-300 mt-2 block">${a.Date.split('T')[0]}</span></div>`).join('') : '<p class="text-sm text-gray-500 dark:text-gray-300">No recent announcements.</p>';
-
-          App.state.data.attendanceTrend = data.attendanceTrend;
-          App.ui.render.dashboardChart(App.state.data.attendanceTrend);
-        },
-        employees: async (force = false) => {
-          if (!force && App.state.cache.employees) {
-            App.state.data.employees = App.state.cache.employees;
-            const displayData = App.state.data.employees.filter(emp => emp.Role !== 'ADMIN');
-            App.ui.render.employeeTable(displayData);
-            return;
-          }
-
-          const data = await App.api('getEmployees');
-          App.state.cache.employees = data;
-          App.state.data.employees = data;
-
-          const displayData = data.filter(emp => emp.Role !== 'ADMIN');
-          App.ui.render.employeeTable(displayData);
-        },
-        settings: async (force = false) => {
-          if (!force && App.state.cache.settings) {
-            App.state.data.settings = App.state.cache.settings;
-          } else {
-            App.state.data.settings = await App.api('getAppSettings');
-            App.state.cache.settings = App.state.data.settings;
-          }
-          document.getElementById('set-daily-hours').value = App.state.data.settings?.DailyWorkingHours || 8;
-          document.getElementById('set-late-time').value = App.state.data.settings?.LateArrivalTime || "09:15";
-          document.getElementById('set-casual-leave').value = App.state.data.settings?.CasualLeaveQuota || 10;
-          document.getElementById('set-optional-leave').value = App.state.data.settings?.OptionalLeaveQuota || 2;
-        },
-        profile: async () => {
-
-          const user = App.state.user;
-
-          document.getElementById('profile-empid').value =
-            user.EmpID || '';
-
-          document.getElementById('profile-role').value =
-            user.Role || '';
-
-          document.getElementById('profile-name').value =
-            user.Name || '';
-
-          document.getElementById('profile-email').value =
-            user.Email || '';
-        },
-        clients: async (force = false) => {
-          if (!force && App.state.cache.clients && App.state.cache.assignments) {
-            App.ui.render.clientTable();
-            return;
-          }
-
-          const [clientsData, assignmentsData] = await Promise.all([
-            App.api('getClients'),
-            App.api('getClientAssignments')
-          ]);
-
-          App.state.data.clients = clientsData;
-          App.state.cache.clients = clientsData;
-          App.state.data.assignments = assignmentsData;
-          App.state.cache.assignments = assignmentsData;
-
-          App.ui.render.clientTable();
         },
 
-        'client-details': async () => {
-          const clientId = App.state.activeClientId;
-          const client = App.state.data.clients.find(c => c.ClientID === clientId);
-          if (!client) return App.ui.switchView('clients');
-
-          document.getElementById('cd-name').innerText = client.ClientName;
-          // Add spaces after commas to allow natural word wrapping
-          document.getElementById('cd-tech').innerText = client.Technologies.split(',').map(t => t.trim()).join(', ');
-
-          const data = await App.api('getClientDashboardData', clientId);
-          const assignments = data.assignments || [];
-
-          document.getElementById('cd-dev-count').innerText = assignments.length;
-          document.getElementById('cd-leaves').innerText = data.leaves.filter(l => l.Status === 'Approved').length;
-          document.getElementById('cd-holidays').innerText = data.holidays.filter(h => new Date(h.Date) > new Date()).length;
-
-          App.ui.render.table('cd-team-table', ['Employee ID', 'Name', 'Assigned Date'], assignments, row =>
-            `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-      <td class="px-4 py-3 text-gray-500 dark:text-gray-300">${row.EmpID}</td>
-      <td class="px-4 py-3 font-semibold dark:text-white">${row.EmployeeName}</td>
-      <td class="px-4 py-3 text-xs">${row.AssignedDate.split('T')[0]}</td>
-    </tr>`
-          );
-
-          App.ui.render.table('cd-leaves-table', ['Employee', 'Type', 'Date', 'Status'], data.leaves, row =>
-            `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-      <td class="px-4 py-3 font-semibold dark:text-white">${row.EmpID}</td>
-      <td class="px-4 py-3">${row.Type}</td>
-      <td class="px-4 py-3 text-xs">${row.StartDate.split('T')[0]}</td>
-      <td class="px-4 py-3 font-bold ${row.Status === 'Approved' ? 'text-green-600' : 'text-orange-600'}">${row.Status}</td>
-    </tr>`
-          );
-        },
-        attendance: async () => {
-          const liveCard = document.getElementById('att-live-card');
-          liveCard.classList.add('hidden');
-          liveCard.innerHTML = '';
-
-          const isEmp = App.state.user.Role === 'EMPLOYEE';
-          const filterId = isEmp ? App.state.user.EmpID : null;
-          const data = await App.api('getAttendanceSummary', filterId);
-
-          if (App.state.data.todayHoliday) {
-            const holCard = document.getElementById('att-live-card');
-            holCard.innerHTML = `
-              <div class="text-center">
-                <div class="text-4xl mb-2">🎉</div>
-                <h3 class="text-xl font-bold dark:text-white">Today is a Holiday</h3>
-                <p class="text-gray-500 dark:text-gray-300 mt-1">${App.state.data.todayHoliday.Name} (${App.state.data.todayHoliday.Type})</p>
-                <p class="text-sm font-semibold text-brand-600 dark:text-brand-400 mt-4">Attendance is disabled.</p>
-              </div>`;
-            holCard.classList.remove('hidden');
-            document.getElementById('attendance-summary-table').innerHTML = '';
-            return;
-          }
-
-          if (isEmp) {
-            liveCard.classList.remove('hidden');
-            const now = new Date();
-            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-            const myToday = data.find(d => d.EmpID === App.state.user.EmpID && d.Date === todayStr);
-
-            const reqH = myToday ? myToday.RequiredHours : (App.state.data.settings?.DailyWorkingHours || 8);
-            const compH = myToday ? myToday.TotalHours : 0;
-            let activeSession = null;
-            if (myToday) activeSession = myToday.Sessions.find(s => !s.CheckOut || s.CheckOut === "");
-
-            const btnHtml = activeSession ?
-              `<button onclick="App.actions.markAttendance('CHECK_OUT')" class="bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg w-full sm:w-auto">Check Out</button>` :
-              `<button onclick="App.actions.markAttendance('CHECK_IN')" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg w-full sm:w-auto">Check In</button>`;
-
-            const cHTML = `
-              <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div class="flex-1 w-full">
-                  <h3 class="text-xl font-bold mb-1 dark:text-white">Today's Attendance</h3>
-                  <div class="flex flex-col sm:flex-row sm:gap-8 text-sm mt-4">
-                    <div><span class="text-gray-500 dark:text-gray-300">Worked Today:</span> <span id="att-worked-text" class="font-bold ml-1 dark:text-white">0h 0m / ${reqH}h</span></div>
-                    <div><span id="att-rem-label" class="text-gray-500 dark:text-gray-300">Remaining:</span> <span id="att-rem-text" class="font-bold ml-1 dark:text-white">0h 0m</span></div>
-                    <div><span class="text-gray-500 dark:text-gray-300">Progress:</span> <span id="att-prog-text" class="font-bold text-brand-600 dark:text-brand-400 ml-1">0%</span></div>
-                  </div>
-                  <div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 mt-4 overflow-hidden"><div id="att-prog-fill" class="bg-brand-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
-                </div>
-                <div class="w-full md:w-auto flex flex-col gap-2 items-center md:items-end">
-                   ${activeSession ? `<span class="text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">Active Session Running</span>` : ''}
-                   ${btnHtml}
-                </div>
-              </div>`;
-
-            const card = document.getElementById('att-live-card');
-            card.innerHTML = cHTML;
-            card.setAttribute('data-active-start', activeSession ? String(activeSession.CheckIn).replace(/,/g, '') : '0');
-            card.setAttribute('data-completed-hours', compH);
-            card.setAttribute('data-req-hours', reqH);
-            card.classList.remove('hidden');
-          }
-
-          const formatTime = (val) => {
-            if (!val) return '-';
-            let cleanVal = String(val).replace(/,/g, '');
-            let epoch = Number(cleanVal);
-            if (!isNaN(epoch) && epoch > 100000) return new Date(epoch).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            return val;
+        saveSkill: async () => {
+          const data = {
+            SkillID: document.getElementById('skill-id').value,
+            Category: document.getElementById('skill-cat').value,
+            SkillName: document.getElementById('skill-name').value,
+            Status: document.getElementById('skill-status').value
           };
-
-          const formatDate = (dateStr) => dateStr;
-
-          let tableHtml = `
-              <thead class="text-xs text-gray-500 dark:text-gray-300 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700">
-                <tr><th class="px-4 py-3 tracking-wider w-8"></th><th class="px-4 py-3 tracking-wider">Date</th>${!isEmp ? '<th class="px-4 py-3 tracking-wider">EmpID</th>' : ''}<th class="px-4 py-3 tracking-wider">Sessions</th><th class="px-4 py-3 tracking-wider">Total Hours</th><th class="px-4 py-3 tracking-wider">Status</th></tr>
-              </thead><tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">`;
-
-          if (data.length === 0) {
-            tableHtml += `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-300">No records found.</td></tr>`;
-          } else {
-            // Ensure employees are loaded before mapping
-            if (!App.state.data.employees || App.state.data.employees.length === 0 && !isEmp) {
-              App.loadData.employees(true); // Fire and forget fetch if missing
-            }
-
-            data.forEach((group, i) => {
-              const th = group.TotalHours;
-              const hrs = Math.floor(th);
-              const mins = Math.floor((th % 1) * 60);
-
-              let clr = 'bg-gray-100 text-gray-700';
-              if (group.Status === 'Completed') clr = 'bg-green-100 text-green-700 dark:text-green-300 dark:bg-green-900/30';
-              else if (group.Status === 'Half Day') clr = 'bg-orange-100 text-orange-700 dark:text-orange-300 dark:bg-orange-900/30';
-              else if (group.Status === 'Present') clr = 'bg-blue-100 text-blue-700 dark:text-blue-300 dark:bg-blue-900/30';
-              else if (group.Status === 'Holiday') clr = 'bg-purple-100 text-purple-700 dark:text-purple-300 dark:bg-purple-900/30';
-
-              // Map ID to Name
-              const emp = App.state.data.employees?.find(e => e.EmpID === group.EmpID);
-              const empName = emp ? emp.Name : group.EmpID;
-
-              tableHtml += `
-                <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-colors" onclick="document.getElementById('child-row-${i}').classList.toggle('hidden')">
-                  <td class="px-4 py-3"><svg class="w-4 h-4 text-gray-400 dark:text-gray-200 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></td>
-                  <td class="px-4 py-3 font-medium dark:text-white">${formatDate(group.Date)}</td>
-                  ${!isEmp ? `<td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${group.EmpID}</div></td>` : ''}
-                  <td class="px-4 py-3 text-gray-600 dark:text-gray-200">${group.Sessions.length} Session(s)</td>
-                  <td class="px-4 py-3 font-semibold dark:text-white">${hrs}h ${mins}m</td>
-                  <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${clr}">${group.Status}</span></td>
-                </tr>
-                <tr id="child-row-${i}" class="hidden bg-gray-50/30 dark:bg-slate-800/20 border-b border-gray-100 dark:border-slate-700 ${group.Sessions.length === 0 ? 'hidden' : ''}">
-                  <td colspan="${!isEmp ? '6' : '5'}" class="p-0">
-                    <div class="px-10 py-4">
-                      <table class="w-full text-xs text-left">
-                        <thead class="text-gray-400 dark:text-gray-200 border-b border-gray-200 dark:border-slate-700"><tr><th class="pb-2">Session ID</th><th class="pb-2">Check In</th><th class="pb-2">Check Out</th><th class="pb-2">Hours</th><th class="pb-2">Late?</th></tr></thead>
-                        <tbody>
-                          ${group.Sessions.map(s => `<tr><td class="py-2 text-gray-500 dark:text-gray-300">${s.AttID}</td><td class="py-2 font-medium text-green-600 dark:text-green-400">${formatTime(s.CheckIn)}</td><td class="py-2 font-medium text-orange-500 dark:text-orange-400">${formatTime(s.CheckOut)}</td><td class="py-2 dark:text-gray-100">${s.Hours || '-'}</td><td class="py-2"><span class="${s.LateArrival === 'Yes' ? 'text-red-500 font-bold' : 'dark:text-gray-300'}">${s.LateArrival || 'No'}</span></td></tr>`).join('')}
-                        </tbody>
-                      </table>
-                    </div>
-                  </td>
-                </tr>`;
-            });
+          
+          const res = await App.api('saveSkill', data);
+          
+          if (res.status === 'Error') {
+            Swal.fire({ icon: 'error', title: 'Duplicate Found', text: res.message });
+            return; // Stop processing so they can fix the name
           }
-          tableHtml += `</tbody>`;
-          document.getElementById('attendance-summary-table').innerHTML = tableHtml;
+          
+          // Only close and refresh if it was successful
+          App.ui.modals.close('skill-modal');
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+          App.state.cache.skills = null;
+          App.loadData['skills-master'](true);
         },
-        leaves: async () => {
-          const data = await App.api('getLeaves');
-          const isEmp = App.state.user.Role === 'EMPLOYEE';
-          const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
-
-          if (isEmp) {
-            const quotas = {
-              'Casual Leave': Number(App.state.data.settings?.CasualLeaveQuota || 10),
-              'Optional Leave': Number(App.state.data.settings?.OptionalLeaveQuota || 2)
-            };
-            const used = { 'Casual Leave': 0, 'Optional Leave': 0 };
-
-            // Calculate Leaves Taken
-            filtered.filter(l => l.Status === 'Approved' || l.Status === 'Pending').forEach(l => {
-              if (l.Type === 'Casual Leave') used['Casual Leave'] += Number(l.Days || 1);
-              if (l.Type === 'Optional Leave') used['Optional Leave'] += Number(l.Days || 1);
-            });
-
-            App.state.data.leaveBalances = {}; // Store for validation
-
-            // Adjust the grid to have 2 columns instead of 3
-            const container = document.getElementById('leave-balances-container');
-            container.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
-
-            container.innerHTML = Object.keys(quotas).map(type => {
-              const remain = quotas[type] - used[type];
-              App.state.data.leaveBalances[type] = remain;
-
-              let pct = (used[type] / quotas[type]) * 100;
-              if (pct > 100) pct = 100;
-
-              return `<div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm"><h4 class="font-semibold text-gray-700 dark:text-gray-100 mb-1">${type}</h4><div class="flex justify-between items-end mb-3"><span class="text-3xl font-bold dark:text-white">${remain} <span class="text-sm font-normal text-gray-500 dark:text-gray-300">left</span></span><span class="text-xs font-medium text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">${used[type]} used</span></div><div class="w-full bg-gray-100 rounded-full h-1.5 dark:bg-slate-700 overflow-hidden"><div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div></div></div>`;
-            }).join('');
-
-            container.classList.remove('hidden');
-            document.getElementById('btn-apply-leave').classList.remove('hidden');
+        deleteSkill: async (id) => {
+          const confirm = await Swal.fire({ title: 'Delete Skill?', text: "This will remove the skill from the master list and all employee profiles.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete' });
+          if (confirm.isConfirmed) {
+            const res = await App.api('deleteSkill', id);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+            App.state.cache.skills = null;
+            App.loadData['skills-master'](true);
           }
-          // Ensure employee data is loaded to cross-reference names
-          if (!App.state.data.employees || App.state.data.employees.length === 0) {
-            await App.loadData.employees(true);
-          }
-
-          App.ui.render.table('leaves-table', ['Req. ID', 'Employee', 'Type', 'Date', 'Status', 'Remarks', 'Actions'], filtered,
-            row => {
-              let acts = '-';
-              if (!isEmp && row.Status === 'Pending') acts = `<div class="flex gap-2"><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Approved')" class="text-green-600 hover:text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-semibold">Approve</button><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Rejected')" class="text-red-600 hover:text-red-700 bg-red-50 px-2 py-1 rounded text-xs font-semibold">Reject</button></div>`;
-              const clr = row.Status === 'Approved' ? 'text-green-600 bg-green-50 dark:text-green-300 dark:bg-green-900/30' : (row.Status === 'Rejected' ? 'text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-900/30' : 'text-orange-600 bg-orange-50 dark:text-orange-300 dark:bg-orange-900/30');
-              const dStr = row.StartDate.split('T')[0];
-              const parts = dStr.split('-');
-              const niceDate = parts.length === 3 ? `${parts[1]}-${parts[2]}-${parts[0]}` : dStr;
-
-              // Map ID to Name
-              const emp = App.state.data.employees.find(e => e.EmpID === row.EmpID);
-              const empName = emp ? emp.Name : row.EmpID;
-
-              // Adjust display text if status is pending
-              const displayStatus = row.Status === 'Pending' ? 'Pending Leave Approval' : row.Status;
-
-              return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td class="px-4 py-3 font-medium dark:text-white">${row.LeaveID}</td>
-                <td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${row.EmpID}</div></td>
-                <td class="px-4 py-3 dark:text-gray-100">${row.Type}</td>
-                <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-300">${niceDate}</td>
-                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${clr}">${displayStatus}</span></td>
-                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${clr}">${row.Status}</span></td>
-                <td class="px-4 py-3 text-xs max-w-[150px] truncate dark:text-gray-200" title="${row.Remarks}">${row.Remarks || '-'}</td>
-                <td class="px-4 py-3">${acts}</td>
-              </tr>`;
-            }
-          );
         },
-        holidays: async (force = false) => {
-          if (!force && App.state.cache.holidays) {
-            return App.ui.calendar.render();
-          }
-          App.state.data.holidays = await App.api('getHolidays');
-          App.state.cache.holidays = App.state.data.holidays;
-          App.ui.calendar.render();
-        },
-        announcements: async (force = false) => {
-          let data;
-          if (!force && App.state.cache.announcements) {
-            data = App.state.cache.announcements;
-          } else {
-            data = await App.api('getAnnouncements');
-            App.state.cache.announcements = data;
-          }
-          if (App.state.user.Role === 'ADMIN') document.getElementById('btn-add-ann').classList.remove('hidden');
-          document.getElementById('announcements-grid').innerHTML = data.length ? data.reverse().map(a => `<div class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between"><div><h4 class="font-bold text-lg mb-2 dark:text-white">${a.Title}</h4><p class="text-sm text-gray-600 dark:text-gray-200 mb-4">${a.Content}</p></div><div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-slate-700/50"><span class="text-xs text-gray-400 dark:text-gray-300 font-medium">${a.Date.split('T')[0]}</span>${App.state.user.Role === 'ADMIN' ? `<button onclick="App.api('deleteAnnouncement', '${a.AnnID}').then(()=>{ App.state.cache.announcements = null; App.loadData.announcements(true); App.loadData.dashboard(); })" class="text-red-500 dark:text-red-400 text-xs font-semibold hover:underline">Delete</button>` : ''}</div></div>`).join('') : '<p class="text-gray-500 dark:text-gray-300 col-span-full text-center py-8">No announcements found.</p>';
-        },
-        documents: async () => {
-          if (!App.state.data.employees || App.state.data.employees.length === 0) {
-            await App.loadData.employees(true);
-          }
-
-          const data = await App.api('getEmployeeDocuments', App.state.user.Email);
-          const isAdmin = App.state.user.Role === 'ADMIN';
-          const uploadContainer = document.getElementById('doc-upload-container');
-
-          if (isAdmin) {
-            uploadContainer.classList.remove('hidden');
-            const empSelect = document.getElementById('doc-emp-id');
-            empSelect.innerHTML = App.state.data.employees
-              .filter(e => e.Status === 'Active' && e.Role === 'EMPLOYEE')
-              .map(e => `<option value="${e.EmpID}">${e.Name} (${e.EmpID})</option>`).join('');
-
-            const monthSelect = document.getElementById('doc-month');
-            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            monthSelect.innerHTML = months.map(m => `<option>${m}</option>`).join('');
-            document.getElementById('doc-year').value = new Date().getFullYear();
-
-            document.getElementById('doc-type').onchange = (e) => {
-              document.getElementById('salary-slip-fields').classList.toggle('hidden', e.target.value !== 'Salary Slip');
-            };
-          } else {
-            uploadContainer.classList.add('hidden');
-          }
-
-          const headers = isAdmin ? ['Employee', 'File Name', 'Type', 'Uploaded', 'Actions'] : ['File Name', 'Type', 'Uploaded', 'Actions'];
-          const tableHTML = `<table class="w-full text-sm text-left whitespace-nowrap">
-              <thead class="text-xs text-gray-500 dark:text-gray-300 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700">
-                <tr>${headers.map(h => `<th class="px-4 py-3.5 tracking-wider">${h}</th>`).join('')}</tr>
-              </thead>
-              <tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">
-                ${data.length === 0 ? `<tr><td colspan="${headers.length}" class="text-center py-8 text-gray-500 dark:text-gray-300">No documents found.</td></tr>` :
-              data.map(doc => {
-                const emp = App.state.data.employees.find(e => e.EmpID === doc.EmpID);
-                const empName = emp ? emp.Name : doc.EmpID;
-                const date = new Date(doc.UploadDate).toLocaleDateString();
-                const actions = `<div class="flex gap-2">
-                    <button onclick="App.actions.downloadDocument('${doc.DocID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-brand-300 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 rounded-lg transition-colors" title="Download"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg></button>
-                    ${isAdmin ? `<button onclick="App.actions.deleteDocument('${doc.DocID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-lg transition-colors" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : ''}
-                  </div>`;
-                return `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50">
-                    ${isAdmin ? `<td class="px-4 py-3"><div class="font-semibold dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-300">${doc.EmpID}</div></td>` : ''}
-                    <td class="px-4 py-3 font-medium dark:text-white">${doc.FileName}</td>
-                    <td class="px-4 py-3 dark:text-gray-100">${doc.DocumentType === 'Salary Slip' ? `${doc.DocumentType} (${doc.Month} ${doc.Year})` : doc.DocumentType}</td>
-                    <td class="px-4 py-3 text-gray-500 dark:text-gray-300">${date}</td>
-                    <td class="px-4 py-3">${actions}</td>
-                  </tr>`;
-              }).join('')}
-              </tbody>
-            </table>`;
-          document.getElementById('documents-container').innerHTML = tableHTML;
+        saveMySkills: async () => {
+          const checkboxes = document.querySelectorAll('.skill-cb:checked');
+          const skillIds = Array.from(checkboxes).map(cb => cb.value);
+          const res = await App.api('saveEmployeeSkills', App.state.user.EmpID, skillIds);
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+          App.state.cache.mySkills = null;
+          App.loadData['my-skills'](true);
         }
       },
+
       ui: {
         openLeaveModal: async () => {
           if (!App.state.data.holidays) {
@@ -2094,22 +1621,14 @@ Password: ${res.password}`
         handleLeaveTypeChange: (type) => {
           const dateInput = document.getElementById('leave-date');
           const optSelect = document.getElementById('leave-date-opt');
-
           if (type === 'Optional Leave') {
             dateInput.classList.add('hidden');
             dateInput.disabled = true;
             optSelect.classList.remove('hidden');
             optSelect.disabled = false;
-
             const todayStr = new Date().toISOString().split('T')[0];
-            const currentYear = todayStr.substring(0, 4); // Gets "2026"
-
-            const optHols = (App.state.data.holidays || []).filter(h =>
-              h.Type === 'Optional' &&
-              h.Date.startsWith(currentYear) && // Strictly limit to this year's holidays
-              h.Date >= todayStr                // Only show upcoming or today's holidays
-            );
-
+            const currentYear = todayStr.substring(0, 4);
+            const optHols = (App.state.data.holidays || []).filter(h => h.Type === 'Optional' && h.Date.startsWith(currentYear) && h.Date >= todayStr);
             if (optHols.length === 0) {
               optSelect.innerHTML = `<option value="">No upcoming Optional Holidays available</option>`;
             } else {
@@ -2136,7 +1655,6 @@ Password: ${res.password}`
             document.getElementById('client-form').reset();
             document.getElementById('cl-id').value = '';
             document.getElementById('client-modal-title').innerText = 'Add Client';
-
             if (id) {
               const cl = App.state.data.clients.find(c => c.ClientID === id);
               if (cl) {
@@ -2154,29 +1672,65 @@ Password: ${res.password}`
             App.ui.modals.open('client-modal');
           },
 
+          viewSkill: async (skillId, skillName, category) => {
+            document.getElementById('view-skill-name').innerText = `Skill: ${skillName}`;
+            document.getElementById('view-skill-cat').innerText = `Category: ${category}`;
+            document.getElementById('skill-employees-list').innerHTML = '<div class="text-center py-8 text-gray-500">Loading...</div>';
+            App.ui.modals.open('view-skill-modal');
+
+            try {
+              const employees = await App.api('getEmployeesBySkill', skillId);
+              const listContainer = document.getElementById('skill-employees-list');
+
+              if (employees.length === 0) {
+                listContainer.innerHTML = '<div class="text-center py-10 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800/30 rounded-xl mx-4 my-2">No employees have selected this skill yet.</div>';
+                return;
+              }
+
+              listContainer.innerHTML = employees.map((emp, index) => `
+                <div class="flex items-start gap-4 p-4 border-b border-gray-50 dark:border-slate-700/50 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors mx-2 rounded-xl">
+                  <div class="font-bold text-gray-400 dark:text-gray-500 w-6 pt-0.5">${index + 1}.</div>
+                  <div>
+                    <div class="font-bold text-gray-900 dark:text-white text-base">${emp.Name}</div>
+                    <div class="text-sm font-medium text-gray-600 dark:text-gray-300 mt-1">${emp.Designation}</div>
+                    <div class="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-0.5">${emp.Department}</div>
+                  </div>
+                </div>
+              `).join('');
+            } catch (e) {
+              document.getElementById('skill-employees-list').innerHTML = '<div class="text-center py-8 text-red-500">Error loading data.</div>';
+            }
+          },
+
           openAssignDevs: async (id) => {
-            // FIX: Explicitly check for an empty array
             if (!App.state.data.employees || App.state.data.employees.length === 0) {
               await App.loadData.employees(true);
             }
-
             const cl = App.state.data.clients.find(c => c.ClientID === id);
             const currentAssigned = App.state.data.assignments.filter(a => a.ClientID === id).map(a => a.EmpID);
-
             document.getElementById('assign-client-id').value = id;
             document.getElementById('assign-client-name').innerText = `Assigning to: ${cl.ClientName}`;
-
             const devListHtml = App.state.data.employees
               .filter(e => e.Role !== 'ADMIN' && e.Status === 'Active')
-              .map(e => `
-      <label class="flex items-center space-x-3 p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors">
-        <input type="checkbox" name="assign-emp" value="${e.EmpID}" ${currentAssigned.includes(e.EmpID) ? 'checked' : ''} class="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500">
-        <div class="flex flex-col"><span class="text-sm font-semibold dark:text-white">${e.Name}</span><span class="text-xs text-gray-500">${e.Designation}</span></div>
-      </label>
-    `).join('');
-
+              .map(e => `<label class="flex items-center space-x-3 p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg cursor-pointer transition-colors"><input type="checkbox" name="assign-emp" value="${e.EmpID}" ${currentAssigned.includes(e.EmpID) ? 'checked' : ''} class="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500"><div class="flex flex-col"><span class="text-sm font-semibold dark:text-white">${e.Name}</span><span class="text-xs text-gray-500">${e.Designation}</span></div></label>`).join('');
             document.getElementById('dev-checkbox-list').innerHTML = devListHtml;
             App.ui.modals.open('assign-dev-modal');
+          },
+          openSkill: (id) => {
+            document.getElementById('skill-form').reset();
+            document.getElementById('skill-id').value = '';
+            document.getElementById('skill-modal-title').innerText = 'Add Skill';
+            if (id) {
+              const sk = App.state.data.skills.find(s => s.SkillID === id);
+              if (sk) {
+                document.getElementById('skill-id').value = sk.SkillID;
+                document.getElementById('skill-cat').value = sk.Category;
+                document.getElementById('skill-name').value = sk.SkillName;
+                document.getElementById('skill-status').value = sk.Status;
+                document.getElementById('skill-modal-title').innerText = 'Edit Skill';
+              }
+            }
+            App.ui.modals.open('skill-modal');
           },
           open: (id) => document.getElementById(id).classList.remove('hidden'),
           close: (id) => { document.getElementById(id).classList.add('hidden'); document.querySelector(`#${id} form`)?.reset(); },
@@ -2223,69 +1777,20 @@ Password: ${res.password}`
         },
         setupNavigation: () => {
           const items = [
-            {
-              id: 'dashboard',
-              label: 'Dashboard',
-              icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-              roles: ['ADMIN', 'EMPLOYEE']
-            },
-            {
-              id: 'employees',
-              label: 'Directory',
-              icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-              roles: ['ADMIN']
-            },
-            {
-              id: 'attendance',
-              label: 'Attendance',
-              icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-              roles: ['ADMIN', 'EMPLOYEE']
-            },
-            {
-              id: 'leaves',
-              label: 'Leaves',
-              icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-              roles: ['ADMIN', 'EMPLOYEE']
-            },
-            {
-              id: 'holidays',
-              label: 'Calendar',
-              icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-              roles: ['ADMIN', 'EMPLOYEE']
-            },
-            {
-              id: 'clients',
-              label: 'Clients',
-              icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-              roles: ['ADMIN']
-            },
-            {
-              id: 'documents',
-              label: 'Documents',
-              icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-              roles: ['ADMIN', 'EMPLOYEE']
-            },
-            {
-              id: 'announcements',
-              label: 'Newsboard',
-              icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',
-              roles: ['ADMIN', 'EMPLOYEE']
-            },
-            {
-              id: 'profile',
-              label: 'My Profile',
-              icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-              roles: ['ADMIN', 'EMPLOYEE']
-            },
-            {
-              id: 'settings',
-              label: 'Settings',
-              icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
-              roles: ['ADMIN']
-            }
+            { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'employees', label: 'Directory', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['ADMIN'] },
+            { id: 'attendance', label: 'Attendance', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'leaves', label: 'Leaves', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'holidays', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'skills-master', label: 'Skills Master', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', roles: ['ADMIN'] },
+            { id: 'clients', label: 'Clients', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', roles: ['ADMIN'] },
+            { id: 'my-skills', label: 'My Skills', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z', roles: ['EMPLOYEE'] },
+            { id: 'documents', label: 'Documents', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'announcements', label: 'Newsboard', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'profile', label: 'My Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'settings', label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', roles: ['ADMIN'] }
           ];
 
-          // Now we execute the mapping logic AFTER the array is fully defined
           document.getElementById('nav-menu').innerHTML = items.filter(i => i.roles.includes(App.state.user.Role)).map(i => `<button onclick="App.ui.switchView('${i.id}'); if(window.innerWidth < 768) App.ui.toggleSidebar();" id="nav-${i.id}" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-100 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-slate-800 dark:hover:text-white transition-all group"><svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${i.icon}"></path></svg> ${i.label}</button>`).join('');
         },
         switchView: (viewId) => {
@@ -2298,6 +1803,8 @@ Password: ${res.password}`
             attendance: 'Attendance',
             leaves: 'Leave Management',
             holidays: 'Holiday Calendar',
+            'skills-master': 'Skills Master Repository',
+            'my-skills': 'My Skill Portfolio',
             announcements: 'Announcements',
             documents: 'Document Center',
             settings: 'Settings',
@@ -2305,19 +1812,12 @@ Password: ${res.password}`
           };
 
           document.getElementById('header-title').innerText = titles[viewId] || viewId;
-
           document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
           setTimeout(() => document.getElementById(`view-${viewId}`).classList.add('active'), 10);
-
-          document.querySelectorAll('.nav-item').forEach(el => {
-            el.classList.remove('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white', 'active');
-          });
+          document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white', 'active'));
 
           const activeNav = document.getElementById(`nav-${viewId}`);
-          if (activeNav) {
-            activeNav.classList.add('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white', 'active');
-          }
-
+          if (activeNav) activeNav.classList.add('bg-brand-50', 'text-brand-600', 'dark:bg-slate-800', 'dark:text-white', 'active');
           if (App.loadData[viewId]) App.loadData[viewId]();
         },
         render: {
@@ -2327,48 +1827,34 @@ Password: ${res.password}`
           clientTable: () => {
             const searchTerm = (document.getElementById('client-search')?.value || '').toLowerCase();
             const filterStatus = document.getElementById('client-filter')?.value || 'All';
-
             let filtered = App.state.data.clients;
-            if (filterStatus !== 'All') {
-              filtered = filtered.filter(c => c.Status === filterStatus);
-            }
-            if (searchTerm) {
-              filtered = filtered.filter(c => c.ClientName.toLowerCase().includes(searchTerm) || c.Technologies.toLowerCase().includes(searchTerm));
-            }
+            if (filterStatus !== 'All') filtered = filtered.filter(c => c.Status === filterStatus);
+            if (searchTerm) filtered = filtered.filter(c => c.ClientName.toLowerCase().includes(searchTerm) || c.Technologies.toLowerCase().includes(searchTerm));
 
             App.ui.render.table('clients-table', ['ID', 'Client Name', 'Tech Stack', 'Devs', 'Status', 'Actions'], filtered, row => {
               const devsCount = App.state.data.assignments.filter(a => a.ClientID === row.ClientID).length;
               const statusClr = row.Status === 'Active' ? 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400' : 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400';
-
               return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-      <td class="px-4 py-3 font-medium dark:text-white">${row.ClientID}</td>
-      <td class="px-4 py-3"><div class="font-bold text-gray-800 dark:text-white">${row.ClientName}</div><div class="text-xs text-gray-500">${row.WorkingHours} hrs/day</div></td>
-<td class="px-4 py-3"><div class="dark:text-gray-200 text-xs whitespace-normal max-w-[250px] leading-relaxed break-words">${row.Technologies.split(',').map(t => t.trim()).join(', ')}</div></td>
-      <td class="px-4 py-3 font-bold dark:text-white">${devsCount}</td>
-      <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${statusClr}">${row.Status}</span></td>
-      <td class="px-4 py-3 flex gap-2">
-        <button onclick="App.state.activeClientId = '${row.ClientID}'; App.ui.switchView('client-details');" class="p-1.5 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-900/30 rounded-lg" title="View Details"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-        <button onclick="App.ui.modals.openClient('${row.ClientID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-        <button onclick="App.ui.modals.openAssignDevs('${row.ClientID}')" class="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 dark:text-purple-300 dark:bg-purple-900/30 rounded-lg" title="Assign Devs"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></button>
-        <button onclick="App.actions.deleteClient('${row.ClientID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 rounded-lg" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-      </td>
-    </tr>`;
+                <td class="px-4 py-3 font-medium dark:text-white">${row.ClientID}</td>
+                <td class="px-4 py-3"><div class="font-bold text-gray-800 dark:text-white">${row.ClientName}</div><div class="text-xs text-gray-500">${row.WorkingHours} hrs/day</div></td>
+                <td class="px-4 py-3"><div class="dark:text-gray-200 text-xs whitespace-normal max-w-[250px] leading-relaxed break-words">${row.Technologies.split(',').map(t => t.trim()).join(', ')}</div></td>
+                <td class="px-4 py-3 font-bold dark:text-white">${devsCount}</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${statusClr}">${row.Status}</span></td>
+                <td class="px-4 py-3 flex gap-2">
+                  <button onclick="App.state.activeClientId = '${row.ClientID}'; App.ui.switchView('client-details');" class="p-1.5 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-900/30 rounded-lg" title="View Details"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
+                  <button onclick="App.ui.modals.openClient('${row.ClientID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                  <button onclick="App.ui.modals.openAssignDevs('${row.ClientID}')" class="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 dark:text-purple-300 dark:bg-purple-900/30 rounded-lg" title="Assign Devs"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></button>
+                  <button onclick="App.actions.deleteClient('${row.ClientID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 rounded-lg" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                </td>
+              </tr>`;
             });
           },
           employeeTable: (data) => {
             App.ui.render.table('employees-table', ['ID', 'Employee Info', 'Department', 'Role', 'Status', 'Actions'], data, row => {
-
               let statusColor = 'text-green-600 dark:text-green-400';
               let dotColor = 'bg-green-500';
-
-              if (row.Status === 'Terminated' || row.Status === 'Inactive') {
-                statusColor = 'text-red-600 dark:text-red-400';
-                dotColor = 'bg-red-500';
-              } else if (row.Status === 'Resigned' || row.Status === 'Retired') {
-                statusColor = 'text-orange-600 dark:text-orange-400';
-                dotColor = 'bg-orange-500';
-              }
-
+              if (row.Status === 'Terminated' || row.Status === 'Inactive') { statusColor = 'text-red-600 dark:text-red-400'; dotColor = 'bg-red-500'; }
+              else if (row.Status === 'Resigned' || row.Status === 'Retired') { statusColor = 'text-orange-600 dark:text-orange-400'; dotColor = 'bg-orange-500'; }
               return `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group">
                 <td class="px-4 py-3 font-medium dark:text-white">${row.EmpID}</td>
                 <td class="px-4 py-3"><div class="flex flex-col"><span class="font-semibold text-gray-800 dark:text-white">${row.Name}</span><span class="text-xs text-gray-500 dark:text-gray-300">${row.Email}</span></div></td>
@@ -2386,10 +1872,8 @@ Password: ${res.password}`
           dashboardChart: (trendData) => {
             const ctx = document.getElementById('dashChart').getContext('2d');
             if (window.dashChartInst) window.dashChartInst.destroy();
-
             const labels = trendData?.labels || ['No Data'];
             const dataPoints = trendData?.data || [0];
-
             const gridColor = App.state.theme === 'dark' ? '#334155' : '#e2e8f0';
             const textColor = App.state.theme === 'dark' ? '#f1f5f9' : '#64748b';
 
@@ -2399,23 +1883,10 @@ Password: ${res.password}`
                 labels: labels,
                 datasets: [{
                   label: App.state.user.Role === 'ADMIN' ? 'Company Attendance %' : 'My Hours Worked',
-                  data: dataPoints,
-                  borderColor: '#60a5fa',
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                  fill: true,
-                  tension: 0.4,
-                  borderWidth: 3
+                  data: dataPoints, borderColor: '#60a5fa', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.4, borderWidth: 3
                 }]
               },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                  y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { color: textColor } },
-                  x: { grid: { display: false }, ticks: { color: textColor } }
-                }
-              }
+              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
             });
           }
         },
@@ -2456,15 +1927,416 @@ Password: ${res.password}`
               }
 
               const clickAction = isAdmin ? `onclick='App.ui.modals.openHoliday("${dateStr}", ${JSON.stringify(hol || null)})'` : '';
-              const classes = `cal-cell flex flex-col 
-                ${hol ? 'is-holiday' : ''} 
-                ${isSunday && !hol ? 'is-weekend' : ''} 
-                ${isAdmin ? 'is-admin' : ''} 
-                ${isToday ? 'is-today' : ''}`;
+              const classes = `cal-cell flex flex-col ${hol ? 'is-holiday' : ''} ${isSunday && !hol ? 'is-weekend' : ''} ${isAdmin ? 'is-admin' : ''} ${isToday ? 'is-today' : ''}`;
               html += `<div class="${classes}" ${clickAction}><span class="text-sm font-semibold ${hol ? 'text-brand-600 dark:text-brand-400' : (isToday ? 'text-brand-500 dark:text-brand-300' : 'text-gray-600 dark:text-gray-100')}">${i}</span>${contentHtml}</div>`;
             }
             document.getElementById('cal-days-grid').innerHTML = html;
           }
+        }
+      },
+
+      loadData: {
+        dashboard: async () => {
+          const data = await App.api('getDashboardData', App.state.user.EmpID, App.state.user.Role);
+          App.state.data.todayHoliday = data.todayHoliday;
+          App.state.data.nextHoliday = data.nextHoliday;
+
+          const banner = document.getElementById('today-holiday-banner');
+          if (data.todayHoliday && data.todayHoliday.Type !== 'Weekend') {
+            document.getElementById('banner-hol-name').innerText = data.todayHoliday.Name;
+            document.getElementById('banner-hol-type').innerText = data.todayHoliday.Type + ' Holiday';
+            banner.classList.remove('hidden');
+          } else {
+            banner.classList.add('hidden');
+          }
+
+          const isAdmin = App.state.user.Role === 'ADMIN';
+          const kpi = (t, v, icon, color) => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between group hover:-translate-y-1 transition-transform"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">${t}</span><span class="p-2 rounded-lg bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 dark:text-${color}-400 group-hover:scale-110 transition-transform">${icon}</span></div><div class="text-3xl font-bold mt-2 text-gray-800 dark:text-white">${v}</div></div>`;
+          const kpiSub = (t, v, sub, icon, color) => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between group hover:-translate-y-1 transition-transform"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">${t}</span><span class="p-2 rounded-lg bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 dark:text-${color}-400 group-hover:scale-110 transition-transform">${icon}</span></div><div><div class="text-2xl font-bold mt-2 text-gray-800 dark:text-white truncate">${v}</div><div class="text-xs font-medium text-gray-400 dark:text-gray-200">${sub}</div></div></div>`;
+          const iconP = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
+          const iconH = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
+
+          let nextHolName = 'N/A', nextHolSub = 'No upcoming holidays';
+          if (data.nextHoliday) {
+            nextHolName = data.nextHoliday.Name;
+            if (data.nextHoliday.daysLeft === 0) nextHolSub = 'Today';
+            else if (data.nextHoliday.daysLeft === 1) nextHolSub = 'Tomorrow';
+            else nextHolSub = `${data.nextHoliday.daysLeft} days left`;
+          }
+
+          document.getElementById('dash-kpis').innerHTML = isAdmin ?
+            kpi('Active Emp.', data.totalEmployees, iconP, 'brand') + kpi('Present', data.presentToday, iconP, 'green') +
+            kpi('Absent', data.absentToday, iconP, 'red') + kpi('On Leave', data.onLeaveToday, iconH, 'orange') +
+            kpi('Pending Leave Approvals', data.pendingLeaves, iconH, 'yellow') :
+            kpiSub('Next Holiday', nextHolName, nextHolSub, iconH, 'purple') +
+            kpi('My Status', data.todayHoliday ? 'Holiday' : 'Active', iconP, 'green') + kpi('Pending Leave Approvals', data.pendingLeaves, iconH, 'yellow');
+
+          document.getElementById('dash-holidays').innerHTML = data.upcomingHolidays.length ? data.upcomingHolidays.map(h => {
+            let daysText = '';
+            if (h.daysLeft === 0) daysText = 'Today';
+            else if (h.daysLeft === 1) daysText = 'Tomorrow';
+            else daysText = `${h.daysLeft} days left`;
+            const date = new Date(h.Date.replace(/-/g, '/'));
+            const formattedDate = `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+
+            // Allow Admins to edit directly from dashboard
+            const clickAction = isAdmin ? `onclick='App.ui.modals.openHoliday("${h.Date}", ${JSON.stringify(h).replace(/'/g, "\\'")})' class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 cursor-pointer hover:border-brand-400 dark:hover:border-brand-500 transition-colors"` : `class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700"`;
+
+            return `<div ${clickAction}><div class="flex flex-col"><span class="font-semibold text-sm dark:text-white">${h.Name}</span><span class="text-xs text-gray-500 dark:text-gray-300">${h.Type} Holiday</span></div><div class="text-right"><div class="text-xs font-bold text-brand-600 dark:text-brand-400">${daysText}</div><div class="text-[10px] text-gray-400 dark:text-gray-200">${formattedDate}</div></div></div>`
+          }).join('') : '<p class="text-sm text-gray-500 dark:text-gray-300">No upcoming holidays.</p>';
+
+          const annContainer = document.getElementById('dash-announcements-container');
+          const annBody = document.getElementById('dash-announcements');
+
+          if (data.announcements && data.announcements.length > 0) {
+            annContainer.classList.remove('hidden');
+            annBody.innerHTML = data.announcements.map(a => `<div class="p-4 bg-brand-50 dark:bg-brand-900/20 rounded-xl border border-brand-100 dark:border-brand-800/50 flex flex-col justify-between"><div class="flex-1"><h4 class="font-bold text-sm text-brand-800 dark:text-brand-300">${a.Title}</h4><p class="text-xs text-gray-600 dark:text-gray-200 mt-2 line-clamp-3">${a.Content}</p></div><span class="text-[10px] text-gray-400 dark:text-gray-400 mt-3 block font-medium">${String(a.Date || '').split('T')[0]}</span></div>`).join('');
+          } else {
+            annContainer.classList.add('hidden');
+            annBody.innerHTML = '';
+          }
+          App.state.data.attendanceTrend = data.attendanceTrend;
+          App.ui.render.dashboardChart(App.state.data.attendanceTrend);
+        },
+        employees: async (force = false) => {
+          if (!force && App.state.cache.employees) {
+            App.state.data.employees = App.state.cache.employees;
+            const displayData = App.state.data.employees.filter(emp => emp.Role !== 'ADMIN');
+            App.ui.render.employeeTable(displayData);
+            return;
+          }
+          const data = await App.api('getEmployees');
+          App.state.cache.employees = data;
+          App.state.data.employees = data;
+          const displayData = data.filter(emp => emp.Role !== 'ADMIN');
+          App.ui.render.employeeTable(displayData);
+        },
+        settings: async (force = false) => {
+          if (!force && App.state.cache.settings) {
+            App.state.data.settings = App.state.cache.settings;
+          } else {
+            App.state.data.settings = await App.api('getAppSettings');
+            App.state.cache.settings = App.state.data.settings;
+          }
+          document.getElementById('set-daily-hours').value = App.state.data.settings?.DailyWorkingHours || 8;
+          document.getElementById('set-late-time').value = App.state.data.settings?.LateArrivalTime || "09:15";
+          document.getElementById('set-casual-leave').value = App.state.data.settings?.CasualLeaveQuota || 10;
+          document.getElementById('set-optional-leave').value = App.state.data.settings?.OptionalLeaveQuota || 2;
+        },
+        profile: async () => {
+          const user = App.state.user;
+          document.getElementById('profile-empid').value = user.EmpID || '';
+          document.getElementById('profile-role').value = user.Role || '';
+          document.getElementById('profile-name').value = user.Name || '';
+          document.getElementById('profile-email').value = user.Email || '';
+        },
+        clients: async (force = false) => {
+          if (!force && App.state.cache.clients && App.state.cache.assignments) {
+            App.ui.render.clientTable();
+            return;
+          }
+          const [clientsData, assignmentsData] = await Promise.all([App.api('getClients'), App.api('getClientAssignments')]);
+          App.state.data.clients = clientsData;
+          App.state.cache.clients = clientsData;
+          App.state.data.assignments = assignmentsData;
+          App.state.cache.assignments = assignmentsData;
+          App.ui.render.clientTable();
+        },
+        'client-details': async () => {
+          const clientId = App.state.activeClientId;
+          const client = App.state.data.clients.find(c => c.ClientID === clientId);
+          if (!client) return App.ui.switchView('clients');
+
+          document.getElementById('cd-name').innerText = client.ClientName;
+          document.getElementById('cd-tech').innerText = client.Technologies.split(',').map(t => t.trim()).join(', ');
+
+          const data = await App.api('getClientDashboardData', clientId);
+          const assignments = data.assignments || [];
+
+          document.getElementById('cd-dev-count').innerText = assignments.length;
+          document.getElementById('cd-leaves').innerText = data.leaves.filter(l => l.Status === 'Approved').length;
+          document.getElementById('cd-holidays').innerText = data.holidays.filter(h => new Date(h.Date) > new Date()).length;
+
+          App.ui.render.table('cd-team-table', ['Employee ID', 'Name', 'Assigned Date'], assignments, row => `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"><td class="px-4 py-3 text-gray-500 dark:text-gray-300">${row.EmpID}</td><td class="px-4 py-3 font-semibold dark:text-white">${row.EmployeeName}</td><td class="px-4 py-3 text-xs">${row.AssignedDate.split('T')[0]}</td></tr>`);
+          App.ui.render.table('cd-leaves-table', ['Employee', 'Type', 'Date', 'Status'], data.leaves, row => {
+            const displayStatus = row.Status === 'Pending' ? 'Pending Leave Approval' : row.Status;
+            return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"><td class="px-4 py-3 font-semibold dark:text-white">${row.EmpID}</td><td class="px-4 py-3">${row.Type}</td><td class="px-4 py-3 text-xs">${row.StartDate.split('T')[0]}</td><td class="px-4 py-3 font-bold ${row.Status === 'Approved' ? 'text-green-600' : 'text-orange-600'}">${displayStatus}</td></tr>`;
+          });
+        },
+        attendance: async () => {
+          const liveCard = document.getElementById('att-live-card');
+          liveCard.classList.add('hidden');
+          liveCard.innerHTML = '';
+
+          const isEmp = App.state.user.Role === 'EMPLOYEE';
+          const filterId = isEmp ? App.state.user.EmpID : null;
+          const data = await App.api('getAttendanceSummary', filterId);
+
+          if (App.state.data.todayHoliday) {
+            const holCard = document.getElementById('att-live-card');
+            holCard.innerHTML = `<div class="text-center"><div class="text-4xl mb-2">🎉</div><h3 class="text-xl font-bold dark:text-white">Today is a Holiday</h3><p class="text-gray-500 dark:text-gray-300 mt-1">${App.state.data.todayHoliday.Name} (${App.state.data.todayHoliday.Type})</p><p class="text-sm font-semibold text-brand-600 dark:text-brand-400 mt-4">Attendance is disabled.</p></div>`;
+            holCard.classList.remove('hidden');
+            document.getElementById('attendance-summary-table').innerHTML = '';
+            return;
+          }
+
+          if (isEmp) {
+            liveCard.classList.remove('hidden');
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const myToday = data.find(d => d.EmpID === App.state.user.EmpID && d.Date === todayStr);
+
+            const reqH = myToday ? myToday.RequiredHours : (App.state.data.settings?.DailyWorkingHours || 8);
+            const compH = myToday ? myToday.TotalHours : 0;
+            let activeSession = null;
+            if (myToday) activeSession = myToday.Sessions.find(s => !s.CheckOut || s.CheckOut === "");
+
+            const btnHtml = activeSession ? `<button onclick="App.actions.markAttendance('CHECK_OUT')" class="bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg w-full sm:w-auto">Check Out</button>` : `<button onclick="App.actions.markAttendance('CHECK_IN')" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg w-full sm:w-auto">Check In</button>`;
+
+            const cHTML = `<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"><div class="flex-1 w-full"><h3 class="text-xl font-bold mb-1 dark:text-white">Today's Attendance</h3><div class="flex flex-col sm:flex-row sm:gap-8 text-sm mt-4"><div><span class="text-gray-500 dark:text-gray-300">Worked Today:</span> <span id="att-worked-text" class="font-bold ml-1 dark:text-white">0h 0m / ${reqH}h</span></div><div><span id="att-rem-label" class="text-gray-500 dark:text-gray-300">Remaining:</span> <span id="att-rem-text" class="font-bold ml-1 dark:text-white">0h 0m</span></div><div><span class="text-gray-500 dark:text-gray-300">Progress:</span> <span id="att-prog-text" class="font-bold text-brand-600 dark:text-brand-400 ml-1">0%</span></div></div><div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 mt-4 overflow-hidden"><div id="att-prog-fill" class="bg-brand-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div></div><div class="w-full md:w-auto flex flex-col gap-2 items-center md:items-end">${activeSession ? `<span class="text-xs font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">Active Session Running</span>` : ''}${btnHtml}</div></div>`;
+
+            const card = document.getElementById('att-live-card');
+            card.innerHTML = cHTML;
+            card.setAttribute('data-active-start', activeSession ? String(activeSession.CheckIn).replace(/,/g, '') : '0');
+            card.setAttribute('data-completed-hours', compH);
+            card.setAttribute('data-req-hours', reqH);
+            card.classList.remove('hidden');
+          }
+
+          const formatTime = (val) => {
+            if (!val) return '-';
+            let epoch = Number(String(val).replace(/,/g, ''));
+            if (!isNaN(epoch) && epoch > 100000) return new Date(epoch).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            return val;
+          };
+
+          let tableHtml = `<thead class="text-xs text-gray-500 dark:text-gray-300 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700"><tr><th class="px-4 py-3 tracking-wider w-8"></th><th class="px-4 py-3 tracking-wider">Date</th>${!isEmp ? '<th class="px-4 py-3 tracking-wider">EmpID</th>' : ''}<th class="px-4 py-3 tracking-wider">Sessions</th><th class="px-4 py-3 tracking-wider">Total Hours</th><th class="px-4 py-3 tracking-wider">Status</th></tr></thead><tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">`;
+
+          if (data.length === 0) {
+            tableHtml += `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-300">No records found.</td></tr>`;
+          } else {
+            if (!App.state.data.employees || App.state.data.employees.length === 0 && !isEmp) App.loadData.employees(true);
+
+            data.forEach((group, i) => {
+              const th = group.TotalHours;
+              const hrs = Math.floor(th);
+              const mins = Math.floor((th % 1) * 60);
+
+              let clr = 'bg-gray-100 text-gray-700';
+              if (group.Status === 'Completed') clr = 'bg-green-100 text-green-700 dark:text-green-300 dark:bg-green-900/30';
+              else if (group.Status === 'Half Day') clr = 'bg-orange-100 text-orange-700 dark:text-orange-300 dark:bg-orange-900/30';
+              else if (group.Status === 'Present') clr = 'bg-blue-100 text-blue-700 dark:text-blue-300 dark:bg-blue-900/30';
+              else if (group.Status === 'Holiday') clr = 'bg-purple-100 text-purple-700 dark:text-purple-300 dark:bg-purple-900/30';
+
+              const emp = App.state.data.employees?.find(e => e.EmpID === group.EmpID);
+              const empName = emp ? emp.Name : group.EmpID;
+
+              tableHtml += `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-colors" onclick="document.getElementById('child-row-${i}').classList.toggle('hidden')"><td class="px-4 py-3"><svg class="w-4 h-4 text-gray-400 dark:text-gray-200 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></td><td class="px-4 py-3 font-medium dark:text-white">${group.Date}</td>${!isEmp ? `<td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${group.EmpID}</div></td>` : ''}<td class="px-4 py-3 text-gray-600 dark:text-gray-200">${group.Sessions.length} Session(s)</td><td class="px-4 py-3 font-semibold dark:text-white">${hrs}h ${mins}m</td><td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${clr}">${group.Status}</span></td></tr><tr id="child-row-${i}" class="hidden bg-gray-50/30 dark:bg-slate-800/20 border-b border-gray-100 dark:border-slate-700 ${group.Sessions.length === 0 ? 'hidden' : ''}"><td colspan="${!isEmp ? '6' : '5'}" class="p-0"><div class="px-10 py-4"><table class="w-full text-xs text-left"><thead class="text-gray-400 dark:text-gray-200 border-b border-gray-200 dark:border-slate-700"><tr><th class="pb-2">Session ID</th><th class="pb-2">Check In</th><th class="pb-2">Check Out</th><th class="pb-2">Hours</th><th class="pb-2">Late?</th></tr></thead><tbody>${group.Sessions.map(s => `<tr><td class="py-2 text-gray-500 dark:text-gray-300">${s.AttID}</td><td class="py-2 font-medium text-green-600 dark:text-green-400">${formatTime(s.CheckIn)}</td><td class="py-2 font-medium text-orange-500 dark:text-orange-400">${formatTime(s.CheckOut)}</td><td class="py-2 dark:text-gray-100">${s.Hours || '-'}</td><td class="py-2"><span class="${s.LateArrival === 'Yes' ? 'text-red-500 font-bold' : 'dark:text-gray-300'}">${s.LateArrival || 'No'}</span></td></tr>`).join('')}</tbody></table></div></td></tr>`;
+            });
+          }
+          tableHtml += `</tbody>`;
+          document.getElementById('attendance-summary-table').innerHTML = tableHtml;
+        },
+        leaves: async () => {
+          const data = await App.api('getLeaves');
+          const isEmp = App.state.user.Role === 'EMPLOYEE';
+          const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
+
+          if (isEmp) {
+            const quotas = {
+              'Casual Leave': Number(App.state.data.settings?.CasualLeaveQuota || 10),
+              'Optional Leave': Number(App.state.data.settings?.OptionalLeaveQuota || 2)
+            };
+            const used = { 'Casual Leave': 0, 'Optional Leave': 0 };
+
+            filtered.filter(l => l.Status === 'Approved' || l.Status === 'Pending').forEach(l => {
+              if (l.Type === 'Casual Leave') used['Casual Leave'] += Number(l.Days || 1);
+              if (l.Type === 'Optional Leave') used['Optional Leave'] += Number(l.Days || 1);
+            });
+
+            App.state.data.leaveBalances = {};
+            const container = document.getElementById('leave-balances-container');
+            container.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
+
+            container.innerHTML = Object.keys(quotas).map(type => {
+              const remain = quotas[type] - used[type];
+              App.state.data.leaveBalances[type] = remain;
+              let pct = (used[type] / quotas[type]) * 100;
+              if (pct > 100) pct = 100;
+
+              return `<div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm"><h4 class="font-semibold text-gray-700 dark:text-gray-100 mb-1">${type}</h4><div class="flex justify-between items-end mb-3"><span class="text-3xl font-bold dark:text-white">${remain} <span class="text-sm font-normal text-gray-500 dark:text-gray-300">left</span></span><span class="text-xs font-medium text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">${used[type]} used</span></div><div class="w-full bg-gray-100 rounded-full h-1.5 dark:bg-slate-700 overflow-hidden"><div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div></div></div>`;
+            }).join('');
+
+            container.classList.remove('hidden');
+            document.getElementById('btn-apply-leave').classList.remove('hidden');
+          } else {
+            document.getElementById('leave-balances-container').classList.add('hidden');
+            document.getElementById('btn-apply-leave').classList.add('hidden');
+          }
+
+          if (!App.state.data.employees || App.state.data.employees.length === 0) await App.loadData.employees(true);
+
+          App.ui.render.table('leaves-table', ['Req. ID', 'Employee', 'Type', 'Date', 'Status', 'Remarks', 'Actions'], filtered, row => {
+            let acts = '-';
+            if (!isEmp && row.Status === 'Pending') acts = `<div class="flex gap-2"><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Approved')" class="text-green-600 hover:text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-semibold">Approve</button><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Rejected')" class="text-red-600 hover:text-red-700 bg-red-50 px-2 py-1 rounded text-xs font-semibold">Reject</button></div>`;
+            const clr = row.Status === 'Approved' ? 'text-green-600 bg-green-50 dark:text-green-300 dark:bg-green-900/30' : (row.Status === 'Rejected' ? 'text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-900/30' : 'text-orange-600 bg-orange-50 dark:text-orange-300 dark:bg-orange-900/30');
+            const dStr = row.StartDate.split('T')[0];
+            const parts = dStr.split('-');
+            const niceDate = parts.length === 3 ? `${parts[1]}-${parts[2]}-${parts[0]}` : dStr;
+            const emp = App.state.data.employees.find(e => e.EmpID === row.EmpID);
+            const empName = emp ? emp.Name : row.EmpID;
+            const displayStatus = row.Status === 'Pending' ? 'Pending Leave Approval' : row.Status;
+
+            return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td class="px-4 py-3 font-medium dark:text-white">${row.LeaveID}</td>
+              <td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${row.EmpID}</div></td>
+              <td class="px-4 py-3 dark:text-gray-100">${row.Type}</td>
+              <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-300">${niceDate}</td>
+              <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${clr}">${displayStatus}</span></td>
+              <td class="px-4 py-3 text-xs max-w-[150px] truncate dark:text-gray-200" title="${row.Remarks}">${row.Remarks || '-'}</td>
+              <td class="px-4 py-3">${acts}</td>
+            </tr>`;
+          });
+        },
+        holidays: async (force = false) => {
+          if (!force && App.state.cache.holidays) return App.ui.calendar.render();
+          App.state.data.holidays = await App.api('getHolidays');
+          App.state.cache.holidays = App.state.data.holidays;
+          App.ui.calendar.render();
+        },
+        announcements: async (force = false) => {
+          let data;
+          if (!force && App.state.cache.announcements) {
+            data = App.state.cache.announcements;
+          } else {
+            data = await App.api('getAnnouncements');
+            App.state.cache.announcements = data;
+          }
+          if (App.state.user.Role === 'ADMIN') document.getElementById('btn-add-ann').classList.remove('hidden');
+          document.getElementById('announcements-grid').innerHTML = data.length ? [...data].reverse().map(a => `<div class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between"><div><h4 class="font-bold text-lg mb-2 dark:text-white">${a.Title}</h4><p class="text-sm text-gray-600 dark:text-gray-200 mb-4">${a.Content}</p></div><div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-slate-700/50"><span class="text-xs text-gray-400 dark:text-gray-300 font-medium">${String(a.Date || '').split('T')[0]}</span>${App.state.user.Role === 'ADMIN' ? `<button onclick="App.api('deleteAnnouncement', '${a.AnnID}').then(()=>{ App.state.cache.announcements = null; App.loadData.announcements(true); App.loadData.dashboard(); })" class="text-red-500 dark:text-red-400 text-xs font-semibold hover:underline">Delete</button>` : ''}</div></div>`).join('') : '<p class="text-gray-500 dark:text-gray-300 col-span-full text-center py-8">No announcements found.</p>';
+        },
+        documents: async () => {
+          if (!App.state.data.employees || App.state.data.employees.length === 0) await App.loadData.employees(true);
+          const data = await App.api('getEmployeeDocuments', App.state.user.Email);
+          const isAdmin = App.state.user.Role === 'ADMIN';
+          const uploadContainer = document.getElementById('doc-upload-container');
+
+          if (isAdmin) {
+            uploadContainer.classList.remove('hidden');
+            document.getElementById('doc-emp-id').innerHTML = App.state.data.employees.filter(e => e.Status === 'Active' && e.Role === 'EMPLOYEE').map(e => `<option value="${e.EmpID}">${e.Name} (${e.EmpID})</option>`).join('');
+            document.getElementById('doc-month').innerHTML = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => `<option>${m}</option>`).join('');
+            document.getElementById('doc-year').value = new Date().getFullYear();
+            document.getElementById('doc-type').onchange = (e) => document.getElementById('salary-slip-fields').classList.toggle('hidden', e.target.value !== 'Salary Slip');
+          } else {
+            uploadContainer.classList.add('hidden');
+          }
+
+          const headers = isAdmin ? ['Employee', 'File Name', 'Type', 'Uploaded', 'Actions'] : ['File Name', 'Type', 'Uploaded', 'Actions'];
+          const tableHTML = `<table class="w-full text-sm text-left whitespace-nowrap"><thead class="text-xs text-gray-500 dark:text-gray-300 uppercase bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700"><tr>${headers.map(h => `<th class="px-4 py-3.5 tracking-wider">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-gray-50 dark:divide-slate-700/50">${data.length === 0 ? `<tr><td colspan="${headers.length}" class="text-center py-8 text-gray-500 dark:text-gray-300">No documents found.</td></tr>` : data.map(doc => {
+            const emp = App.state.data.employees.find(e => e.EmpID === doc.EmpID);
+            const empName = emp ? emp.Name : doc.EmpID;
+            const date = new Date(doc.UploadDate).toLocaleDateString();
+            const actions = `<div class="flex gap-2"><button onclick="App.actions.downloadDocument('${doc.DocID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-brand-300 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 rounded-lg transition-colors" title="Download"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg></button>${isAdmin ? `<button onclick="App.actions.deleteDocument('${doc.DocID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-lg transition-colors" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : ''}</div>`;
+            return `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50">${isAdmin ? `<td class="px-4 py-3"><div class="font-semibold dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-300">${doc.EmpID}</div></td>` : ''}<td class="px-4 py-3 font-medium dark:text-white">${doc.FileName}</td><td class="px-4 py-3 dark:text-gray-100">${doc.DocumentType === 'Salary Slip' ? `${doc.DocumentType} (${doc.Month} ${doc.Year})` : doc.DocumentType}</td><td class="px-4 py-3 text-gray-500 dark:text-gray-300">${date}</td><td class="px-4 py-3">${actions}</td></tr>`;
+          }).join('')}</tbody></table>`;
+          document.getElementById('documents-container').innerHTML = tableHTML;
+        },
+        'skills-master': async (force = false) => {
+          if (!force && App.state.cache.skills) {
+            App.state.data.skills = App.state.cache.skills;
+          } else {
+            App.state.data.skills = await App.api('getSkills');
+            App.state.cache.skills = App.state.data.skills;
+          }
+
+          const allSkills = App.state.data.skills;
+
+          // Generate the top KPI cards based on ALL data (so they don't zero out when filtering)
+          const cats = { Languages: 0, Frameworks: 0, DevOps: 0, Cloud: 0, AI: 0 };
+          allSkills.forEach(s => { if (cats[s.Category] !== undefined) cats[s.Category]++; });
+
+          const iconS = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>`;
+          const kpiHtml = Object.keys(cats).map(k => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">${k}</span><span class="p-2 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">${iconS}</span></div><div class="text-3xl font-bold mt-2 text-gray-800 dark:text-white">${cats[k]}</div></div>`).join('');
+          document.getElementById('skills-kpis').innerHTML = kpiHtml;
+
+          // Apply Category Filter to the Table
+          const filterValue = document.getElementById('skill-filter')?.value || 'All';
+          let displaySkills = [...allSkills];
+          
+          if (filterValue !== 'All') {
+            displaySkills = displaySkills.filter(s => s.Category === filterValue);
+          }
+
+          // Sort the filtered data
+          displaySkills.sort((a, b) => {
+            if (a.Category === b.Category) {
+              return a.SkillName.localeCompare(b.SkillName);
+            }
+            return a.Category.localeCompare(b.Category);
+          });
+
+          App.ui.render.table('skills-table', ['Skill Name', 'Category', 'Status', 'Users Count', 'Actions'], displaySkills, row => {
+            const statusClr = row.Status === 'Active' ? 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400' : 'text-gray-600 bg-gray-50 dark:bg-slate-700 dark:text-gray-400';
+            return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+               <td class="px-4 py-3 font-bold dark:text-white">${row.SkillName}</td>
+               <td class="px-4 py-3 text-gray-600 dark:text-gray-200">${row.Category}</td>
+               <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${statusClr}">${row.Status}</span></td>
+               <td class="px-4 py-3 font-semibold dark:text-white">${row.EmpCount || 0}</td>
+               <td class="px-4 py-3 flex gap-2">
+                 <button onclick="App.ui.modals.viewSkill('${row.SkillID}', '${row.SkillName.replace(/'/g, "\\'")}', '${row.Category}')" class="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 dark:text-green-300 dark:bg-green-900/30 rounded-lg" title="View Employees"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
+                 <button onclick="App.ui.modals.openSkill('${row.SkillID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                 <button onclick="App.actions.deleteSkill('${row.SkillID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 rounded-lg" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+               </td>
+             </tr>`;
+          });
+        },
+        'my-skills': async (force = false) => {
+          if (!force && App.state.cache.skills) {
+            App.state.data.skills = App.state.cache.skills;
+          } else {
+            App.state.data.skills = await App.api('getSkills');
+            App.state.cache.skills = App.state.data.skills;
+          }
+          if (!force && App.state.cache.mySkills) {
+            App.state.data.mySkills = App.state.cache.mySkills;
+          } else {
+            App.state.data.mySkills = await App.api('getEmployeeSkills', App.state.user.EmpID);
+            App.state.cache.mySkills = App.state.data.mySkills;
+          }
+
+          const allActive = App.state.data.skills.filter(s => s.Status === 'Active');
+          const mySkillIds = App.state.data.mySkills.map(s => s.SkillID);
+
+          document.getElementById('my-skills-count').innerText = `${mySkillIds.length} Selected`;
+
+          const groups = {};
+          allActive.forEach(s => {
+            if (!groups[s.Category]) groups[s.Category] = [];
+            groups[s.Category].push(s);
+          });
+
+          const container = document.getElementById('my-skills-container');
+          container.innerHTML = Object.keys(groups).map(cat => {
+            const itemsHtml = groups[cat].map(s => {
+              const isChecked = mySkillIds.includes(s.SkillID) ? 'checked' : '';
+              return `
+              <label class="flex items-center gap-3 p-3 border border-gray-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:bg-brand-50 has-[:checked]:border-brand-500 dark:has-[:checked]:bg-brand-900/20 dark:has-[:checked]:border-brand-400">
+                <input type="checkbox" class="skill-cb w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500 dark:bg-slate-700 dark:border-slate-500 dark:checked:bg-brand-500" value="${s.SkillID}" ${isChecked} onchange="
+                  const count = document.querySelectorAll('.skill-cb:checked').length;
+                  document.getElementById('my-skills-count').innerText = count + ' Selected';
+                ">
+                <span class="text-sm font-medium dark:text-white select-none">${s.SkillName}</span>
+              </label>`;
+            }).join('');
+
+            return `
+            <div class="bg-gray-50/50 dark:bg-slate-800/30 rounded-2xl p-5 border border-gray-100 dark:border-dark-border">
+              <h4 class="font-bold text-gray-800 dark:text-white mb-4 uppercase tracking-wider text-xs">${cat}</h4>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                ${itemsHtml}
+              </div>
+            </div>`;
+          }).join('');
         }
       }
     };
@@ -2478,138 +2350,59 @@ Password: ${res.password}`
     function loadHolidays() {
       google.script.run
         .withSuccessHandler(function (data) {
-
           allHolidays = data || [];
-
-          availableYears = [...new Set(
-            allHolidays
-              .filter(h => h.Date)
-              .map(h => new Date(h.Date).getFullYear())
-          )].sort((a, b) => a - b);
-
+          availableYears = [...new Set(allHolidays.filter(h => h.Date).map(h => new Date(h.Date).getFullYear()))].sort((a, b) => a - b);
           const currentYear = new Date().getFullYear();
-
           currentYearIndex = availableYears.indexOf(currentYear);
-
-          // If current year not found, use latest available year
-          if (currentYearIndex === -1) {
-            currentYearIndex = availableYears.length - 1;
-          }
-
+          if (currentYearIndex === -1) { currentYearIndex = availableYears.length - 1; }
           renderHolidays();
         })
         .getHolidays();
     }
 
     function changeHolidayYear(direction) {
-
       const nextIndex = currentYearIndex + direction;
-
-      // Prevent going outside available years
-      if (nextIndex < 0 || nextIndex >= availableYears.length) {
-        return;
-      }
-
+      if (nextIndex < 0 || nextIndex >= availableYears.length) return;
       currentYearIndex = nextIndex;
       renderHolidays();
     }
 
     function renderHolidays() {
+      const selectedHolidayYear = availableYears[currentYearIndex];
+      document.getElementById('holidayYear').textContent = selectedHolidayYear;
 
-      const selectedHolidayYear =
-        availableYears[currentYearIndex];
-
-      document.getElementById('holidayYear').textContent =
-        selectedHolidayYear;
-
-      // Disable previous button if first year
       const prevBtn = document.getElementById('prevBtn');
-      if (prevBtn) {
-        prevBtn.disabled = currentYearIndex === 0;
-        prevBtn.classList.toggle(
-          'opacity-50',
-          currentYearIndex === 0
-        );
-      }
+      if (prevBtn) { prevBtn.disabled = currentYearIndex === 0; prevBtn.classList.toggle('opacity-50', currentYearIndex === 0); }
 
-      // Disable next button if last year
       const nextBtn = document.getElementById('nextBtn');
-      if (nextBtn) {
-        nextBtn.disabled =
-          currentYearIndex === availableYears.length - 1;
+      if (nextBtn) { nextBtn.disabled = currentYearIndex === availableYears.length - 1; nextBtn.classList.toggle('opacity-50', currentYearIndex === availableYears.length - 1); }
 
-        nextBtn.classList.toggle(
-          'opacity-50',
-          currentYearIndex === availableYears.length - 1
-        );
-      }
-
-      const holidays = allHolidays
-        .filter(h =>
-          h.Date &&
-          new Date(h.Date).getFullYear() === selectedHolidayYear
-        )
-        .sort((a, b) =>
-          new Date(a.Date) - new Date(b.Date)
-        );
+      const holidays = allHolidays.filter(h => h.Date && new Date(h.Date).getFullYear() === selectedHolidayYear).sort((a, b) => new Date(a.Date) - new Date(b.Date));
 
       const totalBadge = document.getElementById('total-holidays-badge');
-      if (totalBadge) {
-        totalBadge.textContent = `${holidays.length} Holidays`;
-      }
+      if (totalBadge) totalBadge.textContent = `${holidays.length} Holidays`;
 
-      const tbody =
-        document.getElementById('holidayTableBody');
+      const tbody = document.getElementById('holidayTableBody');
 
       if (!holidays.length) {
-        tbody.innerHTML = `
-        <tr>
-          <td colspan="4" class="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50/20 dark:bg-transparent">
-            No holidays found for ${selectedHolidayYear}
-          </td>
-        </tr>
-      `;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50/20 dark:bg-transparent">No holidays found for ${selectedHolidayYear}</td></tr>`;
         return;
       }
 
       tbody.innerHTML = holidays.map(h => `
       <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-        <td class="px-4 py-3 font-medium dark:text-white">
-          ${h.Name}
-        </td>
-
-        <td class="px-4 py-3 text-gray-600 dark:text-gray-200">
-          ${formatDate(h.Date)}
-        </td>
-
-        <td class="px-4 py-3">
-          <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-300">
-            ${h.Type || 'Public'}
-          </span>
-        </td>
-
-        <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title="${h.Description || ''}">
-          ${h.Description || '-'}
-        </td>
-      </tr>
-    `).join('');
+        <td class="px-4 py-3 font-medium dark:text-white">${h.Name}</td>
+        <td class="px-4 py-3 text-gray-600 dark:text-gray-200">${formatDate(h.Date)}</td>
+        <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-[10px] font-bold bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-300">${h.Type || 'Public'}</span></td>
+        <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title="${h.Description || ''}">${h.Description || '-'}</td>
+      </tr>`).join('');
     }
 
     function formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString(
-        'en-IN',
-        {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric'
-        }
-      );
+      return new Date(dateString).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     }
 
-    document.addEventListener(
-      'DOMContentLoaded',
-      loadHolidays
-    );
+    document.addEventListener('DOMContentLoaded', loadHolidays);
   </script>
 </body>
 

@@ -12,18 +12,10 @@ const SHEETS = {
   ANN: 'Announcements',
   DOCUMENTS: 'Documents',
   CLIENTS: 'Clients',
-  CLIENT_ASSIGNMENTS: 'ClientAssignments'
+  CLIENT_ASSIGNMENTS: 'ClientAssignments',
+  SKILLS: 'Skills',
+  EMP_SKILLS: 'EmployeeSkills'
 };
-
-function debugTodaySummary() {
-  Logger.log(
-    JSON.stringify(
-      getAttendanceSummary("EMP-204415"),
-      null,
-      2
-    )
-  );
-}
 
 function doGet(e) {
   return HtmlService.createTemplateFromFile('Index')
@@ -33,13 +25,6 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-function debugRawCheckIn() {
-  const sheet = getDb().getSheetByName(SHEETS.ATT);
-  const data = sheet.getDataRange().getValues();
-
-  Logger.log(typeof data[1][3]);
-  Logger.log(data[1][3]);
-}
 // ==========================================
 // SETUP & INSTALLATION
 // ==========================================
@@ -57,7 +42,9 @@ function setupSystem() {
     [SHEETS.ANN]: ['AnnID', 'Date', 'Title', 'Content', 'Status'],
     [SHEETS.DOCUMENTS]: ['DocID', 'EmpID', 'FileName', 'DocumentType', 'Month', 'Year', 'DriveFileID', 'UploadDate', 'UploadedBy'],
     [SHEETS.CLIENTS]: ['ClientID', 'ClientName', 'WorkingHours', 'Technologies', 'Status', 'StartDate', 'EndDate', 'Description', 'CreatedAt'],
-    [SHEETS.CLIENT_ASSIGNMENTS]: ['AssignmentID', 'ClientID', 'EmpID', 'EmployeeName', 'AssignedDate', 'Status']
+    [SHEETS.CLIENT_ASSIGNMENTS]: ['AssignmentID', 'ClientID', 'EmpID', 'EmployeeName', 'AssignedDate', 'Status'],
+    [SHEETS.SKILLS]: ['SkillID', 'Category', 'SkillName', 'Status'],
+    [SHEETS.EMP_SKILLS]: ['EmpID', 'SkillID', 'SkillName', 'Category', 'UpdatedAt']
   };
 
   for (const [sheetName, headers] of Object.entries(schemas)) {
@@ -75,59 +62,30 @@ function setupSystem() {
     setSheet.appendRow(['DailyWorkingHours', '8']);
     setSheet.appendRow(['LateArrivalTime', '09:15']);
     setSheet.appendRow(['CasualLeaveQuota', '10']);
-    setSheet.appendRow(['AnnualHolidayQuota', '15']);
-    setSheet.appendRow(['OptionalLeaveQuota', '15']);
+    setSheet.appendRow(['OptionalLeaveQuota', '2']);
   }
 
-  // Sample Users
-  const empSheet = ss.getSheetByName(SHEETS.EMP);
-
-  const data = empSheet.getDataRange().getValues();
-
-  const adminExists = data.some(
-    row => row[2] === 'admin@company.com'
-  );
-
-  if (!adminExists) {
-    empSheet.appendRow([
-      'EMP001',
-      'System Admin',
-      'admin@company.com',
-      'admin123',
-      'Administration',
-      'Administrator',
-      'ADMIN',
-      'Active',
-      new Date(),
-      '', false
-    ]);
-
-    empSheet.appendRow([
-      'EMP002',
-      'John Doe',
-      'john@company.com',
-      'john123',
-      'Engineering',
-      'Software Engineer',
-      'EMPLOYEE',
-      'Active',
-      new Date(),
-      '', false
-    ]);
-
-    empSheet.appendRow([
-      'EMP003',
-      'Jane Smith',
-      'jane@company.com',
-      'jane123',
-      'HR',
-      'HR Executive',
-      'EMPLOYEE',
-      'Active',
-      new Date(),
-      '', false
-    ]);
+  // Seed Default Skills if empty
+  const skillsSheet = ss.getSheetByName(SHEETS.SKILLS);
+  if (skillsSheet.getLastRow() === 1) {
+    const defaultSkills = [
+      ['SKL-101', 'Languages', 'JavaScript', 'Active'],
+      ['SKL-102', 'Languages', 'TypeScript', 'Active'],
+      ['SKL-103', 'Languages', 'Python', 'Active'],
+      ['SKL-201', 'Frameworks', 'React', 'Active'],
+      ['SKL-202', 'Frameworks', 'Next.js', 'Active'],
+      ['SKL-203', 'Frameworks', 'Node.js', 'Active'],
+      ['SKL-301', 'DevOps', 'Docker', 'Active'],
+      ['SKL-302', 'DevOps', 'Kubernetes', 'Active'],
+      ['SKL-401', 'Cloud', 'AWS', 'Active'],
+      ['SKL-402', 'Cloud', 'GCP', 'Active'],
+      ['SKL-501', 'AI', 'OpenAI', 'Active'],
+      ['SKL-502', 'AI', 'LangChain', 'Active']
+    ];
+    defaultSkills.forEach(row => skillsSheet.appendRow(row));
   }
+
+
   return "Setup successful.";
 }
 
@@ -148,67 +106,30 @@ function getSheetDataAsJSON(sheetName) {
 
   return data.map(row => {
     const obj = {};
-
     headers.forEach((header, i) => {
       const value = row[i];
-
-      // Attendance Date column
       if (sheetName === SHEETS.ATT && header === 'Date') {
-        if (value instanceof Date) {
-          obj[header] = Utilities.formatDate(
-            value,
-            Session.getScriptTimeZone(),
-            "yyyy-MM-dd"
-          );
-        } else {
-          obj[header] = String(value);
-        }
+        obj[header] = value instanceof Date ? Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd") : String(value);
         return;
       }
-
-      // Check In / Check Out
       if (header === 'CheckIn' || header === 'CheckOut') {
-        if (value instanceof Date) {
-          obj[header] = String(value.getTime());
-        } else {
-          obj[header] = value || '';
-        }
+        obj[header] = value instanceof Date ? String(value.getTime()) : value || '';
         return;
       }
-
-      // Settings -> Late Arrival Time
-      if (
-        sheetName === SHEETS.SET &&
-        row[0] === 'LateArrivalTime' &&
-        header === 'Value'
-      ) {
-        if (value instanceof Date) {
-          obj[header] = Utilities.formatDate(
-            value,
-            Session.getScriptTimeZone(),
-            "HH:mm"
-          );
-        } else {
-          obj[header] = String(value).trim();
-        }
+      if (sheetName === SHEETS.SET && row[0] === 'LateArrivalTime' && header === 'Value') {
+        obj[header] = value instanceof Date ? Utilities.formatDate(value, Session.getScriptTimeZone(), "HH:mm") : String(value).trim();
         return;
       }
-
-      // Generic Date Handling
       if (value instanceof Date) {
-        obj[header] = Utilities.formatDate(
-          value,
-          Session.getScriptTimeZone(),
-          "yyyy-MM-dd"
-        );
+        obj[header] = Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
       } else {
         obj[header] = value;
       }
     });
-
     return obj;
   });
 }
+
 function saveRowToSheet(sheetName, dataObj, keyField) {
   const sheet = getDb().getSheetByName(sheetName);
   const data = sheet.getDataRange().getValues();
@@ -250,25 +171,19 @@ function updateRowByKey(sheetName, keyField, keyValue, updateData) {
   const sheet = getDb().getSheetByName(sheetName);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
-
   const keyColIndex = headers.indexOf(keyField);
-  if (keyColIndex === -1) {
-    throw new Error(`Key field "${keyField}" not found in sheet "${sheetName}".`);
-  }
+  
+  if (keyColIndex === -1) throw new Error(`Key field "${keyField}" not found.`);
 
   const rowIndex = data.findIndex(row => row[keyColIndex] == keyValue);
-
-  if (rowIndex > 0) { // rowIndex is 0-based for array, but we skip header (index 0)
+  if (rowIndex > 0) {
     for (const [updateKey, updateValue] of Object.entries(updateData)) {
       const colIndex = headers.indexOf(updateKey);
-      if (colIndex > -1) {
-        // sheet ranges are 1-based, rowIndex is 0-based for array
-        sheet.getRange(rowIndex + 1, colIndex + 1).setValue(updateValue);
-      }
+      if (colIndex > -1) sheet.getRange(rowIndex + 1, colIndex + 1).setValue(updateValue);
     }
     return true;
   }
-  return false; // Row not found
+  return false;
 }
 
 function logAudit(userEmail, action, details) {
@@ -276,26 +191,16 @@ function logAudit(userEmail, action, details) {
   sheet.appendRow([Utilities.getUuid(), new Date().toISOString(), userEmail, action, details]);
 }
 
-/**
- * Reusable helper to check if a given date is a holiday or a weekend (Sunday).
- * @param {Date} date The date to check.
- * @param {Array<Object>} holidays An array of holiday objects from the sheet.
- * @returns {Object|null} The holiday object if it's a holiday/weekend, otherwise null.
- */
 function isDateHoliday(date, holidays) {
   if (!date || !(date instanceof Date)) return null;
-  if (date.getDay() === 0) { // Sunday is a weekend
-    return { Name: 'Weekend', Type: 'Weekend', Description: 'Sunday Weekend' };
-  }
+  if (date.getDay() === 0) return { Name: 'Weekend', Type: 'Weekend', Description: 'Sunday Weekend' };
   const dateStr = Utilities.formatDate(date, Session.getScriptTimeZone(), "yyyy-MM-dd");
   return holidays.find(h => h.Date === dateStr) || null;
 }
 
 function getOrCreateFolder(parentFolder, folderName) {
   const folders = parentFolder.getFoldersByName(folderName);
-  if (folders.hasNext()) {
-    return folders.next();
-  }
+  if (folders.hasNext()) return folders.next();
   return parentFolder.createFolder(folderName);
 }
 
@@ -305,30 +210,17 @@ function getOrCreateFolder(parentFolder, folderName) {
 
 function getAppSettings() {
   const data = getSheetDataAsJSON(SHEETS.SET);
-
-  let settings = {
-    DailyWorkingHours: 8,
-    LateArrivalTime: "09:15",
-    CasualLeaveQuota: 10,
-    OptionalLeaveQuota: 2
-  };
+  let settings = { DailyWorkingHours: 8, LateArrivalTime: "09:15", CasualLeaveQuota: 10, OptionalLeaveQuota: 2 };
 
   data.forEach(row => {
     const key = String(row.Key).trim();
-
     if (key === 'DailyWorkingHours') settings.DailyWorkingHours = Number(row.Value);
     if (key === 'CasualLeaveQuota') settings.CasualLeaveQuota = Number(row.Value);
     if (key === 'OptionalLeaveQuota') settings.OptionalLeaveQuota = Number(row.Value);
-
     if (key === 'LateArrivalTime') {
-      if (row.Value instanceof Date) {
-        settings.LateArrivalTime = Utilities.formatDate(row.Value, Session.getScriptTimeZone(), 'HH:mm');
-      } else {
-        settings.LateArrivalTime = String(row.Value).trim();
-      }
+      settings.LateArrivalTime = row.Value instanceof Date ? Utilities.formatDate(row.Value, Session.getScriptTimeZone(), 'HH:mm') : String(row.Value).trim();
     }
   });
-
   return settings;
 }
 
@@ -338,7 +230,7 @@ function saveAppSettings(settingsData) {
   saveRowToSheet(SHEETS.SET, { Key: 'LateArrivalTime', Value: settingsData.LateArrivalTime }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'CasualLeaveQuota', Value: settingsData.CasualLeaveQuota }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'OptionalLeaveQuota', Value: settingsData.OptionalLeaveQuota }, 'Key');
-
+  
   logAudit(currentUser, 'UPDATE_SETTINGS', `Updated System Settings & Quotas`);
   return { status: 'Success', message: 'Settings updated successfully!' };
 }
@@ -348,64 +240,24 @@ function saveAppSettings(settingsData) {
 // ==========================================
 
 function loginUser(loginId, password) {
-
-  if (!loginId || !password) {
-    return {
-      status: 'Error',
-      message: 'Login ID and password are required.'
-    };
-  }
+  if (!loginId || !password) return { status: 'Error', message: 'Login ID and password are required.' };
 
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-
   const credential = loginId.trim().toLowerCase();
+  const user = employees.find(e => (e.Email && e.Email.toLowerCase() === credential) || String(e.EmpID).toLowerCase() === credential);
 
-  const user = employees.find(e =>
-    (e.Email && e.Email.toLowerCase() === credential) ||
-    String(e.EmpID).toLowerCase() === credential
-  );
-
-  if (!user) {
-    return {
-      status: 'Error',
-      message: 'Account not found.'
-    };
-  }
-
-  if (user.Password !== password) {
-    return {
-      status: 'Error',
-      message: 'Invalid credentials.'
-    };
-  }
-
-  if (user.Status !== 'Active') {
-    return {
-      status: 'Error',
-      message: `Your account is inactive. Status: ${user.Status}.`
-    };
-  }
+  if (!user) return { status: 'Error', message: 'Account not found.' };
+  if (user.Password !== password) return { status: 'Error', message: 'Invalid credentials.' };
+  if (user.Status !== 'Active') return { status: 'Error', message: `Your account is inactive. Status: ${user.Status}.` };
 
   if (user.MustChangePassword === true || user.MustChangePassword === 'TRUE') {
     delete user.Password;
-    return {
-      status: 'PASSWORD_CHANGE_REQUIRED',
-      user: user
-    };
+    return { status: 'PASSWORD_CHANGE_REQUIRED', user: user };
   }
 
   delete user.Password;
-
-  logAudit(
-    user.Email,
-    'LOGIN',
-    `User logged in using ${credential}`
-  );
-
-  return {
-    status: 'Success',
-    user: user
-  };
+  logAudit(user.Email, 'LOGIN', `User logged in using ${credential}`);
+  return { status: 'Success', user: user };
 }
 
 // ==========================================
@@ -421,7 +273,6 @@ function getDashboardData(currentUserEmpID, currentUserRole) {
   const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
   const hols = getSheetDataAsJSON(SHEETS.HOL);
 
-  // --- Holiday Calculations ---
   const todayHoliday = isDateHoliday(todayDate, hols);
   const upcomingHolidays = hols
     .filter(h => h.Date >= todayStr)
@@ -430,22 +281,19 @@ function getDashboardData(currentUserEmpID, currentUserRole) {
       const holDate = new Date(h.Date);
       const todayMidnight = new Date(todayStr);
       const holMidnight = new Date(holDate.getFullYear(), holDate.getMonth(), holDate.getDate());
-      const diffTime = holMidnight.getTime() - todayMidnight.getTime();
-      h.daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      h.daysLeft = Math.round((holMidnight.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24));
       return h;
     });
 
   const nextHoliday = upcomingHolidays.find(h => h.Type !== 'Weekend') || null;
 
-  // --- Attendance Calculations ---
   const activeEmployees = emps.filter(e => e.Status === 'Active' && e.Role === 'EMPLOYEE');
   const activeEmpIds = activeEmployees.map(e => e.EmpID);
 
   const presentSet = new Set();
   atts.forEach(a => {
     if (a.CheckIn && activeEmpIds.includes(a.EmpID)) {
-      let rStr = String(a.Date).split('T')[0];
-      if (rStr === todayStr) presentSet.add(a.EmpID);
+      if (String(a.Date).split('T')[0] === todayStr) presentSet.add(a.EmpID);
     }
   });
 
@@ -454,46 +302,29 @@ function getDashboardData(currentUserEmpID, currentUserRole) {
   const presentToday = todayHoliday ? 0 : presentSet.size;
   const absentToday = todayHoliday ? 0 : (activeEmployees.length - presentToday - leavesTodayCount);
 
-  // --- ROLE-BASED ATTENDANCE TREND (Last 5 Days) ---
   const trendLabels = [];
   const trendData = [];
 
   for (let i = 4; i >= 0; i--) {
     const d = new Date(todayDate.getTime() - (i * 24 * 60 * 60 * 1000));
     const dStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
-    const shortDay = Utilities.formatDate(d, Session.getScriptTimeZone(), "EEE");
-
-    trendLabels.push(shortDay);
+    trendLabels.push(Utilities.formatDate(d, Session.getScriptTimeZone(), "EEE"));
 
     if (currentUserRole === 'ADMIN') {
-      // ADMIN VIEW: Company-wide attendance percentage
       const presentOnDate = new Set();
       atts.forEach(a => {
-        if (a.CheckIn && activeEmpIds.includes(a.EmpID)) {
-          let rStr = String(a.Date).split('T')[0];
-          if (rStr === dStr) presentOnDate.add(a.EmpID);
-        }
+        if (a.CheckIn && activeEmpIds.includes(a.EmpID) && String(a.Date).split('T')[0] === dStr) presentOnDate.add(a.EmpID);
       });
-
-      const totalActive = activeEmployees.length;
-      trendData.push(totalActive > 0 ? Math.round((presentOnDate.size / totalActive) * 100) : 0);
-
+      trendData.push(activeEmployees.length > 0 ? Math.round((presentOnDate.size / activeEmployees.length) * 100) : 0);
     } else {
-      // EMPLOYEE VIEW: Personal total hours worked
       let dailyHours = 0;
       atts.forEach(a => {
-        if (a.EmpID === currentUserEmpID) {
-          let rStr = String(a.Date).split('T')[0];
-          if (rStr === dStr && a.Hours) {
-            dailyHours += Number(a.Hours);
-          }
-        }
+        if (a.EmpID === currentUserEmpID && String(a.Date).split('T')[0] === dStr && a.Hours) dailyHours += Number(a.Hours);
       });
-      trendData.push(Number(dailyHours.toFixed(2))); // Keep to 2 decimal places
+      trendData.push(Number(dailyHours.toFixed(2)));
     }
   }
 
-  // --- Return Data Payload ---
   return {
     totalEmployees: activeEmployees.length,
     presentToday: presentToday,
@@ -501,15 +332,10 @@ function getDashboardData(currentUserEmpID, currentUserRole) {
     onLeaveToday: leavesTodayCount,
     pendingLeaves: leaves.filter(l => l.Status === 'Pending').length,
     announcements: getSheetDataAsJSON(SHEETS.ANN).filter(a => a.Status === 'Active').slice(-5).reverse(),
-
     todayHoliday: todayHoliday,
     nextHoliday: nextHoliday,
     upcomingHolidays: upcomingHolidays.slice(0, 3),
-
-    attendanceTrend: {
-      labels: trendLabels,
-      data: trendData
-    }
+    attendanceTrend: { labels: trendLabels, data: trendData }
   };
 }
 
@@ -517,28 +343,18 @@ function getDashboardData(currentUserEmpID, currentUserRole) {
 // EMPLOYEE APIs
 // ==========================================
 
-// Updated Backend Code
-function getEmployees() {
-  return getSheetDataAsJSON(SHEETS.EMP).filter(e => e.Role === 'EMPLOYEE');
-}
+function getEmployees() { return getSheetDataAsJSON(SHEETS.EMP).filter(e => e.Role === 'EMPLOYEE'); }
 
 function generateEmpId() {
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-
   let id;
-
-  do {
-    id = 'EMP-' + Math.floor(100000 + Math.random() * 900000);
-  } while (employees.some(e => e.EmpID === id));
-
+  do { id = 'EMP-' + Math.floor(100000 + Math.random() * 900000); } while (employees.some(e => e.EmpID === id));
   return id;
 }
 
 function saveEmployee(empData) {
   const isNew = !empData.EmpID;
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
-  let message = isNew ? 'Employee successfully added.' : 'Employee details updated.';
-
   const tempPassword = 'Welcome@123';
 
   if (isNew) {
@@ -553,243 +369,86 @@ function saveEmployee(empData) {
 
   saveRowToSheet(SHEETS.EMP, empData, 'EmpID');
   logAudit(currentUser, isNew ? 'CREATE_EMP' : 'UPDATE_EMP', `Employee ID: ${empData.EmpID}`);
-  return {
-    status: 'Success',
-    message,
-    empId: empData.EmpID,
-    password: isNew ? tempPassword : null
-  };
+  return { status: 'Success', message: isNew ? 'Employee added.' : 'Employee updated.', empId: empData.EmpID, password: isNew ? tempPassword : null };
 }
 
 function updateEmployeeStatus(empID, status) {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
-
-  updateRowByKey(
-    SHEETS.EMP,
-    'EmpID',
-    empID,
-    {
-      Status: status,
-      ExitDate: ['Resigned', 'Terminated', 'Retired'].includes(status)
-        ? new Date()
-        : ''
-    }
-  );
-
-  logAudit(
-    currentUser,
-    'UPDATE_EMP_STATUS',
-    `Employee ${empID} status changed to ${status}`
-  );
-
-  return {
-    status: 'Success',
-    message,
-    empId: empData.EmpID,
-    password: isNew ? tempPassword : null
-  };
+  updateRowByKey(SHEETS.EMP, 'EmpID', empID, { Status: status, ExitDate: ['Resigned', 'Terminated', 'Retired'].includes(status) ? new Date() : '' });
+  logAudit(currentUser, 'UPDATE_EMP_STATUS', `Employee ${empID} status to ${status}`);
+  return { status: 'Success', message: 'Employee status updated.' };
 }
 
 function changePassword(loginId, currentPassword, newPassword) {
-
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-
   const credential = String(loginId).trim().toLowerCase();
+  const user = employees.find(e => (e.Email && e.Email.toLowerCase() === credential) || String(e.EmpID).toLowerCase() === credential);
 
-  const user = employees.find(e =>
-    (e.Email && e.Email.toLowerCase() === credential) ||
-    String(e.EmpID).toLowerCase() === credential
-  );
+  if (!user) return { status: 'Error', message: 'User not found.' };
+  if (user.Password !== currentPassword) return { status: 'Error', message: 'Current password does not match.' };
 
-  if (!user) {
-    return {
-      status: 'Error',
-      message: 'User not found.'
-    };
-  }
-
-  if (user.Password !== currentPassword) {
-    return {
-      status: 'Error',
-      message: 'Current password does not match.'
-    };
-  }
-
-  updateRowByKey(
-    SHEETS.EMP,
-    'EmpID',
-    user.EmpID,
-    {
-      Password: newPassword,
-      MustChangePassword: false
-    }
-  );
-
-  return {
-    status: 'Success',
-    message: 'Password changed successfully.'
-  };
+  updateRowByKey(SHEETS.EMP, 'EmpID', user.EmpID, { Password: newPassword, MustChangePassword: false });
+  return { status: 'Success', message: 'Password changed successfully.' };
 }
 
 function resetEmployeePassword(empId) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const employees = getSheetDataAsJSON(SHEETS.EMP);
+  const user = employees.find(e => String(e.EmpID).toLowerCase() === String(empId).trim().toLowerCase());
 
-  const currentUser =
-    Session.getActiveUser().getEmail() || 'Admin';
+  if (!user) return { status: 'Error', message: 'Employee not found.' };
 
-  const employees =
-    getSheetDataAsJSON(SHEETS.EMP);
-
-  const user = employees.find(
-    e => String(e.EmpID).toLowerCase() ===
-      String(empId).trim().toLowerCase()
-  );
-
-  if (!user) {
-    return {
-      status: 'Error',
-      message: 'Employee not found.'
-    };
-  }
-
-  updateRowByKey(
-    SHEETS.EMP,
-    'EmpID',
-    user.EmpID,
-    {
-      Password: 'Welcome@123',
-      MustChangePassword: true
-    }
-  );
-
-  logAudit(
-    currentUser,
-    'RESET_PASSWORD',
-    `Password reset for ${user.EmpID}`
-  );
-
-  return {
-    status: 'Success',
-    message: `Password reset successfully.`,
-    empId: user.EmpID,
-    password: 'Welcome@123'
-  };
+  updateRowByKey(SHEETS.EMP, 'EmpID', user.EmpID, { Password: 'Welcome@123', MustChangePassword: true });
+  logAudit(currentUser, 'RESET_PASSWORD', `Password reset for ${user.EmpID}`);
+  return { status: 'Success', message: `Password reset successfully.`, empId: user.EmpID, password: 'Welcome@123' };
 }
-
-// ==========================================
-// PROFILE APIs
-// ==========================================
 
 function updateMyProfile(empId, profileData) {
   const currentUser = Session.getActiveUser().getEmail() || empId;
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-
-  // 1. Basic validation: Check if the user exists
   const user = employees.find(e => e.EmpID === empId);
-  if (!user) {
-    return { status: 'Error', message: 'Employee not found.' };
-  }
+  
+  if (!user) return { status: 'Error', message: 'Employee not found.' };
 
-  // 2. Email uniqueness validation: Ensure the new email isn't already taken by someone else
   if (profileData.Email && profileData.Email.toLowerCase() !== user.Email.toLowerCase()) {
-    const emailTaken = employees.find(e => e.Email.toLowerCase() === profileData.Email.toLowerCase());
-    if (emailTaken) {
-      return { status: 'Error', message: 'This email address is already in use.' };
+    if (employees.find(e => e.Email.toLowerCase() === profileData.Email.toLowerCase())) {
+      return { status: 'Error', message: 'Email address already in use.' };
     }
   }
 
-  // 3. Update the specific row using your existing helper
-  const isUpdated = updateRowByKey(
-    SHEETS.EMP,
-    'EmpID',
-    empId,
-    {
-      Name: profileData.Name,
-      Email: profileData.Email
-    }
-  );
-
-  // 4. Return success/error and log the audit
-  if (isUpdated) {
-    logAudit(currentUser, 'UPDATE_PROFILE', `User ${empId} updated their profile Name/Email.`);
-    return {
-      status: 'Success',
-      message: 'Profile updated successfully!'
-    };
-  } else {
-    return {
-      status: 'Error',
-      message: 'Could not update the database.'
-    };
-  }
+  updateRowByKey(SHEETS.EMP, 'EmpID', empId, { Name: profileData.Name, Email: profileData.Email });
+  logAudit(currentUser, 'UPDATE_PROFILE', `User ${empId} updated profile.`);
+  return { status: 'Success', message: 'Profile updated successfully!' };
 }
 
 // ==========================================
-// ATTENDANCE APIs (RE-ENGINEERED)
+// ATTENDANCE APIs
 // ==========================================
 
 function getAttendanceSummary(empIdFilter = null) {
   const rawData = getSheetDataAsJSON(SHEETS.ATT);
   const settings = getAppSettings();
   const reqHours = Number(settings.DailyWorkingHours) || 8;
-  const holidays = getSheetDataAsJSON(SHEETS.HOL); // Get all holidays
 
-  let filtered = rawData;
-  if (empIdFilter) {
-    filtered = rawData.filter(r => r.EmpID === empIdFilter);
-  }
-
-  // Group by EmpID + Date
+  let filtered = empIdFilter ? rawData.filter(r => r.EmpID === empIdFilter) : rawData;
   const groups = {};
+
   filtered.forEach(row => {
-    const dStr = row.Date; // already yyyy-MM-dd
-
-    const key = row.EmpID + "_" + dStr;
-
-    if (!groups[key]) {
-      groups[key] = {
-        EmpID: row.EmpID,
-        Date: dStr,
-        TotalHours: 0,
-        Sessions: [],
-        RequiredHours: reqHours
-      };
-    }
-
+    const key = row.EmpID + "_" + row.Date;
+    if (!groups[key]) groups[key] = { EmpID: row.EmpID, Date: row.Date, TotalHours: 0, Sessions: [], RequiredHours: reqHours };
     groups[key].Sessions.push(row);
-
-    const h = Number(row.Hours);
-    if (!isNaN(h)) {
-      groups[key].TotalHours += h;
-    }
+    if (!isNaN(Number(row.Hours))) groups[key].TotalHours += Number(row.Hours);
   });
 
   const result = Object.values(groups).map(g => {
+    const hasActiveSession = g.Sessions.some(s => !s.CheckOut || s.CheckOut === "");
+    if (hasActiveSession) g.Status = 'Present';
+    else if (g.TotalHours >= g.RequiredHours) g.Status = 'Completed';
+    else if (g.TotalHours >= (g.RequiredHours / 2)) g.Status = 'Half Day';
+    else if (g.TotalHours > 0) g.Status = 'Present';
+    else g.Status = 'Absent';
 
-    const hasActiveSession = g.Sessions.some(
-      s => !s.CheckOut || s.CheckOut === ""
-    );
-
-    if (hasActiveSession) {
-      g.Status = 'Present';
-    }
-    else if (g.TotalHours >= g.RequiredHours) {
-      g.Status = 'Completed';
-    }
-    else if (g.TotalHours >= (g.RequiredHours / 2)) {
-      g.Status = 'Half Day';
-    }
-    else if (g.TotalHours > 0) {
-      g.Status = 'Present';
-    }
-    else {
-      g.Status = 'Absent';
-    }
-
-    g.Sessions.sort((a, b) =>
-      Number(String(a.CheckIn).replace(/,/g, '')) -
-      Number(String(b.CheckIn).replace(/,/g, ''))
-    );
-
+    g.Sessions.sort((a, b) => Number(String(a.CheckIn).replace(/,/g, '')) - Number(String(b.CheckIn).replace(/,/g, '')));
     return g;
   });
 
@@ -799,30 +458,22 @@ function getAttendanceSummary(empIdFilter = null) {
 
 function markAttendance(action, empId) {
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayStr = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd");
   const epochTimestamp = now.getTime();
   const currentUser = Session.getActiveUser().getEmail() || empId;
   const settings = getAppSettings();
-
   const sheet = getDb().getSheetByName(SHEETS.ATT);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
 
-  let lastRecordIndex = -1;
-  let lastCheckIn = null;
-  let lastCheckOut = null;
-  let lastDateStr = null;
-  let sessionsToday = 0;
+  let lastRecordIndex = -1, lastCheckIn = null, lastCheckOut = null, lastDateStr = null, sessionsToday = 0;
 
   for (let i = data.length - 1; i >= 1; i--) {
-    let rowEmpId = data[i][headers.indexOf('EmpID')];
-    if (rowEmpId === empId) {
-      let rawDate = data[i][headers.indexOf('Date')];
-      let d = new Date(rawDate);
+    if (data[i][headers.indexOf('EmpID')] === empId) {
+      let d = new Date(data[i][headers.indexOf('Date')]);
       if (!isNaN(d.getTime())) {
-        let rStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        let rStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
         if (rStr === todayStr) sessionsToday++;
-
         if (lastRecordIndex === -1) {
           lastRecordIndex = i + 1;
           lastCheckIn = data[i][headers.indexOf('CheckIn')];
@@ -839,92 +490,51 @@ function markAttendance(action, empId) {
     if (hasActiveSessionToday) return { status: 'Error', message: 'You have an active session! Check out first.' };
 
     let isLate = 'No';
-    if (sessionsToday === 0) { // Only check late arrival on the FIRST check-in of the day
+    if (sessionsToday === 0) {
       const [lateH, lateM] = (settings.LateArrivalTime || "09:15").split(':').map(Number);
-      const currentH = now.getHours();
-      const currentM = now.getMinutes();
+      const currentH = now.getHours(), currentM = now.getMinutes();
       if (currentH > lateH || (currentH === lateH && currentM > lateM)) isLate = 'Yes';
     }
-    Logger.log('sessionsToday = ' + sessionsToday);
-    Logger.log('isLate = ' + isLate);
-    Logger.log([
-      'ATT-' + epochTimestamp,
-      empId,
-      todayStr,
-      String(epochTimestamp),
-      "",
-      "",
-      'Present',
-      isLate
-    ]);
 
-    sheet.appendRow([
-      'ATT-' + epochTimestamp,
-      empId,
-      todayStr,
-      String(epochTimestamp),
-      "",
-      "",
-      'Present',
-      isLate
-    ]);
+    sheet.appendRow(['ATT-' + epochTimestamp, empId, todayStr, String(epochTimestamp), "", "", 'Present', isLate]);
     logAudit(currentUser, 'CHECK_IN', `Checked in at Epoch ${epochTimestamp}`);
     return { status: 'Success', message: 'Successfully checked in!' };
 
   } else if (action === 'CHECK_OUT') {
-    if (!hasActiveSessionToday) return { status: 'Error', message: 'No active Check-In found. You must Check In first.' };
+    if (!hasActiveSessionToday) return { status: 'Error', message: 'No active Check-In found.' };
 
-    const cleanCheckInStr = String(lastCheckIn).replace(/,/g, '');
-    const cInEpoch = Number(cleanCheckInStr);
+    const cInEpoch = Number(String(lastCheckIn).replace(/,/g, ''));
     let workedHours = "0.00";
-    if (!isNaN(cInEpoch) && cInEpoch > 0) {
-      workedHours = (Math.abs(epochTimestamp - cInEpoch) / 36e5).toFixed(2);
-    }
+    if (!isNaN(cInEpoch) && cInEpoch > 0) workedHours = (Math.abs(epochTimestamp - cInEpoch) / 36e5).toFixed(2);
 
-    sheet.getRange(
-      lastRecordIndex,
-      headers.indexOf('CheckOut') + 1
-    ).setValue(String(epochTimestamp));
+    sheet.getRange(lastRecordIndex, headers.indexOf('CheckOut') + 1).setValue(String(epochTimestamp));
     sheet.getRange(lastRecordIndex, headers.indexOf('Hours') + 1).setValue(workedHours);
     logAudit(currentUser, 'CHECK_OUT', `Checked out. Session Hours: ${workedHours}`);
 
     return { status: 'Success', message: 'Successfully checked out!' };
   }
-
   return { status: 'Error', message: 'Invalid action payload.' };
 }
 
 // ==========================================
-// LEAVE APIs
+// LEAVE & HOLIDAY APIs
 // ==========================================
 
 function getLeaves() { return getSheetDataAsJSON(SHEETS.LEAVE); }
 
 function applyLeave(leaveData) {
   const currentUser = Session.getActiveUser().getEmail() || leaveData.EmpID;
-
+  
   if (leaveData.Type === 'Optional Leave') {
     const holidays = getSheetDataAsJSON(SHEETS.HOL);
     const isOptHol = holidays.find(h => h.Date === leaveData.Date && h.Type === 'Optional');
+    if (!isOptHol) return { status: 'Error', message: 'The selected date is not an Optional Holiday.' };
 
-    if (!isOptHol) {
-      return { status: 'Error', message: 'The selected date is not marked as an Optional Holiday.' };
-    }
-
-    const month = leaveData.Date.substring(0, 7); // Gets 'YYYY-MM'
+    const month = leaveData.Date.substring(0, 7);
     const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
+    const existingOpt = leaves.find(l => l.EmpID === leaveData.EmpID && l.Type === 'Optional Leave' && l.StartDate.substring(0, 7) === month && l.Status !== 'Rejected');
 
-    // Check if employee already has an optional leave this month (Pending or Approved)
-    const existingOpt = leaves.find(l =>
-      l.EmpID === leaveData.EmpID &&
-      l.Type === 'Optional Leave' &&
-      l.StartDate.substring(0, 7) === month &&
-      l.Status !== 'Rejected'
-    );
-
-    if (existingOpt) {
-      return { status: 'Error', message: 'You have already selected an Optional Leave for this month.' };
-    }
+    if (existingOpt) return { status: 'Error', message: 'You have already selected an Optional Leave for this month.' };
   }
 
   leaveData.LeaveID = 'LV-' + Math.floor(100000 + Math.random() * 900000);
@@ -933,8 +543,8 @@ function applyLeave(leaveData) {
   leaveData.EndDate = leaveData.Date;
   leaveData.Days = 1;
   saveRowToSheet(SHEETS.LEAVE, leaveData, 'LeaveID');
-
-  logAudit(currentUser, 'APPLY_LEAVE', `Applied for ${leaveData.Days} day of ${leaveData.Type}`);
+  
+  logAudit(currentUser, 'APPLY_LEAVE', `Applied for ${leaveData.Type}`);
   return { status: 'Success', message: 'Leave request successfully submitted!' };
 }
 
@@ -951,10 +561,6 @@ function updateLeaveStatus(leaveId, status, remarks = '') {
   }
   return { status: 'Error', message: 'Leave request not found.' };
 }
-
-// ==========================================
-// HOLIDAY APIs
-// ==========================================
 
 function getHolidays() { return getSheetDataAsJSON(SHEETS.HOL); }
 
@@ -974,7 +580,7 @@ function deleteHoliday(holId) {
 }
 
 // ==========================================
-// ANNOUNCEMENT APIs
+// ANNOUNCEMENTS & DOCUMENTS
 // ==========================================
 
 function getAnnouncements() { return getSheetDataAsJSON(SHEETS.ANN); }
@@ -996,17 +602,9 @@ function deleteAnnouncement(annId) {
   return { status: 'Success', message: 'Announcement deleted.' };
 }
 
-// ==========================================
-// DOCUMENT APIs
-// ==========================================
-
 function uploadEmployeeDocument(fileData, docInfo, requestingEmail) {
-  const employees = getSheetDataAsJSON(SHEETS.EMP);
-  const adminUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
-
-  if (!adminUser || adminUser.Role !== 'ADMIN') {
-    throw new Error('Permission Denied: Only administrators can upload documents.');
-  }
+  const adminUser = getSheetDataAsJSON(SHEETS.EMP).find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+  if (!adminUser || adminUser.Role !== 'ADMIN') throw new Error('Permission Denied.');
 
   const { base64, mimeType, fileName } = fileData;
   const { empId, docType, month, year } = docInfo;
@@ -1020,81 +618,42 @@ function uploadEmployeeDocument(fileData, docInfo, requestingEmail) {
   const driveFile = empFolder.createFile(blob);
 
   const docId = 'DOC-' + Date.now();
-  const docSheet = getDb().getSheetByName(SHEETS.DOCUMENTS);
-  docSheet.appendRow([
-    docId, empId, fileName, docType,
-    month || '', year || '',
-    driveFile.getId(), new Date().toISOString(), requestingEmail
-  ]);
-
-  logAudit(requestingEmail, 'UPLOAD_DOCUMENT', `Uploaded '${fileName}' for employee ${empId}.`);
+  getDb().getSheetByName(SHEETS.DOCUMENTS).appendRow([docId, empId, fileName, docType, month || '', year || '', driveFile.getId(), new Date().toISOString(), requestingEmail]);
+  logAudit(requestingEmail, 'UPLOAD_DOCUMENT', `Uploaded '${fileName}' for ${empId}.`);
   return { status: 'Success', message: 'Document uploaded successfully.' };
 }
 
 function getEmployeeDocuments(requestingEmail) {
-  const employees = getSheetDataAsJSON(SHEETS.EMP);
-  const currentUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
-
-  if (!currentUser) {
-    throw new Error('Access Denied: User not found.');
-  }
-
+  const currentUser = getSheetDataAsJSON(SHEETS.EMP).find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+  if (!currentUser) throw new Error('Access Denied.');
   const allDocuments = getSheetDataAsJSON(SHEETS.DOCUMENTS);
-
-  if (currentUser.Role === 'ADMIN') {
-    return allDocuments.sort((a, b) => new Date(b.UploadDate) - new Date(a.UploadDate));
-  } else {
-    return allDocuments.filter(doc => doc.EmpID === currentUser.EmpID).sort((a, b) => new Date(b.UploadDate) - new Date(a.UploadDate));
-  }
+  if (currentUser.Role === 'ADMIN') return allDocuments.sort((a, b) => new Date(b.UploadDate) - new Date(a.UploadDate));
+  return allDocuments.filter(doc => doc.EmpID === currentUser.EmpID).sort((a, b) => new Date(b.UploadDate) - new Date(a.UploadDate));
 }
 
 function getDocumentForDownload(docId, requestingEmail) {
-  const employees = getSheetDataAsJSON(SHEETS.EMP);
-  const currentUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
-
-  const documents = getSheetDataAsJSON(SHEETS.DOCUMENTS);
-  const docMeta = documents.find(d => d.DocID === docId);
-
-  if (!docMeta) { throw new Error('Document not found.'); }
-
-  if (currentUser.Role !== 'ADMIN' && currentUser.EmpID !== docMeta.EmpID) {
-    throw new Error('Access Denied: You do not have permission to download this file.');
-  }
+  const currentUser = getSheetDataAsJSON(SHEETS.EMP).find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+  const docMeta = getSheetDataAsJSON(SHEETS.DOCUMENTS).find(d => d.DocID === docId);
+  if (!docMeta) throw new Error('Document not found.');
+  if (currentUser.Role !== 'ADMIN' && currentUser.EmpID !== docMeta.EmpID) throw new Error('Access Denied.');
 
   try {
     const file = DriveApp.getFileById(docMeta.DriveFileID);
     const blob = file.getBlob();
-    const base64 = Utilities.base64Encode(blob.getBytes());
-
-    logAudit(requestingEmail, 'DOWNLOAD_DOCUMENT', `User downloaded document ${docId} (${docMeta.FileName}).`);
-
-    return { base64: base64, fileName: docMeta.FileName, mimeType: blob.getContentType() };
-  } catch (e) {
-    throw new Error('File not found in Google Drive. It may have been deleted.');
-  }
+    logAudit(requestingEmail, 'DOWNLOAD_DOCUMENT', `User downloaded document ${docId}.`);
+    return { base64: Utilities.base64Encode(blob.getBytes()), fileName: docMeta.FileName, mimeType: blob.getContentType() };
+  } catch (e) { throw new Error('File not found in Google Drive.'); }
 }
 
 function deleteEmployeeDocument(docId, requestingEmail) {
-  const employees = getSheetDataAsJSON(SHEETS.EMP);
-  const currentUser = employees.find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+  const currentUser = getSheetDataAsJSON(SHEETS.EMP).find(e => e.Email.toLowerCase() === requestingEmail.toLowerCase());
+  if (!currentUser || currentUser.Role !== 'ADMIN') throw new Error('Permission Denied.');
+  const docMeta = getSheetDataAsJSON(SHEETS.DOCUMENTS).find(d => d.DocID === docId);
+  if (!docMeta) throw new Error('Document metadata not found.');
 
-  if (!currentUser || currentUser.Role !== 'ADMIN') {
-    throw new Error('Permission Denied: Only administrators can delete documents.');
-  }
-
-  const documents = getSheetDataAsJSON(SHEETS.DOCUMENTS);
-  const docMeta = documents.find(d => d.DocID === docId);
-
-  if (!docMeta) { throw new Error('Document metadata not found.'); }
-
-  try {
-    DriveApp.getFileById(docMeta.DriveFileID).setTrashed(true);
-  } catch (e) {
-    Logger.log(`Could not find file ${docMeta.DriveFileID} in Drive to delete. It may already be gone.`);
-  }
-
+  try { DriveApp.getFileById(docMeta.DriveFileID).setTrashed(true); } catch (e) {}
   deleteRowFromSheet(SHEETS.DOCUMENTS, 'DocID', docId);
-  logAudit(requestingEmail, 'DELETE_DOCUMENT', `Deleted document ${docId} (${docMeta.FileName}) for ${docMeta.EmpID}.`);
+  logAudit(requestingEmail, 'DELETE_DOCUMENT', `Deleted document ${docId}.`);
   return { status: 'Success', message: 'Document deleted successfully.' };
 }
 
@@ -1102,87 +661,144 @@ function deleteEmployeeDocument(docId, requestingEmail) {
 // CLIENT APIs
 // ==========================================
 
-function getClients() {
-  return getSheetDataAsJSON(SHEETS.CLIENTS);
-}
+function getClients() { return getSheetDataAsJSON(SHEETS.CLIENTS); }
+function getClientAssignments() { return getSheetDataAsJSON(SHEETS.CLIENT_ASSIGNMENTS); }
 
 function saveClient(clientData) {
   const isNew = !clientData.ClientID;
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
-
-  if (isNew) {
-    clientData.ClientID = 'CL-' + Math.floor(100000 + Math.random() * 900000);
-    clientData.CreatedAt = new Date().toISOString();
-  }
-
+  if (isNew) { clientData.ClientID = 'CL-' + Math.floor(100000 + Math.random() * 900000); clientData.CreatedAt = new Date().toISOString(); }
   saveRowToSheet(SHEETS.CLIENTS, clientData, 'ClientID');
-  logAudit(currentUser, isNew ? 'CREATE_CLIENT' : 'UPDATE_CLIENT', `Client: ${clientData.ClientName}`);
-
+  logAudit(Session.getActiveUser().getEmail() || 'Admin', isNew ? 'CREATE_CLIENT' : 'UPDATE_CLIENT', `Client: ${clientData.ClientName}`);
   return { status: 'Success', message: 'Client details saved successfully.' };
 }
 
 function deleteClient(clientId) {
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   deleteRowFromSheet(SHEETS.CLIENTS, 'ClientID', clientId);
-
-  // Clean up assignments
   const assignmentsSheet = getDb().getSheetByName(SHEETS.CLIENT_ASSIGNMENTS);
   const data = assignmentsSheet.getDataRange().getValues();
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (data[i][1] === clientId) assignmentsSheet.deleteRow(i + 1);
-  }
-
-  logAudit(currentUser, 'DELETE_CLIENT', `Removed Client ID: ${clientId}`);
+  for (let i = data.length - 1; i >= 1; i--) { if (data[i][1] === clientId) assignmentsSheet.deleteRow(i + 1); }
+  logAudit(Session.getActiveUser().getEmail() || 'Admin', 'DELETE_CLIENT', `Removed Client ID: ${clientId}`);
   return { status: 'Success', message: 'Client deleted successfully.' };
 }
 
-function getClientAssignments() {
-  return getSheetDataAsJSON(SHEETS.CLIENT_ASSIGNMENTS);
-}
-
 function assignDevelopers(clientId, empIds) {
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   const sheet = getDb().getSheetByName(SHEETS.CLIENT_ASSIGNMENTS);
   const data = sheet.getDataRange().getValues();
   const employees = getSheetDataAsJSON(SHEETS.EMP);
-
-  // Remove old assignments for this client
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (data[i][1] === clientId) sheet.deleteRow(i + 1);
-  }
-
-  // Add new assignments
+  for (let i = data.length - 1; i >= 1; i--) { if (data[i][1] === clientId) sheet.deleteRow(i + 1); }
   const today = new Date().toISOString().split('T')[0];
   empIds.forEach(empId => {
     const emp = employees.find(e => e.EmpID === empId);
-    if (emp) {
-      sheet.appendRow([
-        'ASN-' + Math.floor(100000 + Math.random() * 900000),
-        clientId,
-        empId,
-        emp.Name,
-        today,
-        'Active'
-      ]);
-    }
+    if (emp) sheet.appendRow(['ASN-' + Math.floor(100000 + Math.random() * 900000), clientId, empId, emp.Name, today, 'Active']);
   });
-
-  logAudit(currentUser, 'ASSIGN_DEVELOPERS', `Assigned ${empIds.length} developers to Client ${clientId}`);
+  logAudit(Session.getActiveUser().getEmail() || 'Admin', 'ASSIGN_DEVELOPERS', `Assigned devs to Client ${clientId}`);
   return { status: 'Success', message: 'Developers assigned successfully.' };
 }
 
 function getClientDashboardData(clientId) {
   const assignments = getSheetDataAsJSON(SHEETS.CLIENT_ASSIGNMENTS).filter(a => a.ClientID === clientId);
   const assignedEmpIds = assignments.map(a => a.EmpID);
-
-  const leaves = getSheetDataAsJSON(SHEETS.LEAVE).filter(l => assignedEmpIds.includes(l.EmpID));
-  const attendance = getSheetDataAsJSON(SHEETS.ATT).filter(a => assignedEmpIds.includes(a.EmpID));
-  const holidays = getSheetDataAsJSON(SHEETS.HOL);
-
   return {
     assignments,
-    leaves,
-    attendance,
-    holidays
+    leaves: getSheetDataAsJSON(SHEETS.LEAVE).filter(l => assignedEmpIds.includes(l.EmpID)),
+    attendance: getSheetDataAsJSON(SHEETS.ATT).filter(a => assignedEmpIds.includes(a.EmpID)),
+    holidays: getSheetDataAsJSON(SHEETS.HOL)
   };
+}
+
+// ==========================================
+// SKILLS MANAGEMENT APIs
+// ==========================================
+
+function getSkills() {
+  const skills = getSheetDataAsJSON(SHEETS.SKILLS);
+  const empSkills = getSheetDataAsJSON(SHEETS.EMP_SKILLS);
+  
+  const counts = {};
+  empSkills.forEach(es => {
+    counts[es.SkillID] = (counts[es.SkillID] || 0) + 1;
+  });
+  
+  return skills.map(s => ({
+    ...s,
+    EmpCount: counts[s.SkillID] || 0
+  }));
+}
+
+function saveSkill(skillData) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const skills = getSheetDataAsJSON(SHEETS.SKILLS);
+  
+  // Normalize the input name to prevent tricky duplicates (e.g. "React " vs "React")
+  const normalizedNewName = skillData.SkillName.trim().toLowerCase();
+  
+  // Check if this skill name already exists (ignoring the one currently being edited)
+  const duplicate = skills.find(s => 
+    s.SkillName.trim().toLowerCase() === normalizedNewName && 
+    s.SkillID !== skillData.SkillID
+  );
+
+  if (duplicate) {
+    return { status: 'Error', message: `The skill '${skillData.SkillName}' already exists in the system.` };
+  }
+
+  const isNew = !skillData.SkillID;
+  if (isNew) skillData.SkillID = 'SKL-' + Math.floor(10000 + Math.random() * 90000);
+  
+  saveRowToSheet(SHEETS.SKILLS, skillData, 'SkillID');
+  logAudit(currentUser, 'SAVE_SKILL', `Saved skill: ${skillData.SkillName}`);
+  
+  return { status: 'Success', message: 'Skill successfully saved.' };
+}
+
+function deleteSkill(skillId) {
+  deleteRowFromSheet(SHEETS.SKILLS, 'SkillID', skillId);
+  const empSheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
+  const data = empSheet.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === skillId) empSheet.deleteRow(i + 1);
+  }
+  logAudit(Session.getActiveUser().getEmail() || 'Admin', 'DELETE_SKILL', `Deleted skill ID: ${skillId}`);
+  return { status: 'Success', message: 'Skill and related employee records deleted.' };
+}
+
+function getEmployeeSkills(empId) {
+  return getSheetDataAsJSON(SHEETS.EMP_SKILLS).filter(s => s.EmpID === empId);
+}
+
+function saveEmployeeSkills(empId, skillIds) {
+  const sheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === empId) sheet.deleteRow(i + 1);
+  }
+  
+  const masterSkills = getSheetDataAsJSON(SHEETS.SKILLS);
+  const today = new Date().toISOString().split('T')[0];
+  
+  skillIds.forEach(id => {
+    const sk = masterSkills.find(s => s.SkillID === id);
+    if (sk && sk.Status === 'Active') {
+      sheet.appendRow([empId, id, sk.SkillName, sk.Category, today]);
+    }
+  });
+  
+  logAudit(Session.getActiveUser().getEmail() || empId, 'UPDATE_EMP_SKILLS', `Updated skills for ${empId}`);
+  return { status: 'Success', message: 'Your skills have been updated successfully!' };
+}
+
+function getEmployeesBySkill(skillId) {
+  const empSkills = getSheetDataAsJSON(SHEETS.EMP_SKILLS).filter(es => es.SkillID === skillId);
+  const empIds = empSkills.map(es => es.EmpID);
+  
+  if (empIds.length === 0) return [];
+  
+  const employees = getSheetDataAsJSON(SHEETS.EMP).filter(e => empIds.includes(e.EmpID));
+  
+  return employees.map(e => ({
+    Name: e.Name,
+    Designation: e.Designation,
+    Department: e.Department
+  }));
 }
