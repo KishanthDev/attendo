@@ -643,15 +643,10 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">First check-in after this time will be flagged
                   as Late.</p>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-100 dark:border-slate-700">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-slate-700">
                 <div>
                   <label class="block text-sm font-medium mb-1 dark:text-gray-200">Casual Leave Quota</label>
                   <input type="number" id="set-casual-leave" required
-                    class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Annual Holiday Quota</label>
-                  <input type="number" id="set-annual-leave" required
                     class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
                 </div>
                 <div>
@@ -1327,7 +1322,6 @@
             DailyWorkingHours: document.getElementById('set-daily-hours').value,
             LateArrivalTime: document.getElementById('set-late-time').value,
             CasualLeaveQuota: document.getElementById('set-casual-leave').value,
-            AnnualHolidayQuota: document.getElementById('set-annual-leave').value,
             OptionalLeaveQuota: document.getElementById('set-optional-leave').value
           };
           const res = await App.api('saveAppSettings', data);
@@ -1471,11 +1465,8 @@ Password: ${res.password}`
         applyLeave: async () => {
           const leaveType = document.getElementById('leave-type').value;
 
-          // Map Optional Leave to check against the Annual Holiday balance
-          const balanceKey = leaveType === 'Optional Leave' ? 'Annual Holiday' : leaveType;
-
-          if (App.state.data.leaveBalances && App.state.data.leaveBalances[balanceKey] <= 0) {
-            Swal.fire({ icon: 'error', title: 'Insufficient Balance', text: `You do not have any ${balanceKey} balance left. You have reached your limit.` });
+          if (App.state.data.leaveBalances && App.state.data.leaveBalances[leaveType] <= 0) {
+            Swal.fire({ icon: 'error', title: 'Insufficient Balance', text: `You do not have any ${leaveType} balance left. You have reached your limit.` });
             return;
           }
 
@@ -1699,9 +1690,9 @@ Password: ${res.password}`
           document.getElementById('dash-kpis').innerHTML = isAdmin ?
             kpi('Active Emp.', data.totalEmployees, iconP, 'brand') + kpi('Present', data.presentToday, iconP, 'green') +
             kpi('Absent', data.absentToday, iconP, 'red') + kpi('On Leave', data.onLeaveToday, iconH, 'orange') +
-            kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow') :
+            kpi('Pending Leaves Approval', data.pendingLeaves, iconH, 'yellow') :
             kpiSub('Next Holiday', nextHolName, nextHolSub, iconH, 'purple') +
-            kpi('My Status', data.todayHoliday ? 'Holiday' : 'Active', iconP, 'green') + kpi('Pending Leaves', data.pendingLeaves, iconH, 'yellow');
+            kpi('My Status', data.todayHoliday ? 'Holiday' : 'Active', iconP, 'green') + kpi('Pending Leaves Approval', data.pendingLeaves, iconH, 'yellow');
 
           document.getElementById('dash-holidays').innerHTML = data.upcomingHolidays.length ? data.upcomingHolidays.map(h => {
             let daysText = '';
@@ -1746,8 +1737,7 @@ Password: ${res.password}`
           document.getElementById('set-daily-hours').value = App.state.data.settings?.DailyWorkingHours || 8;
           document.getElementById('set-late-time').value = App.state.data.settings?.LateArrivalTime || "09:15";
           document.getElementById('set-casual-leave').value = App.state.data.settings?.CasualLeaveQuota || 10;
-          document.getElementById('set-annual-leave').value = App.state.data.settings?.AnnualHolidayQuota || 15;
-          document.getElementById('set-optional-leave').value = App.state.data.settings?.OptionalLeaveQuota || 5;
+          document.getElementById('set-optional-leave').value = App.state.data.settings?.OptionalLeaveQuota || 2;
         },
         profile: async () => {
 
@@ -1951,45 +1941,25 @@ Password: ${res.password}`
           const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
 
           if (isEmp) {
-            // Ensure holidays are loaded to calculate public holidays
-            if (!App.state.cache.holidays) {
-              App.state.data.holidays = await App.api('getHolidays');
-              App.state.cache.holidays = App.state.data.holidays;
-            }
-
             const quotas = {
               'Casual Leave': Number(App.state.data.settings?.CasualLeaveQuota || 10),
-              'Optional Leave': Number(App.state.data.settings?.OptionalLeaveQuota || 2),
-              'Annual Holiday': Number(App.state.data.settings?.AnnualHolidayQuota || 15)
+              'Optional Leave': Number(App.state.data.settings?.OptionalLeaveQuota || 2)
             };
-            const used = { 'Casual Leave': 0, 'Optional Leave': 0, 'Annual Holiday': 0 };
+            const used = { 'Casual Leave': 0, 'Optional Leave': 0 };
 
-            // 1. Calculate Leaves Taken
+            // Calculate Leaves Taken
             filtered.filter(l => l.Status === 'Approved' || l.Status === 'Pending').forEach(l => {
               if (l.Type === 'Casual Leave') used['Casual Leave'] += Number(l.Days || 1);
-              if (l.Type === 'Optional Leave') {
-                used['Optional Leave'] += Number(l.Days || 1);
-                if (l.Status === 'Approved') {
-                  used['Annual Holiday'] += Number(l.Days || 1); // Only confirmed optional leaves drop the annual quota
-                }
-              }
+              if (l.Type === 'Optional Leave') used['Optional Leave'] += Number(l.Days || 1);
             });
-
-            // 2. Add passed/current Public Holidays to the Annual Holiday deduction
-            const todayStr = new Date().toISOString().split('T')[0];
-            const currentYear = todayStr.substring(0, 4);
-
-            const passedPublicHols = App.state.data.holidays.filter(h =>
-              h.Type === 'Public' &&
-              h.Date.startsWith(currentYear) &&
-              h.Date <= todayStr // Only count holidays that have already passed or are today
-            ).length;
-
-            used['Annual Holiday'] += passedPublicHols;
 
             App.state.data.leaveBalances = {}; // Store for validation
 
-            document.getElementById('leave-balances-container').innerHTML = Object.keys(quotas).map(type => {
+            // Adjust the grid to have 2 columns instead of 3
+            const container = document.getElementById('leave-balances-container');
+            container.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
+
+            container.innerHTML = Object.keys(quotas).map(type => {
               const remain = quotas[type] - used[type];
               App.state.data.leaveBalances[type] = remain;
 
@@ -1998,13 +1968,10 @@ Password: ${res.password}`
 
               return `<div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm"><h4 class="font-semibold text-gray-700 dark:text-gray-100 mb-1">${type}</h4><div class="flex justify-between items-end mb-3"><span class="text-3xl font-bold dark:text-white">${remain} <span class="text-sm font-normal text-gray-500 dark:text-gray-300">left</span></span><span class="text-xs font-medium text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">${used[type]} used</span></div><div class="w-full bg-gray-100 rounded-full h-1.5 dark:bg-slate-700 overflow-hidden"><div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div></div></div>`;
             }).join('');
-            document.getElementById('leave-balances-container').classList.remove('hidden');
-            document.getElementById('btn-apply-leave').classList.remove('hidden');
-          } else {
-            document.getElementById('leave-balances-container').classList.add('hidden');
-            document.getElementById('btn-apply-leave').classList.add('hidden');
-          }
 
+            container.classList.remove('hidden');
+            document.getElementById('btn-apply-leave').classList.remove('hidden');
+          }
           // Ensure employee data is loaded to cross-reference names
           if (!App.state.data.employees || App.state.data.employees.length === 0) {
             await App.loadData.employees(true);

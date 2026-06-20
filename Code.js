@@ -310,8 +310,7 @@ function getAppSettings() {
     DailyWorkingHours: 8,
     LateArrivalTime: "09:15",
     CasualLeaveQuota: 10,
-    AnnualHolidayQuota: 15,
-    OptionalLeaveQuota: 15
+    OptionalLeaveQuota: 2
   };
 
   data.forEach(row => {
@@ -319,7 +318,6 @@ function getAppSettings() {
 
     if (key === 'DailyWorkingHours') settings.DailyWorkingHours = Number(row.Value);
     if (key === 'CasualLeaveQuota') settings.CasualLeaveQuota = Number(row.Value);
-    if (key === 'AnnualHolidayQuota') settings.AnnualHolidayQuota = Number(row.Value);
     if (key === 'OptionalLeaveQuota') settings.OptionalLeaveQuota = Number(row.Value);
 
     if (key === 'LateArrivalTime') {
@@ -339,7 +337,6 @@ function saveAppSettings(settingsData) {
   saveRowToSheet(SHEETS.SET, { Key: 'DailyWorkingHours', Value: settingsData.DailyWorkingHours }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'LateArrivalTime', Value: settingsData.LateArrivalTime }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'CasualLeaveQuota', Value: settingsData.CasualLeaveQuota }, 'Key');
-  saveRowToSheet(SHEETS.SET, { Key: 'AnnualHolidayQuota', Value: settingsData.AnnualHolidayQuota }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'OptionalLeaveQuota', Value: settingsData.OptionalLeaveQuota }, 'Key');
 
   logAudit(currentUser, 'UPDATE_SETTINGS', `Updated System Settings & Quotas`);
