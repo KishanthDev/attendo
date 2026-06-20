@@ -74,7 +74,11 @@ function setupSystem() {
   if (setSheet.getLastRow() === 1) {
     setSheet.appendRow(['DailyWorkingHours', '8']);
     setSheet.appendRow(['LateArrivalTime', '09:15']);
+    setSheet.appendRow(['SickLeaveQuota', '10']);
+    setSheet.appendRow(['CasualLeaveQuota', '10']);
+    setSheet.appendRow(['AnnualLeaveQuota', '15']);
   }
+
   // Sample Users
   const empSheet = ss.getSheetByName(SHEETS.EMP);
 
@@ -304,19 +308,21 @@ function getAppSettings() {
 
   let settings = {
     DailyWorkingHours: 8,
-    LateArrivalTime: "09:15"
+    LateArrivalTime: "09:15",
+    SickLeaveQuota: 10,
+    CasualLeaveQuota: 10,
+    AnnualLeaveQuota: 15
   };
 
   data.forEach(row => {
     const key = String(row.Key).trim();
 
-    if (key === 'DailyWorkingHours') {
-      settings.DailyWorkingHours = Number(row.Value);
-    }
+    if (key === 'DailyWorkingHours') settings.DailyWorkingHours = Number(row.Value);
+    if (key === 'SickLeaveQuota') settings.SickLeaveQuota = Number(row.Value);
+    if (key === 'CasualLeaveQuota') settings.CasualLeaveQuota = Number(row.Value);
+    if (key === 'AnnualLeaveQuota') settings.AnnualLeaveQuota = Number(row.Value);
 
-    if (row.Key === 'LateArrivalTime') {
-      Logger.log(row.Value);
-
+    if (key === 'LateArrivalTime') {
       if (row.Value instanceof Date) {
         settings.LateArrivalTime = Utilities.formatDate(
           row.Value,
@@ -324,7 +330,7 @@ function getAppSettings() {
           'HH:mm'
         );
       } else {
-        settings.LateArrivalTime = String(row.Value);
+        settings.LateArrivalTime = String(row.Value).trim();
       }
     }
   });
@@ -336,7 +342,11 @@ function saveAppSettings(settingsData) {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   saveRowToSheet(SHEETS.SET, { Key: 'DailyWorkingHours', Value: settingsData.DailyWorkingHours }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'LateArrivalTime', Value: settingsData.LateArrivalTime }, 'Key');
-  logAudit(currentUser, 'UPDATE_SETTINGS', `Working Hours: ${settingsData.DailyWorkingHours}, Late Time: ${settingsData.LateArrivalTime}`);
+  saveRowToSheet(SHEETS.SET, { Key: 'SickLeaveQuota', Value: settingsData.SickLeaveQuota }, 'Key');
+  saveRowToSheet(SHEETS.SET, { Key: 'CasualLeaveQuota', Value: settingsData.CasualLeaveQuota }, 'Key');
+  saveRowToSheet(SHEETS.SET, { Key: 'AnnualLeaveQuota', Value: settingsData.AnnualLeaveQuota }, 'Key');
+  
+  logAudit(currentUser, 'UPDATE_SETTINGS', `Updated System Settings & Leave Quotas`);
   return { status: 'Success', message: 'Settings updated successfully!' };
 }
 

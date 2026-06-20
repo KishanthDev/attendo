@@ -474,7 +474,9 @@
               class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-center">
               <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Client Details</h3>
               <div id="cd-name" class="text-2xl font-bold text-gray-800 dark:text-white">...</div>
-              <div id="cd-tech" class="text-sm font-medium text-brand-600 dark:text-brand-400 mt-1 break-words whitespace-normal max-h-20 overflow-y-auto pr-2 custom-scrollbar">...</div>
+              <div id="cd-tech"
+                class="text-sm font-medium text-brand-600 dark:text-brand-400 mt-1 break-words whitespace-normal max-h-20 overflow-y-auto pr-2 custom-scrollbar">
+                ...</div>
             </div>
             <div
               class="bg-white dark:bg-dark-card p-6 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
@@ -593,6 +595,23 @@
                   class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">First check-in after this time will be flagged
                   as Late.</p>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-100 dark:border-slate-700">
+                <div>
+                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Sick Leave Quota</label>
+                  <input type="number" id="set-sick-leave" required
+                    class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Casual Leave Quota</label>
+                  <input type="number" id="set-casual-leave" required
+                    class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1 dark:text-gray-200">Annual Leave Quota</label>
+                  <input type="number" id="set-annual-leave" required
+                    class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+                </div>
               </div>
               <button type="submit"
                 class="bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 text-white font-medium px-6 py-2.5 rounded-xl shadow-lg transition-all">Save
@@ -1250,7 +1269,13 @@
         },
 
         saveSettings: async () => {
-          const data = { DailyWorkingHours: document.getElementById('set-daily-hours').value, LateArrivalTime: document.getElementById('set-late-time').value };
+          const data = {
+            DailyWorkingHours: document.getElementById('set-daily-hours').value,
+            LateArrivalTime: document.getElementById('set-late-time').value,
+            SickLeaveQuota: document.getElementById('set-sick-leave').value,
+            CasualLeaveQuota: document.getElementById('set-casual-leave').value,
+            AnnualLeaveQuota: document.getElementById('set-annual-leave').value
+          };
           const res = await App.api('saveAppSettings', data);
           App.state.data.settings = await App.api('getAppSettings');
           Swal.fire({ icon: 'success', title: 'Settings Updated', text: res.message });
@@ -1390,12 +1415,31 @@ Password: ${res.password}`
         },
 
         applyLeave: async () => {
-          const data = { EmpID: App.state.user.EmpID, Type: document.getElementById('leave-type').value, Date: document.getElementById('leave-date').value, Remarks: document.getElementById('leave-remarks').value };
+          const leaveType = document.getElementById('leave-type').value;
+          
+          // Validate the leave balance before proceeding
+          if (App.state.data.leaveBalances && App.state.data.leaveBalances[leaveType] <= 0) {
+            Swal.fire({ 
+              icon: 'error', 
+              title: 'Insufficient Balance', 
+              text: `You do not have any ${leaveType} balance left.` 
+            });
+            return;
+          }
+
+          const data = { 
+            EmpID: App.state.user.EmpID, 
+            Type: leaveType, 
+            Date: document.getElementById('leave-date').value, 
+            Remarks: document.getElementById('leave-remarks').value 
+          };
+          
           App.ui.modals.close('leave-modal');
           const res = await App.api('applyLeave', data);
           Swal.fire({ icon: 'success', title: 'Requested', text: res.message });
           App.loadData.leaves();
         },
+
         updateLeave: async (id, status) => {
           const { value: remarks } = await Swal.fire({ title: `${status} Leave`, input: 'text', inputLabel: 'Optional Remarks', showCancelButton: true });
           if (remarks !== undefined) {
@@ -1630,6 +1674,9 @@ Password: ${res.password}`
           }
           document.getElementById('set-daily-hours').value = App.state.data.settings?.DailyWorkingHours || 8;
           document.getElementById('set-late-time').value = App.state.data.settings?.LateArrivalTime || "09:15";
+          document.getElementById('set-sick-leave').value = App.state.data.settings?.SickLeaveQuota || 10;
+          document.getElementById('set-casual-leave').value = App.state.data.settings?.CasualLeaveQuota || 10;
+          document.getElementById('set-annual-leave').value = App.state.data.settings?.AnnualLeaveQuota || 15;
         },
         profile: async () => {
 
@@ -1781,6 +1828,11 @@ Password: ${res.password}`
           if (data.length === 0) {
             tableHtml += `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-300">No records found.</td></tr>`;
           } else {
+            // Ensure employees are loaded before mapping
+            if (!App.state.data.employees || App.state.data.employees.length === 0 && !isEmp) {
+              App.loadData.employees(true); // Fire and forget fetch if missing
+            }
+
             data.forEach((group, i) => {
               const th = group.TotalHours;
               const hrs = Math.floor(th);
@@ -1792,11 +1844,15 @@ Password: ${res.password}`
               else if (group.Status === 'Present') clr = 'bg-blue-100 text-blue-700 dark:text-blue-300 dark:bg-blue-900/30';
               else if (group.Status === 'Holiday') clr = 'bg-purple-100 text-purple-700 dark:text-purple-300 dark:bg-purple-900/30';
 
+              // Map ID to Name
+              const emp = App.state.data.employees?.find(e => e.EmpID === group.EmpID);
+              const empName = emp ? emp.Name : group.EmpID;
+
               tableHtml += `
                 <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-colors" onclick="document.getElementById('child-row-${i}').classList.toggle('hidden')">
                   <td class="px-4 py-3"><svg class="w-4 h-4 text-gray-400 dark:text-gray-200 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></td>
                   <td class="px-4 py-3 font-medium dark:text-white">${formatDate(group.Date)}</td>
-                  ${!isEmp ? `<td class="px-4 py-3 text-gray-500 dark:text-gray-300">${group.EmpID}</td>` : ''}
+                  ${!isEmp ? `<td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${group.EmpID}</div></td>` : ''}
                   <td class="px-4 py-3 text-gray-600 dark:text-gray-200">${group.Sessions.length} Session(s)</td>
                   <td class="px-4 py-3 font-semibold dark:text-white">${hrs}h ${mins}m</td>
                   <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${clr}">${group.Status}</span></td>
@@ -1824,16 +1880,38 @@ Password: ${res.password}`
           const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
 
           if (isEmp) {
-            const quotas = { 'Sick Leave': 10, 'Casual Leave': 10, 'Annual Leave': 15 };
+            const quotas = { 
+              'Sick Leave': Number(App.state.data.settings?.SickLeaveQuota || 10), 
+              'Casual Leave': Number(App.state.data.settings?.CasualLeaveQuota || 10), 
+              'Annual Leave': Number(App.state.data.settings?.AnnualLeaveQuota || 15) 
+            };
             const used = { 'Sick Leave': 0, 'Casual Leave': 0, 'Annual Leave': 0 };
-            filtered.filter(l => l.Status === 'Approved').forEach(l => { if (used[l.Type] !== undefined) used[l.Type] += Number(l.Days || 1); });
+            
+            // Include both Approved and Pending so they can't overdraw while waiting for approval
+            filtered.filter(l => l.Status === 'Approved' || l.Status === 'Pending').forEach(l => { 
+              if (used[l.Type] !== undefined) used[l.Type] += Number(l.Days || 1); 
+            });
+
+            App.state.data.leaveBalances = {}; // Store for validation
+
             document.getElementById('leave-balances-container').innerHTML = Object.keys(quotas).map(type => {
               const remain = quotas[type] - used[type];
+              App.state.data.leaveBalances[type] = remain; // Save to state
+              
               const pct = (used[type] / quotas[type]) * 100;
               return `<div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm"><h4 class="font-semibold text-gray-700 dark:text-gray-100 mb-1">${type}</h4><div class="flex justify-between items-end mb-3"><span class="text-3xl font-bold dark:text-white">${remain} <span class="text-sm font-normal text-gray-500 dark:text-gray-300">left</span></span><span class="text-xs font-medium text-gray-500 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">${used[type]} used</span></div><div class="w-full bg-gray-100 rounded-full h-1.5 dark:bg-slate-700 overflow-hidden"><div class="bg-brand-500 h-full rounded-full" style="width: ${pct}%"></div></div></div>`;
             }).join('');
             document.getElementById('leave-balances-container').classList.remove('hidden');
             document.getElementById('btn-apply-leave').classList.remove('hidden');
+          } else {
+            // Explicitly hide these elements for Admins
+            document.getElementById('leave-balances-container').classList.add('hidden');
+            document.getElementById('btn-apply-leave').classList.add('hidden');
+          }
+
+          // Ensure employee data is loaded to cross-reference names
+          if (!App.state.data.employees || App.state.data.employees.length === 0) {
+            await App.loadData.employees(true);
           }
 
           App.ui.render.table('leaves-table', ['Req. ID', 'Employee', 'Type', 'Date', 'Status', 'Remarks', 'Actions'], filtered,
@@ -1844,7 +1922,20 @@ Password: ${res.password}`
               const dStr = row.StartDate.split('T')[0];
               const parts = dStr.split('-');
               const niceDate = parts.length === 3 ? `${parts[1]}-${parts[2]}-${parts[0]}` : dStr;
-              return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"><td class="px-4 py-3 font-medium dark:text-white">${row.LeaveID}</td><td class="px-4 py-3 text-gray-500 dark:text-gray-300">${row.EmpID}</td><td class="px-4 py-3 dark:text-gray-100">${row.Type}</td><td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-300">${niceDate}</td><td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${clr}">${row.Status}</span></td><td class="px-4 py-3 text-xs max-w-[150px] truncate dark:text-gray-200" title="${row.Remarks}">${row.Remarks || '-'}</td><td class="px-4 py-3">${acts}</td></tr>`;
+              
+              // Map ID to Name
+              const emp = App.state.data.employees.find(e => e.EmpID === row.EmpID);
+              const empName = emp ? emp.Name : row.EmpID;
+
+              return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                <td class="px-4 py-3 font-medium dark:text-white">${row.LeaveID}</td>
+                <td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${row.EmpID}</div></td>
+                <td class="px-4 py-3 dark:text-gray-100">${row.Type}</td>
+                <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-300">${niceDate}</td>
+                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${clr}">${row.Status}</span></td>
+                <td class="px-4 py-3 text-xs max-w-[150px] truncate dark:text-gray-200" title="${row.Remarks}">${row.Remarks || '-'}</td>
+                <td class="px-4 py-3">${acts}</td>
+              </tr>`;
             }
           );
         },
