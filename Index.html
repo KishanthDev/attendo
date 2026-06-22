@@ -348,6 +348,25 @@
           </div>
         </div>
 
+        <!-- SKILL MATRIX CARDS VIEW -->
+        <div id="view-skill-matrix" class="view-section space-y-6">
+          <div
+            class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 class="text-xl font-bold dark:text-white">Skill Matrix Cards</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-300 mt-1">Create skill cards, define skills as labels, and
+                assign employees to cover talent gaps.</p>
+            </div>
+            <button onclick="App.actions.addSkillCard()"
+              class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all">
+              + Add New Card
+            </button>
+          </div>
+
+          <!-- The Kanban-style Grid for Cards -->
+          <div id="skill-matrix-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start"></div>
+        </div>
+
         <div id="view-skills-master" class="view-section space-y-4">
           <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
@@ -901,6 +920,24 @@
     </div>
   </div>
 
+  <!-- View Category Team Modal -->
+  <div id="view-category-modal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50 shrink-0">
+        <h3 class="text-lg font-bold dark:text-white">Category Team</h3>
+        <button onclick="App.ui.modals.close('view-category-modal')" class="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="p-4 border-b border-gray-100 dark:border-dark-border shrink-0 bg-indigo-50/50 dark:bg-indigo-900/10 flex flex-col gap-1">
+        <h4 id="view-category-name" class="font-bold text-xl dark:text-white">Category: -</h4>
+        <p class="text-sm font-medium text-indigo-600 dark:text-indigo-400">Employees proficient in this area</p>
+      </div>
+      <div id="category-employees-list" class="overflow-y-auto p-2 custom-scrollbar flex-1">
+      </div>
+    </div>
+  </div>
+
   <div id="assign-dev-modal"
     class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -1123,6 +1160,7 @@
           case 'clients': App.state.cache.clients = null; await App.loadData.clients(true); break;
           case 'client-details': await App.loadData['client-details'](); break;
           case 'skills-master': App.state.cache.skills = null; await App.loadData['skills-master'](true); break;
+          case 'skill-matrix': App.state.cache.skills = null; await App.loadData['skill-matrix'](true); break;
           case 'my-skills': App.state.cache.mySkills = null; App.state.cache.skills = null; await App.loadData['my-skills'](true); break;
         }
       },
@@ -1267,6 +1305,7 @@
           ]);
 
           if (App.state.currentView === 'skills-master') await App.loadData['skills-master'](true);
+
           if (App.state.currentView === 'my-skills') await App.loadData['my-skills'](true);
           if (App.state.currentView === 'clients') await App.loadData.clients(true);
           if (App.state.currentView === 'client-details') await App.loadData['client-details']();
@@ -1624,8 +1663,61 @@
 
           App.ui.modals.close('skill-modal');
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
+          // FIX: Dynamically refresh the active view
           App.state.cache.skills = null;
-          App.loadData['skills-master'](true);
+          if (App.state.currentView === 'skills-master') {
+            App.loadData['skills-master'](true);
+          } else if (App.state.currentView === 'skill-matrix') {
+            App.loadData['skill-matrix'](true);
+          }
+        },
+
+        assignEmployeeToSkill: async (skillId, skillName, category) => {
+          const select = document.getElementById('assign-skill-emp-select');
+          const empId = select.value;
+
+          if (!empId) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Please select an employee first.', showConfirmButton: false, timer: 2000 });
+            return;
+          }
+
+          const res = await App.api('assignEmployeeToSkill', skillId, empId);
+          if (res.status === 'Error') {
+            Swal.fire({ icon: 'error', title: 'Action Failed', text: res.message });
+            return;
+          }
+
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+
+          // FIX: Dynamically refresh the active view
+          App.state.cache.skills = null;
+          if (App.state.currentView === 'skills-master') App.loadData['skills-master'](true);
+          if (App.state.currentView === 'skill-matrix') App.loadData['skill-matrix'](true);
+
+          // Refresh the modal content
+          App.ui.modals.viewSkill(skillId, skillName, category);
+        },
+
+        removeEmployeeFromSkill: async (skillId, empId, skillName, category) => {
+          const confirm = await Swal.fire({ title: 'Remove Employee?', text: "Are you sure you want to remove this employee from this skill?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, remove' });
+
+          if (confirm.isConfirmed) {
+            const res = await App.api('removeEmployeeFromSkill', skillId, empId);
+            if (res.status === 'Error') {
+              Swal.fire({ icon: 'error', title: 'Action Failed', text: res.message });
+              return;
+            }
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+
+            // FIX: Dynamically refresh the active view
+            App.state.cache.skills = null;
+            if (App.state.currentView === 'skills-master') App.loadData['skills-master'](true);
+            if (App.state.currentView === 'skill-matrix') App.loadData['skill-matrix'](true);
+
+            // Refresh the modal content
+            App.ui.modals.viewSkill(skillId, skillName, category);
+          }
         },
 
         deleteSkill: async (id) => {
@@ -1638,9 +1730,10 @@
             }
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
             App.state.cache.skills = null;
-            App.state.cache.mySkills = null;
+            // At the bottom of App.actions.saveSkill
+            App.state.cache.skills = null;
             if (App.state.currentView === 'skills-master') App.loadData['skills-master'](true);
-            if (App.state.currentView === 'my-skills') App.loadData['my-skills'](true);
+            if (App.state.currentView === 'skill-matrix') App.loadData['skill-matrix'](true);
           }
         },
 
@@ -1741,6 +1834,49 @@
             App.ui.modals.viewSkill(skillId, skillName, category);
           }
         },
+
+        rejectSkill: async (id) => {
+          const confirm = await Swal.fire({
+            title: 'Reject Skill?',
+            text: "The employee will be notified that this skill was rejected.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Yes, reject'
+          });
+
+          if (confirm.isConfirmed) {
+            const res = await App.api('rejectSkill', id);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+            App.state.cache.skills = null;
+            App.loadData['skills-master'](true);
+          }
+        },
+
+        addSkillCard: async () => {
+          const { value: cardName } = await Swal.fire({
+            title: 'Add New Skill Card',
+            input: 'text',
+            inputPlaceholder: 'e.g., Databases, Design, QA...',
+            showCancelButton: true,
+            confirmButtonText: 'Create Card',
+            inputValidator: (value) => {
+              if (!value) return 'Card name is required!';
+            }
+          });
+
+          if (cardName) {
+            const res = await App.api('addSkillCategory', cardName);
+            if (res.status === 'Success') {
+              App.state.data.settings.SkillCategories = res.categories;
+              App.loadData['skill-matrix'](); // Render instantly
+              Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Card Created', showConfirmButton: false, timer: 2000 });
+            } else {
+              Swal.fire({ icon: 'warning', title: 'Duplicate', text: res.message });
+            }
+          }
+        },
+
       },
 
       ui: {
@@ -1786,28 +1922,74 @@
           document.getElementById('sidebar-overlay').classList.toggle('hidden');
         },
         modals: {
-          openReviewSkills: () => {
-            const privateSkills = App.state.data.skills.filter(s => s.Visibility === 'PRIVATE');
+          viewCategory: async (categoryName) => {
+            document.getElementById('view-category-name').innerText = `Category: ${categoryName}`;
+            document.getElementById('category-employees-list').innerHTML = '<div class="text-center py-8 text-gray-500">Loading...</div>';
+            App.ui.modals.open('view-category-modal');
+
+            try {
+              const employees = await App.api('getEmployeesByCategory', categoryName);
+              const listContainer = document.getElementById('category-employees-list');
+
+              if (employees.length === 0) {
+                listContainer.innerHTML = '<div class="text-center py-10 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800/30 rounded-xl mx-4 my-2">No employees found for this category yet.</div>';
+                return;
+              }
+
+              listContainer.innerHTML = employees.map((emp, index) => `
+                <div class="flex items-start gap-4 p-4 border-b border-gray-50 dark:border-slate-700/50 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors mx-2 rounded-xl">
+                  <div class="font-bold text-gray-400 dark:text-gray-500 w-6 pt-0.5">${index + 1}.</div>
+                  <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                       <div class="font-bold text-gray-900 dark:text-white text-base">${emp.Name}</div>
+                       <span class="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-white dark:bg-dark-card border border-gray-100 dark:border-slate-700 px-2 py-0.5 rounded">${emp.EmpID}</span>
+                    </div>
+                    <div class="text-sm font-medium text-gray-600 dark:text-gray-300 mt-0.5">${emp.Designation} • ${emp.Department}</div>
+                    <div class="text-xs text-brand-600 dark:text-brand-400 font-semibold mt-2 bg-brand-50 dark:bg-brand-900/20 px-2 py-1 rounded inline-block">
+                       Skills: <span class="text-gray-700 dark:text-gray-300 font-normal">${emp.Skills}</span>
+                    </div>
+                  </div>
+                </div>
+              `).join('');
+            } catch (e) {
+              document.getElementById('category-employees-list').innerHTML = '<div class="text-center py-8 text-red-500">Error loading data.</div>';
+            }
+          },
+          openReviewSkills: async () => {
+            // Ensure employee data is loaded so we can cross-reference the name
+            if (!App.state.data.employees || App.state.data.employees.length === 0) {
+              await App.loadData.employees(true);
+            }
+
+            // Only show PRIVATE skills that haven't been rejected yet
+            const privateSkills = App.state.data.skills.filter(s => s.Visibility === 'PRIVATE' && s.Status !== 'Rejected');
             const listContainer = document.getElementById('review-skills-list');
 
             if (privateSkills.length === 0) {
               listContainer.innerHTML = '<div class="text-center py-10 text-gray-500">No pending personal skills to review.</div>';
             } else {
-              listContainer.innerHTML = privateSkills.map(s => `
+              listContainer.innerHTML = privateSkills.map(s => {
+                // Cross-reference ID to get the Name
+                const emp = App.state.data.employees.find(e => e.EmpID === s.CreatedBy);
+                const empName = emp ? emp.Name : s.CreatedBy;
+
+                return `
                 <div class="flex items-center justify-between p-4 border border-gray-100 dark:border-slate-700 rounded-xl mb-3 bg-gray-50 dark:bg-slate-800/30">
                   <div>
                     <h4 class="font-bold text-gray-900 dark:text-white text-lg">${s.SkillName}</h4>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Category: <span class="font-semibold">${s.Category}</span> | Proposed by: <span class="font-semibold text-brand-600 dark:text-brand-400">${s.CreatedBy}</span></p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Category: <span class="font-semibold">${s.Category}</span> | Proposed by: <span class="font-semibold text-brand-600 dark:text-brand-400">${empName}</span></p>
                   </div>
                   <div class="flex gap-2">
-                    <button onclick="App.actions.promoteSkill('${s.SkillID}'); App.ui.modals.close('review-skills-modal');" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg shadow-md transition-all">Approve & Promote</button>
-                    <button onclick="App.actions.deleteSkill('${s.SkillID}'); App.ui.modals.close('review-skills-modal');" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-sm font-medium rounded-lg transition-colors">Reject</button>
+                    <button onclick="App.actions.promoteSkill('${s.SkillID}'); App.ui.modals.close('review-skills-modal');" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg shadow-md transition-all">Approve</button>
+                    <button onclick="App.actions.rejectSkill('${s.SkillID}'); App.ui.modals.close('review-skills-modal');" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-sm font-medium rounded-lg transition-colors">Reject</button>
                   </div>
                 </div>
-              `).join('');
+                `;
+              }).join('');
             }
             App.ui.modals.open('review-skills-modal');
           },
+
           openClient: (id) => {
             document.getElementById('client-form').reset();
             document.getElementById('cl-id').value = '';
@@ -1898,15 +2080,45 @@
             document.getElementById('dev-checkbox-list').innerHTML = devListHtml;
             App.ui.modals.open('assign-dev-modal');
           },
-          openSkill: (id) => {
+          openSkill: async (id, prefillCat = null) => {
             document.getElementById('skill-form').reset();
             document.getElementById('skill-id').value = '';
             document.getElementById('skill-modal-title').innerText = 'Add Skill';
+
+            // Ensure settings are completely fresh so new cards show up
+            if (!App.state.data.settings || !App.state.data.settings.SkillCategories) {
+              App.state.data.settings = await App.api('getAppSettings');
+            }
+
+            // Build dynamic dropdown for categories
+            let catsStr = App.state.data.settings?.SkillCategories || 'Languages,Frameworks,DevOps,Cloud,AI,Other';
+            let categories = catsStr.split(',').map(c => c.trim());
+
+            if (App.state.data.skills) {
+              App.state.data.skills.forEach(s => {
+                if (!categories.includes(s.Category)) categories.push(s.Category);
+              });
+            }
+
+            const catSelect = document.getElementById('skill-cat');
+            catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            // If we opened this from a specific Card, pre-select that category
+            if (prefillCat) {
+              catSelect.value = prefillCat;
+            }
+
             if (id) {
               const sk = App.state.data.skills.find(s => s.SkillID === id);
               if (sk) {
                 document.getElementById('skill-id').value = sk.SkillID;
-                document.getElementById('skill-cat').value = sk.Category;
+
+                // If editing a skill with a category not in the list, add it
+                if (!categories.includes(sk.Category)) {
+                  catSelect.innerHTML += `<option value="${sk.Category}">${sk.Category}</option>`;
+                }
+
+                catSelect.value = sk.Category;
                 document.getElementById('skill-name').value = sk.SkillName;
                 document.getElementById('skill-status').value = sk.Status;
                 document.getElementById('skill-modal-title').innerText = 'Edit Skill';
@@ -1965,6 +2177,7 @@
             { id: 'leaves', label: 'Leaves', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'holidays', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'skills-master', label: 'Skills Master', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', roles: ['ADMIN'] },
+            { id: 'skill-matrix', label: 'Skill Matrix', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', roles: ['ADMIN'] },
             { id: 'clients', label: 'Clients', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', roles: ['ADMIN'] },
             { id: 'my-skills', label: 'My Skills', icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z', roles: ['EMPLOYEE'] },
             { id: 'documents', label: 'Documents', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
@@ -1986,6 +2199,7 @@
             leaves: 'Leave Management',
             holidays: 'Holiday Calendar',
             'skills-master': 'Skills Master Repository',
+            'skill-matrix': 'Skill Matrix Dashboard',
             'my-skills': 'My Skill Portfolio',
             announcements: 'Announcements',
             documents: 'Document Center',
@@ -2118,6 +2332,71 @@
       },
 
       loadData: {
+        'skill-matrix': async (force = false) => {
+          if (!force && App.state.cache.skills) {
+            App.state.data.skills = App.state.cache.skills;
+          } else {
+            App.state.data.skills = await App.api('getSkills', App.state.user.EmpID, App.state.user.Role);
+            App.state.cache.skills = App.state.data.skills;
+          }
+
+          // Get saved cards (categories)
+          let catsStr = App.state.data.settings?.SkillCategories || 'Languages,Frameworks,DevOps,Cloud,AI,Other';
+          let categories = catsStr.split(',').map(c => c.trim());
+
+          // Ensure any category already attached to an active skill is shown
+          App.state.data.skills.forEach(s => {
+            if (!categories.includes(s.Category)) categories.push(s.Category);
+          });
+
+          const grid = document.getElementById('skill-matrix-grid');
+
+          grid.innerHTML = categories.map(cat => {
+            const catSkills = App.state.data.skills.filter(s => s.Category === cat && s.Status !== 'Rejected');
+
+            const skillsHtml = catSkills.map(s => {
+              const hasZero = s.EmpCount === 0;
+
+              // Highlight skills that have 0 employees (Talent Gap)
+              let pillClass = "bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-200 border-gray-200 dark:border-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 dark:hover:bg-brand-900/30 dark:hover:text-brand-300";
+              let countClass = "bg-white dark:bg-dark-card text-gray-700 dark:text-white";
+
+              if (hasZero) {
+                pillClass = "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800/50 dark:text-orange-400 shadow-sm ring-1 ring-orange-400 ring-offset-1 dark:ring-offset-dark-card";
+                countClass = "bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300";
+              }
+
+              return `
+                  <div onclick="App.ui.modals.viewSkill('${s.SkillID}', '${s.SkillName.replace(/'/g, "\\'")}', '${s.Category}')" 
+                       class="flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm font-medium cursor-pointer transition-colors ${pillClass}">
+                      <span>${s.SkillName}</span>
+                      <span class="flex items-center justify-center min-w-[20px] h-5 rounded-full text-[10px] border border-inherit font-bold ${countClass}" title="${s.EmpCount} Employees Assigned">${s.EmpCount || 0}</span>
+                  </div>`;
+            }).join('');
+
+           return `
+              <div class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col h-full overflow-hidden hover:shadow-md transition-shadow">
+                 <div class="p-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/30">
+                    <h4 class="font-bold text-gray-800 dark:text-white">${cat}</h4>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-xs font-semibold text-gray-500 bg-white dark:bg-dark-card px-2 py-1 rounded-md border border-gray-100 dark:border-slate-700">${catSkills.length} Skills</span>
+                      <button onclick="App.ui.modals.viewCategory('${cat}')" class="p-1.5 text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/30 rounded-lg transition-colors" title="View all employees in ${cat}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                      </button>
+                    </div>
+                 </div>
+                 <div class="p-4 flex-1 flex flex-wrap gap-2 content-start min-h-[100px]">
+                    ${skillsHtml || '<p class="text-sm text-gray-400 italic w-full text-center py-4">No skills added yet.</p>'}
+                 </div>
+                 <div class="p-3 border-t border-gray-50 dark:border-slate-700/50 bg-gray-50/30 dark:bg-slate-800/10">
+                    <button onclick="App.ui.modals.openSkill(null, '${cat}')" class="w-full py-2 flex items-center justify-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40 rounded-xl transition-colors">
+                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                       Add Skill to Card
+                    </button>
+                 </div>
+              </div>`;
+          }).join('');
+        },
         dashboard: async () => {
           const data = await App.api('getDashboardData', App.state.user.EmpID, App.state.user.Role);
           App.state.data.todayHoliday = data.todayHoliday;
@@ -2433,10 +2712,10 @@
 
           const allSkills = App.state.data.skills;
 
-          // --- NEW: Calculate & Render 3 Main Overview Metrics ---
+          // --- FIX: Filter out 'Rejected' skills from the pending personal skills count ---
           const totalSkills = allSkills.length;
-          const personalSkills = allSkills.filter(s => s.Visibility === 'PRIVATE').length;
-          const masterSkills = totalSkills - personalSkills;
+          const personalSkills = allSkills.filter(s => s.Visibility === 'PRIVATE' && s.Status !== 'Rejected').length;
+          const masterSkills = totalSkills - allSkills.filter(s => s.Visibility === 'PRIVATE').length;
 
           const reviewBtnHtml = personalSkills > 0
             ? `<button onclick="App.ui.modals.openReviewSkills()" class="p-3 bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-200 transition-colors shadow-sm" title="Review Pending Skills">
@@ -2496,22 +2775,36 @@
             return a.Category.localeCompare(b.Category);
           });
 
-          App.ui.render.table('skills-table', ['Skill Name', 'Category', 'Status', 'Users', 'Actions'], displaySkills, row => {
-            let statusClr = row.Status === 'Active' ? 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400' : 'text-gray-600 bg-gray-50 dark:bg-slate-700 dark:text-gray-400';
+          App.ui.render.table('skills-table', ['Skill Name', 'Category', 'Status', 'Employees', 'Actions'], displaySkills, row => {
+
+            let statusClr = row.Status === 'Active' ? 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400' :
+              row.Status === 'Rejected' ? 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400' :
+                'text-gray-600 bg-gray-50 dark:bg-slate-700 dark:text-gray-400';
+
             let visibilityBadge = row.Visibility === 'PRIVATE' ? `<span class="ml-2 px-2 py-0.5 text-[9px] font-bold rounded-full bg-purple-50 text-purple-600 border border-purple-200">PRIVATE</span>` : '';
 
-            let promoteBtn = row.Visibility === 'PRIVATE' ? `<button onclick="App.actions.promoteSkill('${row.SkillID}')" class="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg" title="Promote to Master"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7"></path></svg></button>` : '';
+            let promoteBtn = (row.Visibility === 'PRIVATE' && row.Status !== 'Rejected') ?
+              `<button onclick="App.actions.promoteSkill('${row.SkillID}')" class="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg" title="Promote to Master"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7"></path></svg></button>`
+              : '';
+
+            // NEW: Visual indicator for skills with 0 employees (Talent Gap)
+            let empCountDisplay = (row.EmpCount && row.EmpCount > 0)
+              ? `<span class="font-bold text-gray-800 dark:text-white">${row.EmpCount}</span>`
+              : `<div class="flex items-center gap-2">
+                   <span class="font-bold text-gray-400">0</span>
+                   <span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/50 uppercase tracking-wider">Needs Hiring / Training</span>
+                 </div>`;
 
             return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                <td class="px-4 py-3 font-bold dark:text-white flex items-center">${row.SkillName} ${visibilityBadge}</td>
                <td class="px-4 py-3 text-gray-600 dark:text-gray-200">${row.Category}</td>
                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${statusClr}">${row.Status}</span></td>
-               <td class="px-4 py-3 font-semibold dark:text-white">${row.EmpCount || 0}</td>
+               <td class="px-4 py-3">${empCountDisplay}</td>
                <td class="px-4 py-3 flex gap-2">
                  ${promoteBtn}
-                 <button onclick="App.ui.modals.viewSkill('${row.SkillID}', '${row.SkillName.replace(/'/g, "\\'")}', '${row.Category}')" class="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg" title="View Employees"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
-                 <button onclick="App.ui.modals.openSkill('${row.SkillID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                 <button onclick="App.actions.deleteSkill('${row.SkillID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                 <button onclick="App.ui.modals.viewSkill('${row.SkillID}', '${row.SkillName.replace(/'/g, "\\'")}', '${row.Category}')" class="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 dark:text-green-300 dark:bg-green-900/30 rounded-lg" title="View / Assign Employees"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
+                 <button onclick="App.ui.modals.openSkill('${row.SkillID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                 <button onclick="App.actions.deleteSkill('${row.SkillID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 rounded-lg" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                </td>
              </tr>`;
           });
@@ -2523,7 +2816,7 @@
             App.state.data.skills = await App.api('getSkills', App.state.user.EmpID, App.state.user.Role);
             App.state.cache.skills = App.state.data.skills;
           }
-          // ... (keep the rest)
+
           if (!force && App.state.cache.mySkills) {
             App.state.data.mySkills = App.state.cache.mySkills;
           } else {
@@ -2531,13 +2824,23 @@
             App.state.cache.mySkills = App.state.data.mySkills;
           }
 
-          const allActive = App.state.data.skills.filter(s => s.Status === 'Active');
-          const mySkillIds = App.state.data.mySkills.map(s => s.SkillID);
+          // FIX: Keep 'Rejected' skills ONLY if the current employee created them
+          const allRelevant = App.state.data.skills.filter(s =>
+            s.Status === 'Active' || (s.Status === 'Rejected' && s.CreatedBy === App.state.user.EmpID)
+          );
 
+          // FIX: Sort so rejected skills appear at the very top of their categories
+          allRelevant.sort((a, b) => {
+            if (a.Status === 'Rejected' && b.Status !== 'Rejected') return -1;
+            if (a.Status !== 'Rejected' && b.Status === 'Rejected') return 1;
+            return a.SkillName.localeCompare(b.SkillName);
+          });
+
+          const mySkillIds = App.state.data.mySkills.map(s => s.SkillID);
           document.getElementById('my-skills-count').innerText = `${mySkillIds.length} Selected`;
 
           const groups = {};
-          allActive.forEach(s => {
+          allRelevant.forEach(s => {
             if (!groups[s.Category]) groups[s.Category] = [];
             groups[s.Category].push(s);
           });
@@ -2547,17 +2850,23 @@
             const itemsHtml = groups[cat].map(s => {
               const isChecked = mySkillIds.includes(s.SkillID) ? 'checked' : '';
 
-              // Only allow delete if they created it AND it hasn't been promoted yet
+              // Badge and styling for rejected skills
+              const isRejected = s.Status === 'Rejected';
+              const rejectedBadge = isRejected ? `<span class="ml-2 px-1.5 py-0.5 text-[8px] font-bold rounded-md bg-red-100 text-red-600 border border-red-200">REJECTED</span>` : '';
+              const containerBg = isRejected ? 'bg-red-50/40 dark:bg-red-900/10 border-red-200 dark:border-red-900/50' : 'border-gray-200 dark:border-slate-600';
+              const textStyle = isRejected ? 'text-gray-400 dark:text-gray-500 line-through' : 'dark:text-white';
+
+              // Only allow delete if they created it AND it hasn't been promoted
               const canDelete = s.CreatedBy === App.state.user.EmpID && s.Visibility === 'PRIVATE';
-              const deleteIcon = canDelete ? `<button onclick="event.preventDefault(); App.actions.deleteSkill('${s.SkillID}')" class="ml-auto text-gray-400 hover:text-red-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : '';
+              const deleteIcon = canDelete ? `<button onclick="event.preventDefault(); App.actions.deleteSkill('${s.SkillID}')" class="ml-auto p-1.5 bg-white dark:bg-dark-card rounded-md border border-gray-200 dark:border-slate-600 text-gray-400 hover:text-red-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : '';
 
               return `
-              <label class="flex items-center gap-3 p-3 border border-gray-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:bg-brand-50 has-[:checked]:border-brand-500 dark:has-[:checked]:bg-brand-900/20 dark:has-[:checked]:border-brand-400">
-                <input type="checkbox" class="skill-cb w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500 dark:bg-slate-700 dark:border-slate-500 dark:checked:bg-brand-500" value="${s.SkillID}" ${isChecked} onchange="
-                  const count = document.querySelectorAll('.skill-cb:checked').length;
+              <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:bg-brand-50 has-[:checked]:border-brand-500 dark:has-[:checked]:bg-brand-900/20 dark:has-[:checked]:border-brand-400 ${containerBg}">
+                <input type="checkbox" class="skill-cb w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500 dark:bg-slate-700 dark:border-slate-500 dark:checked:bg-brand-500" value="${s.SkillID}" ${isChecked} ${isRejected ? 'disabled' : ''} onchange="
+                  const count = document.querySelectorAll('.skill-cb:checked:not(:disabled)').length;
                   document.getElementById('my-skills-count').innerText = count + ' Selected';
                 ">
-                <span class="text-sm font-medium dark:text-white select-none">${s.SkillName}</span>
+                <span class="text-sm font-medium select-none flex items-center ${textStyle}">${s.SkillName} ${rejectedBadge}</span>
                 ${deleteIcon}
               </label>`;
             }).join('');
@@ -2565,7 +2874,7 @@
             return `
             <div class="bg-gray-50/50 dark:bg-slate-800/30 rounded-2xl p-5 border border-gray-100 dark:border-dark-border">
               <h4 class="font-bold text-gray-800 dark:text-white mb-4 uppercase tracking-wider text-xs">${cat}</h4>
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 ${itemsHtml}
               </div>
             </div>`;

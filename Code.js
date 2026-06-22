@@ -884,3 +884,73 @@ function removeEmployeeFromSkill(skillId, empId) {
   }
   return { status: 'Error', message: 'Assignment record not found.' };
 }
+
+function rejectSkill(skillId) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  
+  // Update the status to 'Rejected'
+  updateRowByKey(SHEETS.SKILLS, 'SkillID', skillId, { Status: 'Rejected' });
+  
+  logAudit(currentUser, 'REJECT_SKILL', `Rejected custom skill ID: ${skillId}`);
+  return { status: 'Success', message: 'Skill request has been rejected.' };
+}
+
+function addSkillCategory(categoryName) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const sheet = getDb().getSheetByName(SHEETS.SET);
+  const data = sheet.getDataRange().getValues();
+  
+  let found = false;
+  let existingCats = 'Languages,Frameworks,DevOps,Cloud,AI,Other';
+  let rowIndex = -1;
+
+  // Search for existing SkillCategories key
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === 'SkillCategories') {
+      found = true;
+      existingCats = data[i][1];
+      rowIndex = i + 1;
+      break;
+    }
+  }
+
+  let catArray = existingCats.split(',').map(c => c.trim());
+  if (!catArray.includes(categoryName.trim())) {
+    catArray.push(categoryName.trim());
+    const newVal = catArray.join(',');
+    
+    if (found) {
+      sheet.getRange(rowIndex, 2).setValue(newVal);
+    } else {
+      sheet.appendRow(['SkillCategories', newVal]);
+    }
+    logAudit(currentUser, 'ADD_SKILL_CATEGORY', `Added category: ${categoryName}`);
+    return { status: 'Success', categories: newVal };
+  }
+  
+  return { status: 'Error', message: 'Category card already exists.' };
+}
+function getEmployeesByCategory(category) {
+  const empSkills = getSheetDataAsJSON(SHEETS.EMP_SKILLS).filter(es => es.Category === category);
+  
+  if (empSkills.length === 0) return [];
+  
+  // Group skills by EmpID
+  const empMap = {};
+  empSkills.forEach(es => {
+    if (!empMap[es.EmpID]) empMap[es.EmpID] = [];
+    empMap[es.EmpID].push(es.SkillName);
+  });
+  
+  const empIds = Object.keys(empMap);
+  const employees = getSheetDataAsJSON(SHEETS.EMP).filter(e => empIds.includes(e.EmpID) && e.Status === 'Active');
+  
+  // Map final response
+  return employees.map(e => ({
+    EmpID: e.EmpID,
+    Name: e.Name,
+    Designation: e.Designation,
+    Department: e.Department,
+    Skills: empMap[e.EmpID].join(', ') // Combine their skills into a string
+  }));
+}
