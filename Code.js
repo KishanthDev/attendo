@@ -930,6 +930,71 @@ function addSkillCategory(categoryName) {
   
   return { status: 'Error', message: 'Category card already exists.' };
 }
+
+function deleteSkillCategory(categoryName) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+
+  // 1. Remove the Category from System Settings
+  const setSheet = getDb().getSheetByName(SHEETS.SET);
+  const setData = setSheet.getDataRange().getValues();
+  let rowIndex = -1;
+  let existingCats = 'Languages,Frameworks,DevOps,Cloud,AI,Other';
+  
+  for (let i = 1; i < setData.length; i++) {
+    if (setData[i][0] === 'SkillCategories') {
+      existingCats = String(setData[i][1]);
+      rowIndex = i + 1;
+      break;
+    }
+  }
+
+  // Filter out the deleted category
+  let catArray = existingCats.split(',').map(c => c.trim()).filter(c => c !== categoryName);
+  let newVal = catArray.join(',');
+  
+  if (rowIndex > -1) {
+    setSheet.getRange(rowIndex, 2).setValue(newVal);
+  } else {
+    // If it wasn't in the DB yet, create it now WITHOUT the deleted category
+    setSheet.appendRow(['SkillCategories', newVal]);
+  }
+
+  // 2. Find and Delete Skills associated with this Category
+  const skillsSheet = getDb().getSheetByName(SHEETS.SKILLS);
+  const skillsData = skillsSheet.getDataRange().getValues();
+  let deletedSkillIds = [];
+
+  if (skillsData.length > 1) {
+    const skillsHeaders = skillsData[0];
+    const catColIdx = skillsHeaders.indexOf('Category');
+    const idColIdx = skillsHeaders.indexOf('SkillID');
+
+    // Loop backwards to safely delete multiple rows
+    for (let i = skillsData.length - 1; i >= 1; i--) {
+      if (skillsData[i][catColIdx] === categoryName) {
+        deletedSkillIds.push(skillsData[i][idColIdx]);
+        skillsSheet.deleteRow(i + 1);
+      }
+    }
+  }
+
+  // 3. Find and Delete Employee mappings for those deleted skills
+  if (deletedSkillIds.length > 0) {
+    const empSkillsSheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
+    const empSkillsData = empSkillsSheet.getDataRange().getValues();
+    
+    // Column 1 is SkillID in EMP_SKILLS (Index 0 = EmpID, Index 1 = SkillID)
+    for (let i = empSkillsData.length - 1; i >= 1; i--) {
+      if (deletedSkillIds.includes(empSkillsData[i][1])) { 
+        empSkillsSheet.deleteRow(i + 1);
+      }
+    }
+  }
+
+  logAudit(currentUser, 'DELETE_SKILL_CATEGORY', `Deleted category: ${categoryName} and ${deletedSkillIds.length} skills.`);
+  return { status: 'Success', message: `Card and ${deletedSkillIds.length} related skills deleted.` };
+}
+
 function getEmployeesByCategory(category) {
   const empSkills = getSheetDataAsJSON(SHEETS.EMP_SKILLS).filter(es => es.Category === category);
   
