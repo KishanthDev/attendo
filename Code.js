@@ -43,7 +43,7 @@ function setupSystem() {
     [SHEETS.DOCUMENTS]: ['DocID', 'EmpID', 'FileName', 'DocumentType', 'Month', 'Year', 'DriveFileID', 'UploadDate', 'UploadedBy'],
     [SHEETS.CLIENTS]: ['ClientID', 'ClientName', 'WorkingHours', 'Technologies', 'Status', 'StartDate', 'EndDate', 'Description', 'CreatedAt'],
     [SHEETS.CLIENT_ASSIGNMENTS]: ['AssignmentID', 'ClientID', 'EmpID', 'EmployeeName', 'AssignedDate', 'Status'],
-    [SHEETS.SKILLS]: ['SkillID', 'Category', 'SkillName', 'Status'],
+    [SHEETS.SKILLS]: ['SkillID', 'Category', 'SkillName', 'Status', 'CreatedBy', 'Visibility'],
     [SHEETS.EMP_SKILLS]: ['EmpID', 'SkillID', 'SkillName', 'Category', 'UpdatedAt']
   };
 
@@ -172,7 +172,7 @@ function updateRowByKey(sheetName, keyField, keyValue, updateData) {
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const keyColIndex = headers.indexOf(keyField);
-  
+
   if (keyColIndex === -1) throw new Error(`Key field "${keyField}" not found.`);
 
   const rowIndex = data.findIndex(row => row[keyColIndex] == keyValue);
@@ -230,7 +230,7 @@ function saveAppSettings(settingsData) {
   saveRowToSheet(SHEETS.SET, { Key: 'LateArrivalTime', Value: settingsData.LateArrivalTime }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'CasualLeaveQuota', Value: settingsData.CasualLeaveQuota }, 'Key');
   saveRowToSheet(SHEETS.SET, { Key: 'OptionalLeaveQuota', Value: settingsData.OptionalLeaveQuota }, 'Key');
-  
+
   logAudit(currentUser, 'UPDATE_SETTINGS', `Updated System Settings & Quotas`);
   return { status: 'Success', message: 'Settings updated successfully!' };
 }
@@ -407,7 +407,7 @@ function updateMyProfile(empId, profileData) {
   const currentUser = Session.getActiveUser().getEmail() || empId;
   const employees = getSheetDataAsJSON(SHEETS.EMP);
   const user = employees.find(e => e.EmpID === empId);
-  
+
   if (!user) return { status: 'Error', message: 'Employee not found.' };
 
   if (profileData.Email && profileData.Email.toLowerCase() !== user.Email.toLowerCase()) {
@@ -524,7 +524,7 @@ function getLeaves() { return getSheetDataAsJSON(SHEETS.LEAVE); }
 
 function applyLeave(leaveData) {
   const currentUser = Session.getActiveUser().getEmail() || leaveData.EmpID;
-  
+
   if (leaveData.Type === 'Optional Leave') {
     const holidays = getSheetDataAsJSON(SHEETS.HOL);
     const isOptHol = holidays.find(h => h.Date === leaveData.Date && h.Type === 'Optional');
@@ -543,7 +543,7 @@ function applyLeave(leaveData) {
   leaveData.EndDate = leaveData.Date;
   leaveData.Days = 1;
   saveRowToSheet(SHEETS.LEAVE, leaveData, 'LeaveID');
-  
+
   logAudit(currentUser, 'APPLY_LEAVE', `Applied for ${leaveData.Type}`);
   return { status: 'Success', message: 'Leave request successfully submitted!' };
 }
@@ -651,7 +651,7 @@ function deleteEmployeeDocument(docId, requestingEmail) {
   const docMeta = getSheetDataAsJSON(SHEETS.DOCUMENTS).find(d => d.DocID === docId);
   if (!docMeta) throw new Error('Document metadata not found.');
 
-  try { DriveApp.getFileById(docMeta.DriveFileID).setTrashed(true); } catch (e) {}
+  try { DriveApp.getFileById(docMeta.DriveFileID).setTrashed(true); } catch (e) { }
   deleteRowFromSheet(SHEETS.DOCUMENTS, 'DocID', docId);
   logAudit(requestingEmail, 'DELETE_DOCUMENT', `Deleted document ${docId}.`);
   return { status: 'Success', message: 'Document deleted successfully.' };
@@ -705,36 +705,39 @@ function getClientDashboardData(clientId) {
     holidays: getSheetDataAsJSON(SHEETS.HOL)
   };
 }
-
 // ==========================================
 // SKILLS MANAGEMENT APIs
 // ==========================================
 
-function getSkills() {
+function getSkills(empId, role) {
   const skills = getSheetDataAsJSON(SHEETS.SKILLS);
   const empSkills = getSheetDataAsJSON(SHEETS.EMP_SKILLS);
-  
+
   const counts = {};
   empSkills.forEach(es => {
     counts[es.SkillID] = (counts[es.SkillID] || 0) + 1;
   });
-  
-  return skills.map(s => ({
+
+  let filteredSkills = skills.map(s => ({
     ...s,
     EmpCount: counts[s.SkillID] || 0
   }));
+
+  // Role-Based Filtering
+  if (role !== 'ADMIN') {
+    filteredSkills = filteredSkills.filter(s => s.Visibility === 'PUBLIC' || s.CreatedBy === empId);
+  }
+
+  return filteredSkills;
 }
 
-function saveSkill(skillData) {
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+function saveSkill(skillData, currentUserEmpId, currentUserRole) {
+  const currentUser = Session.getActiveUser().getEmail() || 'System';
   const skills = getSheetDataAsJSON(SHEETS.SKILLS);
-  
-  // Normalize the input name to prevent tricky duplicates (e.g. "React " vs "React")
+
   const normalizedNewName = skillData.SkillName.trim().toLowerCase();
-  
-  // Check if this skill name already exists (ignoring the one currently being edited)
-  const duplicate = skills.find(s => 
-    s.SkillName.trim().toLowerCase() === normalizedNewName && 
+  const duplicate = skills.find(s =>
+    s.SkillName.trim().toLowerCase() === normalizedNewName &&
     s.SkillID !== skillData.SkillID
   );
 
@@ -743,23 +746,61 @@ function saveSkill(skillData) {
   }
 
   const isNew = !skillData.SkillID;
-  if (isNew) skillData.SkillID = 'SKL-' + Math.floor(10000 + Math.random() * 90000);
-  
+  if (isNew) {
+    skillData.SkillID = 'SKL-' + Math.floor(10000 + Math.random() * 90000);
+
+    // Set Ownership and Visibility
+    if (currentUserRole === 'ADMIN') {
+      skillData.CreatedBy = 'ADMIN';
+      skillData.Visibility = 'PUBLIC';
+    } else {
+      skillData.CreatedBy = currentUserEmpId;
+      skillData.Visibility = 'PRIVATE';
+      skillData.Status = 'Active'; // Auto-active for the employee
+    }
+  }
+
   saveRowToSheet(SHEETS.SKILLS, skillData, 'SkillID');
+
+  // If an employee created it, automatically add it to their portfolio
+  if (isNew && currentUserRole !== 'ADMIN') {
+    const today = new Date().toISOString().split('T')[0];
+    getDb().getSheetByName(SHEETS.EMP_SKILLS).appendRow([currentUserEmpId, skillData.SkillID, skillData.SkillName, skillData.Category, today]);
+  }
+
   logAudit(currentUser, 'SAVE_SKILL', `Saved skill: ${skillData.SkillName}`);
-  
   return { status: 'Success', message: 'Skill successfully saved.' };
 }
 
-function deleteSkill(skillId) {
+function deleteSkill(skillId, currentUserEmpId, currentUserRole) {
+  const skills = getSheetDataAsJSON(SHEETS.SKILLS);
+  const skill = skills.find(s => s.SkillID === skillId);
+
+  if (!skill) return { status: 'Error', message: 'Skill not found.' };
+
+  // Authorization Check
+  if (currentUserRole !== 'ADMIN') {
+    if (skill.CreatedBy !== currentUserEmpId || skill.Visibility !== 'PRIVATE') {
+      return { status: 'Error', message: 'Permission denied to delete this skill.' };
+    }
+  }
+
   deleteRowFromSheet(SHEETS.SKILLS, 'SkillID', skillId);
+
   const empSheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
   const data = empSheet.getDataRange().getValues();
   for (let i = data.length - 1; i >= 1; i--) {
     if (data[i][1] === skillId) empSheet.deleteRow(i + 1);
   }
-  logAudit(Session.getActiveUser().getEmail() || 'Admin', 'DELETE_SKILL', `Deleted skill ID: ${skillId}`);
-  return { status: 'Success', message: 'Skill and related employee records deleted.' };
+
+  logAudit(Session.getActiveUser().getEmail() || 'System', 'DELETE_SKILL', `Deleted skill ID: ${skillId}`);
+  return { status: 'Success', message: 'Skill and related records deleted.' };
+}
+
+function promoteSkill(skillId) {
+  updateRowByKey(SHEETS.SKILLS, 'SkillID', skillId, { Visibility: 'PUBLIC' });
+  logAudit(Session.getActiveUser().getEmail() || 'System', 'PROMOTE_SKILL', `Promoted skill ID: ${skillId} to Public`);
+  return { status: 'Success', message: 'Skill promoted to Master Directory!' };
 }
 
 function getEmployeeSkills(empId) {
@@ -769,21 +810,21 @@ function getEmployeeSkills(empId) {
 function saveEmployeeSkills(empId, skillIds) {
   const sheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
   const data = sheet.getDataRange().getValues();
-  
+
   for (let i = data.length - 1; i >= 1; i--) {
     if (data[i][0] === empId) sheet.deleteRow(i + 1);
   }
-  
+
   const masterSkills = getSheetDataAsJSON(SHEETS.SKILLS);
   const today = new Date().toISOString().split('T')[0];
-  
+
   skillIds.forEach(id => {
     const sk = masterSkills.find(s => s.SkillID === id);
     if (sk && sk.Status === 'Active') {
       sheet.appendRow([empId, id, sk.SkillName, sk.Category, today]);
     }
   });
-  
+
   logAudit(Session.getActiveUser().getEmail() || empId, 'UPDATE_EMP_SKILLS', `Updated skills for ${empId}`);
   return { status: 'Success', message: 'Your skills have been updated successfully!' };
 }
@@ -797,8 +838,49 @@ function getEmployeesBySkill(skillId) {
   const employees = getSheetDataAsJSON(SHEETS.EMP).filter(e => empIds.includes(e.EmpID));
   
   return employees.map(e => ({
+    EmpID: e.EmpID, // Added this so the frontend can delete them
     Name: e.Name,
     Designation: e.Designation,
     Department: e.Department
   }));
+}
+
+function assignEmployeeToSkill(skillId, empId) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const sheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
+  
+  // Check if they already have it assigned
+  const existing = getSheetDataAsJSON(SHEETS.EMP_SKILLS).find(s => s.SkillID === skillId && s.EmpID === empId);
+  if (existing) return { status: 'Error', message: 'Employee already has this skill.' };
+
+  const skills = getSheetDataAsJSON(SHEETS.SKILLS);
+  const sk = skills.find(s => s.SkillID === skillId);
+  if (!sk) return { status: 'Error', message: 'Skill not found.' };
+
+  const today = new Date().toISOString().split('T')[0];
+  sheet.appendRow([empId, skillId, sk.SkillName, sk.Category, today]);
+  
+  logAudit(currentUser, 'ASSIGN_SKILL', `Assigned skill ${skillId} to ${empId}`);
+  return { status: 'Success', message: 'Employee assigned to skill.' };
+}
+
+function removeEmployeeFromSkill(skillId, empId) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const sheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
+  const data = sheet.getDataRange().getValues();
+  
+  let deleted = false;
+  // Loop backwards to safely delete rows
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === empId && data[i][1] === skillId) {
+      sheet.deleteRow(i + 1);
+      deleted = true;
+    }
+  }
+  
+  if (deleted) {
+     logAudit(currentUser, 'REMOVE_SKILL', `Removed skill ${skillId} from ${empId}`);
+     return { status: 'Success', message: 'Employee removed from skill.' };
+  }
+  return { status: 'Error', message: 'Assignment record not found.' };
 }
