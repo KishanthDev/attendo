@@ -14,7 +14,8 @@ const SHEETS = {
   CLIENTS: 'Clients',
   CLIENT_ASSIGNMENTS: 'ClientAssignments',
   SKILLS: 'Skills',
-  EMP_SKILLS: 'EmployeeSkills'
+  EMP_SKILLS: 'EmployeeSkills',
+  SKILL_CARDS: 'SkillCards'
 };
 
 function doGet(e) {
@@ -44,7 +45,8 @@ function setupSystem() {
     [SHEETS.CLIENTS]: ['ClientID', 'ClientName', 'WorkingHours', 'Technologies', 'Status', 'StartDate', 'EndDate', 'Description', 'CreatedAt'],
     [SHEETS.CLIENT_ASSIGNMENTS]: ['AssignmentID', 'ClientID', 'EmpID', 'EmployeeName', 'AssignedDate', 'Status'],
     [SHEETS.SKILLS]: ['SkillID', 'Category', 'SkillName', 'Status', 'CreatedBy', 'Visibility', 'HiringRequired'],
-    [SHEETS.EMP_SKILLS]: ['EmpID', 'SkillID', 'SkillName', 'Category', 'UpdatedAt', 'AssignmentStatus']
+    [SHEETS.EMP_SKILLS]: ['EmpID', 'SkillID', 'SkillName', 'Category', 'UpdatedAt', 'AssignmentStatus'],
+    [SHEETS.SKILL_CARDS]: ['CategoryID', 'CategoryName', 'CardNotes']
   };
 
   for (const [sheetName, headers] of Object.entries(schemas)) {
@@ -220,7 +222,16 @@ function getAppSettings() {
     if (key === 'LateArrivalTime') {
       settings.LateArrivalTime = row.Value instanceof Date ? Utilities.formatDate(row.Value, Session.getScriptTimeZone(), 'HH:mm') : String(row.Value).trim();
     }
+    if (key === 'SkillCategories') {
+      settings.SkillCategories = String(row.Value).trim();
+    }
+    // NEW: Load Notes
+    if (key === 'SkillCardNotes') {
+      try { settings.SkillCardNotes = JSON.parse(row.Value); }
+      catch (e) { settings.SkillCardNotes = {}; }
+    }
   });
+
   return settings;
 }
 
@@ -1132,4 +1143,98 @@ function updateHiringFlag(skillId, value) {
     const rowIndex = data.findIndex(row => row[headers.indexOf('SkillID')] === skillId);
     if (rowIndex > 0) sheet.getRange(rowIndex + 1, hrColIndex + 1).setValue(value);
   }
+}
+
+function editSkillCategory(oldName, newName) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  if (!newName || !newName.trim() || oldName === newName) return { status: 'Error', message: 'Invalid name.' };
+  newName = newName.trim();
+
+  // 1. Update Settings Sheet (Categories List & Notes Key)
+  const setSheet = getDb().getSheetByName(SHEETS.SET);
+  const setData = setSheet.getDataRange().getValues();
+  let catRowIndex = -1;
+  let notesRowIndex = -1;
+  let existingCats = '';
+  let notesStr = '{}';
+
+  for (let i = 1; i < setData.length; i++) {
+    if (setData[i][0] === 'SkillCategories') {
+      existingCats = String(setData[i][1]);
+      catRowIndex = i + 1;
+    }
+    if (setData[i][0] === 'SkillCardNotes') {
+      notesStr = String(setData[i][1]);
+      notesRowIndex = i + 1;
+    }
+  }
+
+  let catArray = existingCats.split(',').map(c => c.trim()).filter(Boolean);
+  if (catArray.includes(newName)) return { status: 'Error', message: 'Category name already exists.' };
+
+  const idx = catArray.indexOf(oldName);
+  if (idx > -1) {
+    catArray[idx] = newName;
+    setSheet.getRange(catRowIndex, 2).setValue(catArray.join(','));
+  }
+
+  // Update Notes JSON key
+  let notesObj = {};
+  try { notesObj = JSON.parse(notesStr); } catch (e) { }
+  if (notesObj[oldName] !== undefined) {
+    notesObj[newName] = notesObj[oldName];
+    delete notesObj[oldName];
+    if (notesRowIndex > -1) {
+      setSheet.getRange(notesRowIndex, 2).setValue(JSON.stringify(notesObj));
+    } else {
+      setSheet.appendRow(['SkillCardNotes', JSON.stringify(notesObj)]);
+    }
+  }
+
+  // 2. Update SKILLS sheet
+  const skSheet = getDb().getSheetByName(SHEETS.SKILLS);
+  const skData = skSheet.getDataRange().getValues();
+  const skCatCol = skData[0].indexOf('Category');
+  for (let i = 1; i < skData.length; i++) {
+    if (skData[i][skCatCol] === oldName) skSheet.getRange(i + 1, skCatCol + 1).setValue(newName);
+  }
+
+  // 3. Update EMP_SKILLS sheet
+  const esSheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
+  const esData = esSheet.getDataRange().getValues();
+  const esCatCol = esData[0].indexOf('Category');
+  if (esCatCol > -1) {
+    for (let i = 1; i < esData.length; i++) {
+      if (esData[i][esCatCol] === oldName) esSheet.getRange(i + 1, esCatCol + 1).setValue(newName);
+    }
+  }
+
+  logAudit(currentUser, 'EDIT_SKILL_CATEGORY', `Renamed ${oldName} to ${newName}`);
+  return { status: 'Success', message: 'Card renamed successfully.' };
+}
+
+function saveSkillCardNotes(categoryName, notes) {
+  const setSheet = getDb().getSheetByName(SHEETS.SET);
+  const setData = setSheet.getDataRange().getValues();
+  let notesRowIndex = -1;
+  let notesStr = '{}';
+
+  for (let i = 1; i < setData.length; i++) {
+    if (setData[i][0] === 'SkillCardNotes') {
+      notesStr = String(setData[i][1]);
+      notesRowIndex = i + 1;
+      break;
+    }
+  }
+
+  let notesObj = {};
+  try { notesObj = JSON.parse(notesStr); } catch (e) { }
+  notesObj[categoryName] = notes;
+
+  if (notesRowIndex > -1) {
+    setSheet.getRange(notesRowIndex, 2).setValue(JSON.stringify(notesObj));
+  } else {
+    setSheet.appendRow(['SkillCardNotes', JSON.stringify(notesObj)]);
+  }
+  return { status: 'Success' };
 }
