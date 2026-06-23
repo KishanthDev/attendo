@@ -72,7 +72,7 @@ function setupSystem() {
   if (cardsSheet && cardsSheet.getLastRow() === 1) {
     const defaultCards = ['Languages', 'Frameworks', 'DevOps', 'Cloud', 'AI', 'Other'];
     defaultCards.forEach((cat, index) => {
-      cardsSheet.appendRow([`CAT-${100+index}`, cat, '']);
+      cardsSheet.appendRow([`CAT-${100 + index}`, cat, '']);
     });
   }
 
@@ -154,10 +154,14 @@ function saveRowToSheet(sheetName, dataObj, keyField) {
     }
   }
 
-  const rowData = headers.map(h => dataObj[h] !== undefined ? dataObj[h] : '');
   if (rowIndex > -1) {
+    // FIX: Merge new data with existing data to prevent blanking out hidden columns!
+    const existingRow = data[rowIndex - 1]; 
+    const rowData = headers.map((h, i) => dataObj[h] !== undefined ? dataObj[h] : existingRow[i]);
     sheet.getRange(rowIndex, 1, 1, headers.length).setValues([rowData]);
   } else {
+    // Append brand new row
+    const rowData = headers.map(h => dataObj[h] !== undefined ? dataObj[h] : '');
     sheet.appendRow(rowData);
   }
   return true;
@@ -235,14 +239,14 @@ function getAppSettings() {
   // Pull Categories and Notes from the NEW dedicated sheet
   const cardsData = getSheetDataAsJSON(SHEETS.SKILL_CARDS);
   if (cardsData.length > 0) {
-     settings.SkillCategories = cardsData.map(c => c.CategoryName).join(',');
-     settings.SkillCardNotes = {};
-     cardsData.forEach(c => {
-        if (c.CardNotes) settings.SkillCardNotes[c.CategoryName] = String(c.CardNotes);
-     });
+    settings.SkillCategories = cardsData.map(c => c.CategoryName).join(',');
+    settings.SkillCardNotes = {};
+    cardsData.forEach(c => {
+      if (c.CardNotes) settings.SkillCardNotes[c.CategoryName] = String(c.CardNotes);
+    });
   } else {
-     settings.SkillCategories = 'Languages,Frameworks,DevOps,Cloud,AI,Other';
-     settings.SkillCardNotes = {};
+    settings.SkillCategories = 'Languages,Frameworks,DevOps,Cloud,AI,Other';
+    settings.SkillCardNotes = {};
   }
 
   return settings;
@@ -843,24 +847,38 @@ function assignEmployeeToSkill(skillId, empId, assignmentStatus = 'Active') {
   return { status: 'Success', message: `Employee assigned (${assignmentStatus}).` };
 }
 
-// 5. UPDATED: Save Employee Skills (For when employees add their own skills)
 function saveEmployeeSkills(empId, skillIds) {
   ensureSchemaHeaders();
   const sheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
   const data = sheet.getDataRange().getValues();
 
+  const existingSkills = {};
+
+  // 1. Loop backwards to map existing skills and safely delete unchecked ones
   for (let i = data.length - 1; i >= 1; i--) {
-    if (data[i][0] === empId) sheet.deleteRow(i + 1);
+    if (data[i][0] === empId) {
+      const sId = data[i][1];
+      // Save their current status (e.g., 'Training' or 'Active')
+      existingSkills[sId] = data[i][5] || 'Active';
+
+      // If the skill is NO LONGER in the checked list, delete the row
+      if (!skillIds.includes(sId)) {
+        sheet.deleteRow(i + 1);
+      }
+    }
   }
 
   const masterSkills = getSheetDataAsJSON(SHEETS.SKILLS);
   const today = new Date().toISOString().split('T')[0];
 
+  // 2. Add only the NEW skills they checked that aren't already in the database
   skillIds.forEach(id => {
-    const sk = masterSkills.find(s => s.SkillID === id);
-    if (sk && sk.Status === 'Active') {
-      // Must append 6 columns here so it doesn't break the layout!
-      sheet.appendRow([empId, id, sk.SkillName, sk.Category, today, 'Active']);
+    if (!existingSkills.hasOwnProperty(id)) {
+      const sk = masterSkills.find(s => s.SkillID === id);
+      if (sk && sk.Status === 'Active') {
+        // New skills added by the employee default to 'Active'
+        sheet.appendRow([empId, id, sk.SkillName, sk.Category, today, 'Active']);
+      }
     }
   });
 
@@ -976,6 +994,7 @@ function rejectSkill(skillId) {
 }
 
 function getEmployeesByCategory(category) {
+  ensureSchemaHeaders();
   const empSkills = getSheetDataAsJSON(SHEETS.EMP_SKILLS).filter(es => es.Category === category);
 
   if (empSkills.length === 0) return [];
@@ -984,7 +1003,10 @@ function getEmployeesByCategory(category) {
   const empMap = {};
   empSkills.forEach(es => {
     if (!empMap[es.EmpID]) empMap[es.EmpID] = [];
-    empMap[es.EmpID].push(es.SkillName);
+
+    // FIX: Append a visible indicator if they are currently in training
+    const skillLabel = es.AssignmentStatus === 'Training' ? `${es.SkillName} (Training ⏳)` : es.SkillName;
+    empMap[es.EmpID].push(skillLabel);
   });
 
   const empIds = Object.keys(empMap);
@@ -996,7 +1018,7 @@ function getEmployeesByCategory(category) {
     Name: e.Name,
     Designation: e.Designation,
     Department: e.Department,
-    Skills: empMap[e.EmpID].join(', ') // Combine their skills into a string
+    Skills: empMap[e.EmpID].join(', ')
   }));
 }
 
@@ -1061,25 +1083,25 @@ function addSkillCategory(categoryName) {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   const sheet = getDb().getSheetByName(SHEETS.SKILL_CARDS);
   const data = sheet.getDataRange().getValues();
-  
+
   const catNameTrimmed = categoryName.trim();
   let exists = false;
-  
-  for(let i=1; i<data.length; i++){
-     if(data[i][1] === catNameTrimmed) { exists = true; break; }
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] === catNameTrimmed) { exists = true; break; }
   }
-  
+
   if (!exists) {
-     sheet.appendRow(['CAT-' + Math.floor(10000 + Math.random() * 90000), catNameTrimmed, '']);
-     logAudit(currentUser, 'ADD_SKILL_CATEGORY', `Added category: ${catNameTrimmed}`);
-     
-     // Return the updated comma string so the UI re-renders correctly
-     const updatedData = sheet.getDataRange().getValues();
-     const allCats = [];
-     for(let i=1; i<updatedData.length; i++){ allCats.push(updatedData[i][1]); }
-     return { status: 'Success', categories: allCats.join(',') };
+    sheet.appendRow(['CAT-' + Math.floor(10000 + Math.random() * 90000), catNameTrimmed, '']);
+    logAudit(currentUser, 'ADD_SKILL_CATEGORY', `Added category: ${catNameTrimmed}`);
+
+    // Return the updated comma string so the UI re-renders correctly
+    const updatedData = sheet.getDataRange().getValues();
+    const allCats = [];
+    for (let i = 1; i < updatedData.length; i++) { allCats.push(updatedData[i][1]); }
+    return { status: 'Success', categories: allCats.join(',') };
   }
-  
+
   return { status: 'Error', message: 'Category card already exists.' };
 }
 
@@ -1137,10 +1159,10 @@ function editSkillCategory(oldName, newName) {
   const cardsSheet = getDb().getSheetByName(SHEETS.SKILL_CARDS);
   const cardsData = cardsSheet.getDataRange().getValues();
   for (let i = 1; i < cardsData.length; i++) {
-     if (cardsData[i][1] === oldName) {
-        cardsSheet.getRange(i+1, 2).setValue(newName);
-        break;
-     }
+    if (cardsData[i][1] === oldName) {
+      cardsSheet.getRange(i + 1, 2).setValue(newName);
+      break;
+    }
   }
 
   // 2. Update SKILLS sheet
@@ -1168,10 +1190,10 @@ function editSkillCategory(oldName, newName) {
 function saveSkillCardNotes(categoryName, notes) {
   const cardsSheet = getDb().getSheetByName(SHEETS.SKILL_CARDS);
   const cardsData = cardsSheet.getDataRange().getValues();
-  
+
   for (let i = 1; i < cardsData.length; i++) {
     if (cardsData[i][1] === categoryName) {
-      cardsSheet.getRange(i+1, 3).setValue(notes); // Write to CardNotes column
+      cardsSheet.getRange(i + 1, 3).setValue(notes); // Write to CardNotes column
       return { status: 'Success' };
     }
   }

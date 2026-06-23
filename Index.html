@@ -369,22 +369,42 @@
 
         <div id="view-skills-master" class="view-section space-y-4">
           <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
+            <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto flex-1">
               <h3 class="font-semibold text-lg dark:text-white hidden sm:block">Skill Directory</h3>
+
+              <!-- NEW: Live Search Bar -->
+              <div class="relative w-full sm:w-64">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 dark:text-gray-300">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </span>
+                <input type="text" id="skill-master-search" onkeyup="App.loadData['skills-master']()"
+                  placeholder="Search skills..."
+                  class="w-full bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+              </div>
+
               <select id="skill-filter" onchange="App.loadData['skills-master']()"
-                class="w-full sm:w-64 bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+                class="w-full sm:w-48 bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
                 <option value="All">All Categories</option>
-                <option value="Languages">Languages</option>
-                <option value="Frameworks">Frameworks</option>
-                <option value="DevOps">DevOps</option>
-                <option value="Cloud">Cloud</option>
-                <option value="AI">AI</option>
-                <option value="Other">Other</option>
               </select>
             </div>
-            <button onclick="App.ui.modals.openSkill(null)"
-              class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all">+
-              Add Skill</button>
+
+            <div class="flex gap-2 w-full sm:w-auto">
+              <!-- NEW: Export Button -->
+              <button onclick="App.actions.exportSkillsCSV()"
+                class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Export
+              </button>
+              <button onclick="App.ui.modals.openSkill(null)"
+                class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all">+
+                Add Skill</button>
+            </div>
           </div>
 
           <div id="skills-overview-kpis" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"></div>
@@ -397,29 +417,54 @@
           </div>
         </div>
 
-        <div id="view-my-skills" class="view-section space-y-6">
-          <div
-            class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h3 class="text-xl font-bold dark:text-white">My Skill Portfolio</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-300 mt-1">Select the technologies and skills you are
-                proficient in.</p>
-            </div>
-            <div class="flex items-center gap-4 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-              <span
-                class="px-3 py-1.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 rounded-lg text-sm font-bold border border-brand-100 dark:border-brand-800/50"
-                id="my-skills-count">0 Selected</span>
-              <button onclick="App.actions.addCustomSkill()"
-                class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 px-4 py-2.5 rounded-xl text-sm font-medium transition-all">
-                + Add Custom Skill
-              </button>
-              <button onclick="App.actions.saveMySkills()"
-                class="flex-1 sm:flex-none bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 text-white px-6 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all">
-                Save Skills
-              </button>
-            </div>
+        <div id="view-my-skills" class="view-section hidden max-w-7xl mx-auto space-y-6">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h3 class="font-semibold text-lg dark:text-white">My Skills Portfolio</h3>
+            <button id="btn-save-my-skills" onclick="App.actions.saveMySkills()"
+              class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all flex items-center justify-center gap-2">
+              <svg id="save-my-skills-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                </path>
+              </svg>
+              <svg id="save-my-skills-spin" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+              </svg>
+
+              <span><span id="save-my-skills-text">Save Changes</span> (<span id="my-skills-count">0</span>)</span>
+            </button>
           </div>
-          <div id="my-skills-container" class="space-y-6"></div>
+
+          <!-- NEW: KPI Dashboard -->
+          <div id="my-skills-kpis" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+
+          <!-- NEW: Search & Custom Skill Toolbar -->
+          <div
+            class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
+            <div class="relative w-full sm:w-72">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </span>
+              <input type="text" id="my-skills-search" onkeyup="App.actions.filterMySkills()"
+                placeholder="Search skills..."
+                class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-shadow">
+            </div>
+            <button onclick="App.ui.modals.openSkill(null)"
+              class="w-full sm:w-auto px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50 rounded-xl text-sm font-bold border border-purple-100 dark:border-purple-800/50 transition-colors flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Propose Custom Skill
+            </button>
+          </div>
+
+          <div id="my-skills-container" class="grid grid-cols-1 gap-6"></div>
         </div>
 
         <div id="view-employees" class="view-section space-y-4">
@@ -928,12 +973,30 @@
           class="flex-1 bg-white dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500">
           <option value="">Select Employee...</option>
         </select>
+
         <button id="btn-assign-skill-active"
-          class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition-all"
-          title="Assign as Proficient">Assign</button>
+          class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition-all flex items-center justify-center gap-1.5"
+          title="Assign as Proficient">
+          <svg id="spin-assign-active" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          <span id="text-assign-active">Assign</span>
+        </button>
+
         <button id="btn-assign-skill-train"
-          class="bg-yellow-500 hover:bg-yellow-400 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition-all"
-          title="Assign for Training">Train</button>
+          class="bg-yellow-500 hover:bg-yellow-400 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition-all flex items-center justify-center gap-1.5"
+          title="Assign for Training">
+          <svg id="spin-assign-train" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          <span id="text-assign-train">Train</span>
+        </button>
       </div>
 
       <div id="skill-employees-list" class="overflow-y-auto p-2 custom-scrollbar flex-1"></div>
@@ -1709,19 +1772,68 @@
             return;
           }
 
-          const res = await App.api('assignEmployeeToSkill', skillId, empId, status);
-          if (res.status === 'Error') {
-            Swal.fire({ icon: 'error', title: 'Action Failed', text: res.message });
-            return;
+          // 1. Identify which button was clicked
+          const isTrain = status === 'Training';
+          const btnId = isTrain ? 'btn-assign-skill-train' : 'btn-assign-skill-active';
+          const spinId = isTrain ? 'spin-assign-train' : 'spin-assign-active';
+          const textId = isTrain ? 'text-assign-train' : 'text-assign-active';
+
+          let btn = document.getElementById(btnId);
+          let spin = document.getElementById(spinId);
+          let textSpan = document.getElementById(textId);
+
+          // 2. Trigger loading UI
+          if (btn) { btn.disabled = true; btn.classList.add('opacity-75', 'cursor-not-allowed'); }
+          if (spin) spin.classList.remove('hidden');
+          if (textSpan) textSpan.classList.add('hidden');
+
+          // 3. Bypass global loader
+          App.state.isSilentRefresh = true;
+
+          try {
+            // 4. Perform API Call
+            const res = await App.api('assignEmployeeToSkill', skillId, empId, status);
+            if (res.status === 'Error') {
+              Swal.fire({ icon: 'error', title: 'Action Failed', text: res.message });
+              return;
+            }
+
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+
+            // 5. Update data silently
+            App.state.cache.skills = null;
+            if (App.state.currentView === 'skills-master') App.loadData['skills-master'](true);
+            if (App.state.currentView === 'skill-matrix') App.loadData['skill-matrix'](true);
+
+            // FIX: Turn off the spinner on the OLD buttons BEFORE we clone them in the next step
+            if (btn) { btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); }
+            if (spin) spin.classList.add('hidden');
+            if (textSpan) textSpan.classList.remove('hidden');
+
+            // 6. Re-render the modal contents (This clones the now-clean buttons)
+            await App.ui.modals.viewSkill(skillId, skillName, category);
+
+            // Re-fetch the select dropdown because the DOM was just overwritten
+            const newSelect = document.getElementById('assign-skill-emp-select');
+            if (newSelect) newSelect.value = '';
+
+          } catch (e) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Network Error', showConfirmButton: false, timer: 2000 });
+          } finally {
+            // 7. Restore global loader 
+            App.state.isSilentRefresh = false;
+
+            // Failsafe: Re-query the DOM for the newly cloned buttons and guarantee they are unlocked
+            btn = document.getElementById(btnId);
+            spin = document.getElementById(spinId);
+            textSpan = document.getElementById(textId);
+
+            if (btn) { btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); }
+            if (spin) spin.classList.add('hidden');
+            if (textSpan) textSpan.innerText = isTrain ? 'Train' : 'Assign';
           }
-
-          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
-
-          App.state.cache.skills = null;
-          if (App.state.currentView === 'skills-master') App.loadData['skills-master'](true);
-          if (App.state.currentView === 'skill-matrix') App.loadData['skill-matrix'](true);
-          App.ui.modals.viewSkill(skillId, skillName, category);
-        }, completeTraining: async (skillId, empId, skillName, category) => {
+        },
+        completeTraining: async (skillId, empId, skillName, category) => {
           const res = await App.api('completeTraining', skillId, empId);
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
 
@@ -1830,13 +1942,92 @@
           }
         },
 
+        exportSkillsCSV: () => {
+          const skills = App.state.data.skills.filter(s => s.Visibility === 'PUBLIC');
+          if (!skills.length) return Swal.fire('No data', 'There are no official skills to export', 'info');
+
+          let csvContent = "data:text/csv;charset=utf-8,Skill Name,Category,Status,Active Employees,Training Employees,Hiring Required\n";
+
+          skills.forEach(row => {
+            const safeName = `"${row.SkillName.replace(/"/g, '""')}"`; // Escape commas in names
+            const rowData = [safeName, row.Category, row.Status, row.EmpCount, row.TrainingCount, row.HiringRequired ? 'Yes' : 'No'];
+            csvContent += rowData.join(",") + "\n";
+          });
+
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", `Skills_Master_Export_${new Date().toISOString().split('T')[0]}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        },
+
         saveMySkills: async () => {
+          // 1. Grab all UI elements
+          const btn = document.getElementById('btn-save-my-skills');
+          const icon = document.getElementById('save-my-skills-icon');
+          const spin = document.getElementById('save-my-skills-spin');
+          const textSpan = document.getElementById('save-my-skills-text');
+
           const checkboxes = document.querySelectorAll('.skill-cb:checked');
           const skillIds = Array.from(checkboxes).map(cb => cb.value);
-          const res = await App.api('saveEmployeeSkills', App.state.user.EmpID, skillIds);
-          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
-          App.state.cache.mySkills = null;
-          App.loadData['my-skills'](true);
+
+          // 2. Trigger the inline Loading State
+          if (btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+          }
+          if (icon) icon.classList.add('hidden');
+          if (spin) spin.classList.remove('hidden');
+          if (textSpan) textSpan.innerText = 'Saving...';
+
+          // 3. Temporarily disable the global loader lock
+          App.state.isSilentRefresh = true;
+
+          try {
+            // 4. Fire the API call
+            const res = await App.api('saveEmployeeSkills', App.state.user.EmpID, skillIds);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
+            // 5. Refresh the UI data silently in the background
+            App.state.cache.mySkills = null;
+            await App.loadData['my-skills'](true);
+          } catch (e) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Failed to save skills', showConfirmButton: false, timer: 3000 });
+          } finally {
+            // 6. Reset everything back to normal
+            App.state.isSilentRefresh = false;
+
+            if (btn) {
+              btn.disabled = false;
+              btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+            if (icon) icon.classList.remove('hidden');
+            if (spin) spin.classList.add('hidden');
+            if (textSpan) textSpan.innerText = 'Save Changes';
+          }
+        },
+
+        filterMySkills: () => {
+          const search = document.getElementById('my-skills-search').value.toLowerCase();
+          const labels = document.querySelectorAll('.skill-item-label');
+
+          labels.forEach(label => {
+            const text = label.innerText.toLowerCase();
+            if (text.includes(search)) {
+              label.style.display = 'flex';
+            } else {
+              label.style.display = 'none';
+            }
+          });
+
+          // Hide the category box entirely if all its skills are filtered out
+          const categories = document.querySelectorAll('.skill-category-card');
+          categories.forEach(cat => {
+            const visibleSkills = Array.from(cat.querySelectorAll('.skill-item-label')).filter(el => el.style.display !== 'none').length;
+            cat.style.display = (visibleSkills === 0 && search !== '') ? 'none' : 'block';
+          });
         },
 
         removeEmployeeFromSkill: async (skillId, empId, skillName, category) => {
@@ -2076,8 +2267,20 @@
         modals: {
           viewCategory: async (categoryName) => {
             document.getElementById('view-category-name').innerText = `Category: ${categoryName}`;
-            document.getElementById('category-employees-list').innerHTML = '<div class="text-center py-8 text-gray-500">Loading...</div>';
+
+            // 1. Sleek inline loading spinner 
+            document.getElementById('category-employees-list').innerHTML = `
+              <div class="flex flex-col items-center justify-center py-10 space-y-3">
+                <svg class="w-8 h-8 animate-spin text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Loading team data...</span>
+              </div>
+            `;
+
             App.ui.modals.open('view-category-modal');
+
+            // 2. NEW: Silence the global loader
+            const previousSilentState = App.state.isSilentRefresh;
+            App.state.isSilentRefresh = true;
 
             try {
               const employees = await App.api('getEmployeesByCategory', categoryName);
@@ -2105,8 +2308,12 @@
               `).join('');
             } catch (e) {
               document.getElementById('category-employees-list').innerHTML = '<div class="text-center py-8 text-red-500">Error loading data.</div>';
+            } finally {
+              // 3. Restore global loader capability
+              App.state.isSilentRefresh = previousSilentState;
             }
           },
+
           openReviewSkills: async () => {
             // Ensure employee data is loaded so we can cross-reference the name
             if (!App.state.data.employees || App.state.data.employees.length === 0) {
@@ -2165,9 +2372,15 @@
           viewSkill: async (skillId, skillName, category) => {
             document.getElementById('view-skill-name').innerText = `Skill: ${skillName}`;
             document.getElementById('view-skill-cat').innerText = `Category: ${category}`;
-            document.getElementById('skill-employees-list').innerHTML = '<div class="text-center py-8 text-gray-500">Loading...</div>';
 
-            // NEW: Inject Edit and Delete buttons for Admins
+            // 1. Sleek inline loading spinner instead of plain text
+            document.getElementById('skill-employees-list').innerHTML = `
+              <div class="flex flex-col items-center justify-center py-10 space-y-3">
+                <svg class="w-8 h-8 animate-spin text-brand-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Loading team data...</span>
+              </div>
+            `;
+
             const actionsContainer = document.getElementById('view-skill-actions');
             if (actionsContainer) {
               if (App.state.user.Role === 'ADMIN') {
@@ -2184,7 +2397,6 @@
               }
             }
 
-            // Cleanly map buttons to ensure no duplicate event listeners fire
             const btnActive = document.getElementById('btn-assign-skill-active');
             const btnTrain = document.getElementById('btn-assign-skill-train');
             btnActive.replaceWith(btnActive.cloneNode(true));
@@ -2194,6 +2406,10 @@
             document.getElementById('btn-assign-skill-train').onclick = () => App.actions.assignEmployeeToSkill(skillId, skillName, category, 'Training');
 
             App.ui.modals.open('view-skill-modal');
+
+            // 2. NEW: Silence the global loader just for this modal fetch
+            const previousSilentState = App.state.isSilentRefresh;
+            App.state.isSilentRefresh = true;
 
             try {
               if (!App.state.data.employees || App.state.data.employees.length === 0) {
@@ -2210,8 +2426,10 @@
 
               const gapBanner = document.getElementById('view-skill-gap-banner');
               const toggleBtn = document.getElementById('btn-toggle-hiring');
-              toggleBtn.replaceWith(toggleBtn.cloneNode(true));
-              document.getElementById('btn-toggle-hiring').onclick = () => App.actions.toggleHiringRequired(skillId, skillName, category);
+              if (toggleBtn) {
+                toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+                document.getElementById('btn-toggle-hiring').onclick = () => App.actions.toggleHiringRequired(skillId, skillName, category);
+              }
 
               if (skData.EmpCount === 0 && skData.TrainingCount === 0) {
                 gapBanner.classList.remove('hidden');
@@ -2263,8 +2481,12 @@
 
             } catch (e) {
               document.getElementById('skill-employees-list').innerHTML = '<div class="text-center py-8 text-red-500">Error loading data.</div>';
+            } finally {
+              // 3. NEW: Always restore the global loader capability when the fetch finishes
+              App.state.isSilentRefresh = previousSilentState;
             }
-          }, openAssignDevs: async (id) => {
+          },
+          openAssignDevs: async (id) => {
             if (!App.state.data.employees || App.state.data.employees.length === 0) {
               await App.loadData.employees(true);
             }
@@ -2647,8 +2869,10 @@
           const personalSkills = allSkills.filter(s => s.Visibility === 'PRIVATE' && s.Status !== 'Rejected').length;
           const masterSkills = totalSkills - allSkills.filter(s => s.Visibility === 'PRIVATE').length;
 
+          // NEW: Animated Ping if there are pending approvals
           const reviewBtnHtml = personalSkills > 0
-            ? `<button onclick="App.ui.modals.openReviewSkills()" class="p-3 bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-200 transition-colors shadow-sm" title="Review Pending Skills">
+            ? `<button onclick="App.ui.modals.openReviewSkills()" class="relative p-3 bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-200 transition-colors shadow-sm" title="Review Pending Skills">
+                 <span class="absolute -top-1 -right-1 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span></span>
                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                </button>`
             : '';
@@ -2681,7 +2905,6 @@
           `;
           document.getElementById('skills-overview-kpis').innerHTML = overviewHtml;
 
-          // Dynamically Load Categories from settings
           if (!App.state.data.settings || App.state.data.settings.SkillCategories === undefined) {
             App.state.data.settings = await App.api('getAppSettings');
           }
@@ -2690,24 +2913,14 @@
           let dynamicCategories = catsStr ? catsStr.split(',').map(c => c.trim()).filter(c => c) : [];
 
           allSkills.forEach(s => {
-            if (s.Status !== 'Rejected' && !dynamicCategories.includes(s.Category)) {
+            if (s.Status !== 'Rejected' && s.Visibility === 'PUBLIC' && !dynamicCategories.includes(s.Category)) {
               dynamicCategories.push(s.Category);
             }
           });
 
-          // FIX: Dynamic Category Count generation (Only count approved PUBLIC skills)
-          const cats = {};
-          dynamicCategories.forEach(c => cats[c] = 0);
-          allSkills.forEach(s => {
-            // We only count it in the category cards if it's official and not rejected
-            if (s.Status !== 'Rejected' && s.Visibility === 'PUBLIC' && cats[s.Category] !== undefined) {
-              cats[s.Category]++;
-            }
-          });
-
-          const iconS = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>`;
-          const kpiHtml = Object.keys(cats).map(k => `<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col justify-between"><div class="flex justify-between items-start"><span class="text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">${k}</span><span class="p-2 rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">${iconS}</span></div><div class="text-3xl font-bold mt-2 text-gray-800 dark:text-white">${cats[k]}</div></div>`).join('');
-          document.getElementById('skills-kpis').innerHTML = kpiHtml;
+          // REMOVED: The dynamic category KPI cards have been removed to keep the UI clean.
+          // We simply clear the container so it doesn't take up any space.
+          document.getElementById('skills-kpis').innerHTML = '';
 
           const filterDropdown = document.getElementById('skill-filter');
           const currentSelection = filterDropdown.value;
@@ -2722,12 +2935,18 @@
           }
 
           const filterValue = filterDropdown.value;
+          // NEW: Grab search input
+          const searchVal = (document.getElementById('skill-master-search')?.value || '').toLowerCase();
 
-          // FIX: Strictly filter out unapproved (PRIVATE) skills from the main master table
           let displaySkills = allSkills.filter(s => s.Visibility === 'PUBLIC');
 
           if (filterValue !== 'All') {
             displaySkills = displaySkills.filter(s => s.Category === filterValue);
+          }
+
+          // NEW: Apply Search Filter
+          if (searchVal) {
+            displaySkills = displaySkills.filter(s => s.SkillName.toLowerCase().includes(searchVal) || s.Category.toLowerCase().includes(searchVal));
           }
 
           displaySkills.sort((a, b) => {
@@ -2737,40 +2956,51 @@
             return a.Category.localeCompare(b.Category);
           });
 
-          App.ui.render.table('skills-table', ['Skill Name', 'Category', 'Status', 'Employees', 'Actions'], displaySkills, row => {
+          // NEW: Changed column from "Employees" to "Coverage"
+          App.ui.render.table('skills-table', ['Skill Name', 'Category', 'Status', 'Coverage', 'Actions'], displaySkills, row => {
 
             let statusClr = row.Status === 'Active' ? 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400' :
               row.Status === 'Rejected' ? 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400' :
                 'text-gray-600 bg-gray-50 dark:bg-slate-700 dark:text-gray-400';
 
-            let visibilityBadge = row.Visibility === 'PRIVATE' ? `<span class="ml-2 px-2 py-0.5 text-[9px] font-bold rounded-full bg-purple-50 text-purple-600 border border-purple-200">PRIVATE</span>` : '';
+            // NEW: Coverage Bar Visuals
+            let coverageHtml = '';
+            const totalAssigned = row.EmpCount + row.TrainingCount;
 
-            let promoteBtn = (row.Visibility === 'PRIVATE' && row.Status !== 'Rejected') ?
-              `<button onclick="App.actions.promoteSkill('${row.SkillID}')" class="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg" title="Promote to Master"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7"></path></svg></button>`
-              : '';
-
-            // Use same exact badge logic for the table rows
-            let badgesHtml = '';
-            if (row.EmpCount > 0) badgesHtml += `<span class="font-bold text-gray-800 dark:text-white mr-2">${row.EmpCount} Active</span>`;
-            if (row.TrainingCount > 0) badgesHtml += `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-yellow-100 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 uppercase whitespace-nowrap">Training: ${row.TrainingCount}</span>`;
-            if (row.HiringRequired) badgesHtml += `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/50 dark:text-red-300 uppercase whitespace-nowrap">Hiring Req.</span>`;
-            if (row.EmpCount === 0 && row.TrainingCount === 0 && !row.HiringRequired) {
-              badgesHtml += `<div class="flex items-center gap-2"><span class="font-bold text-gray-400">0</span><span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/50 uppercase tracking-wider">⚠ Talent Gap</span></div>`;
+            if (totalAssigned > 0) {
+              const activePct = (row.EmpCount / totalAssigned) * 100;
+              const trainPct = (row.TrainingCount / totalAssigned) * 100;
+              coverageHtml = `
+                  <div class="flex flex-col w-36 gap-1.5 mt-1">
+                    <div class="flex justify-between text-[10px] font-bold tracking-wider">
+                      <span class="text-green-600 dark:text-green-400">${row.EmpCount} ACTIVE</span>
+                      ${row.TrainingCount > 0 ? `<span class="text-yellow-600 dark:text-yellow-400">${row.TrainingCount} TRAIN</span>` : ''}
+                    </div>
+                    <div class="w-full flex h-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
+                      <div class="bg-green-500 h-full" style="width: ${activePct}%"></div>
+                      <div class="bg-yellow-400 h-full" style="width: ${trainPct}%"></div>
+                    </div>
+                  </div>
+                `;
+            } else if (row.HiringRequired) {
+              coverageHtml = `<span class="px-2 py-0.5 text-[9px] font-bold rounded-md bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50 uppercase tracking-wider">Hiring Required</span>`;
+            } else {
+              coverageHtml = `<span class="px-2 py-0.5 text-[9px] font-bold rounded-md bg-orange-50 text-orange-600 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800/50 uppercase tracking-wider">⚠ Talent Gap</span>`;
             }
 
             return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-               <td class="px-4 py-3 font-bold dark:text-white flex items-center">${row.SkillName} ${visibilityBadge}</td>
+               <td class="px-4 py-3 font-bold dark:text-white flex items-center">${row.SkillName}</td>
                <td class="px-4 py-3 text-gray-600 dark:text-gray-200">${row.Category}</td>
                <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] font-bold rounded-full ${statusClr}">${row.Status}</span></td>
-               <td class="px-4 py-3"><div class="flex items-center">${badgesHtml}</div></td>
+               <td class="px-4 py-3">${coverageHtml}</td>
                <td class="px-4 py-3 flex gap-2">
-                 ${promoteBtn}
                  <button onclick="App.ui.modals.viewSkill('${row.SkillID}', '${row.SkillName.replace(/'/g, "\\'")}', '${row.Category}')" class="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 dark:text-green-300 dark:bg-green-900/30 rounded-lg" title="View / Assign Employees"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
                  <button onclick="App.ui.modals.openSkill('${row.SkillID}')" class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30 rounded-lg" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
                  <button onclick="App.actions.deleteSkill('${row.SkillID}')" class="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/30 rounded-lg" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                </td>
              </tr>`;
           });
+
         },
         dashboard: async () => {
           const data = await App.api('getDashboardData', App.state.user.EmpID, App.state.user.Role);
@@ -3085,30 +3315,66 @@
             App.state.cache.skills = App.state.data.skills;
           }
 
-          if (!force && App.state.cache.mySkills) {
-            App.state.data.mySkills = App.state.cache.mySkills;
-          } else {
-            App.state.data.mySkills = await App.api('getEmployeeSkills', App.state.user.EmpID);
-            App.state.cache.mySkills = App.state.data.mySkills;
-          }
+          App.state.data.mySkills = await App.api('getEmployeeSkills', App.state.user.EmpID);
+          const allSkills = App.state.data.skills;
+          const mySkills = App.state.data.mySkills;
 
-          // FIX: Keep 'Rejected' skills ONLY if the current employee created them
-          const allRelevant = App.state.data.skills.filter(s =>
-            s.Status === 'Active' || (s.Status === 'Rejected' && s.CreatedBy === App.state.user.EmpID)
-          );
+          // NEW: Calculate KPI Dashboards
+          let proficientCount = 0;
+          let trainingCount = 0;
+          let pendingCount = 0;
 
-          // FIX: Sort so rejected skills appear at the very top of their categories
-          allRelevant.sort((a, b) => {
-            if (a.Status === 'Rejected' && b.Status !== 'Rejected') return -1;
-            if (a.Status !== 'Rejected' && b.Status === 'Rejected') return 1;
-            return a.SkillName.localeCompare(b.SkillName);
+          mySkills.forEach(ms => {
+            if (ms.AssignmentStatus === 'Training') trainingCount++;
+            else proficientCount++;
           });
 
-          const mySkillIds = App.state.data.mySkills.map(s => s.SkillID);
-          document.getElementById('my-skills-count').innerText = `${mySkillIds.length} Selected`;
+          allSkills.forEach(s => {
+            if (s.CreatedBy === App.state.user.EmpID && s.Visibility === 'PRIVATE' && s.Status !== 'Rejected') {
+              pendingCount++;
+            }
+          });
+
+          // Render KPIs
+          const kpiContainer = document.getElementById('my-skills-kpis');
+          if (kpiContainer) {
+            kpiContainer.innerHTML = `
+                <div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center gap-4">
+                   <div class="p-3 bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-xl">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                   </div>
+                   <div>
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Proficient Skills</p>
+                      <h4 class="text-2xl font-bold text-gray-800 dark:text-white">${proficientCount}</h4>
+                   </div>
+                </div>
+                <div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center gap-4">
+                   <div class="p-3 bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-xl">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                   </div>
+                   <div>
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">In Training</p>
+                      <h4 class="text-2xl font-bold text-gray-800 dark:text-white">${trainingCount}</h4>
+                   </div>
+                </div>
+                <div class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center gap-4">
+                   <div class="p-3 bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded-xl">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                   </div>
+                   <div>
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Approval</p>
+                      <h4 class="text-2xl font-bold text-gray-800 dark:text-white">${pendingCount}</h4>
+                   </div>
+                </div>
+             `;
+          }
+
+          document.getElementById('my-skills-count').innerText = mySkills.length;
 
           const groups = {};
-          allRelevant.forEach(s => {
+          const visibleSkills = allSkills.filter(s => s.Status === 'Active' || s.CreatedBy === App.state.user.EmpID);
+
+          visibleSkills.forEach(s => {
             if (!groups[s.Category]) groups[s.Category] = [];
             groups[s.Category].push(s);
           });
@@ -3116,38 +3382,47 @@
           const container = document.getElementById('my-skills-container');
           container.innerHTML = Object.keys(groups).map(cat => {
             const itemsHtml = groups[cat].map(s => {
-              const isChecked = mySkillIds.includes(s.SkillID) ? 'checked' : '';
+              const mySkillData = mySkills.find(ms => ms.SkillID === s.SkillID);
+              const isChecked = mySkillData ? 'checked' : '';
+              const isTraining = mySkillData && mySkillData.AssignmentStatus === 'Training';
 
-              // Badge and styling for rejected skills
               const isRejected = s.Status === 'Rejected';
               const rejectedBadge = isRejected ? `<span class="ml-2 px-1.5 py-0.5 text-[8px] font-bold rounded-md bg-red-100 text-red-600 border border-red-200">REJECTED</span>` : '';
+              const trainingBadge = isTraining ? `<span class="ml-2 px-1.5 py-0.5 text-[8px] font-bold rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 uppercase tracking-wider">Training</span>` : '';
+
               const containerBg = isRejected ? 'bg-red-50/40 dark:bg-red-900/10 border-red-200 dark:border-red-900/50' : 'border-gray-200 dark:border-slate-600';
               const textStyle = isRejected ? 'text-gray-400 dark:text-gray-500 line-through' : 'dark:text-white';
 
-              // Only allow delete if they created it AND it hasn't been promoted
+              const checkedClasses = isTraining
+                ? 'has-[:checked]:bg-yellow-50 has-[:checked]:border-yellow-400 dark:has-[:checked]:bg-yellow-900/20 dark:has-[:checked]:border-yellow-500/50'
+                : 'has-[:checked]:bg-brand-50 has-[:checked]:border-brand-500 dark:has-[:checked]:bg-brand-900/20 dark:has-[:checked]:border-brand-400';
+
               const canDelete = s.CreatedBy === App.state.user.EmpID && s.Visibility === 'PRIVATE';
               const deleteIcon = canDelete ? `<button onclick="event.preventDefault(); App.actions.deleteSkill('${s.SkillID}')" class="ml-auto p-1.5 bg-white dark:bg-dark-card rounded-md border border-gray-200 dark:border-slate-600 text-gray-400 hover:text-red-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>` : '';
 
+              // NEW: Added 'skill-item-label' class for the search filter
               return `
-              <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors has-[:checked]:bg-brand-50 has-[:checked]:border-brand-500 dark:has-[:checked]:bg-brand-900/20 dark:has-[:checked]:border-brand-400 ${containerBg}">
+              <label class="skill-item-label flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${checkedClasses} ${containerBg}">
                 <input type="checkbox" class="skill-cb w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500 dark:bg-slate-700 dark:border-slate-500 dark:checked:bg-brand-500" value="${s.SkillID}" ${isChecked} ${isRejected ? 'disabled' : ''} onchange="
                   const count = document.querySelectorAll('.skill-cb:checked:not(:disabled)').length;
-                  document.getElementById('my-skills-count').innerText = count + ' Selected';
+                  document.getElementById('my-skills-count').innerText = count;
                 ">
-                <span class="text-sm font-medium select-none flex items-center ${textStyle}">${s.SkillName} ${rejectedBadge}</span>
+                <span class="text-sm font-medium select-none flex items-center ${textStyle}">${s.SkillName} ${rejectedBadge} ${trainingBadge}</span>
                 ${deleteIcon}
               </label>`;
             }).join('');
 
             return `
-            <div class="bg-gray-50/50 dark:bg-slate-800/30 rounded-2xl p-5 border border-gray-100 dark:border-dark-border">
-              <h4 class="font-bold text-gray-800 dark:text-white mb-4 uppercase tracking-wider text-xs">${cat}</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                ${itemsHtml}
-              </div>
-            </div>`;
+              <div class="skill-category-card bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border p-5 shadow-sm">
+                <h4 class="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-brand-500"></span> ${cat}
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  ${itemsHtml}
+                </div>
+              </div>`;
           }).join('');
-        }
+        },
       }
     };
     window.onload = App.init;
