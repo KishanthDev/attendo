@@ -514,7 +514,7 @@
           <!-- NEW: Toolbar (Search & Filter) -->
           <div
             class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
-            <div class="relative w-full sm:w-72">
+            <div id="leave-search-container" class="relative w-full sm:w-72">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -525,6 +525,9 @@
                 placeholder="Search employee..."
                 class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-shadow">
             </div>
+
+            <div class="flex-1 hidden sm:block"></div>
+
             <select id="leave-filter" onchange="App.loadData.leaves(false, true)"
               class="w-full sm:w-48 bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
               <option value="All">All Statuses</option>
@@ -3286,7 +3289,6 @@
           const isEmp = App.state.user.Role === 'EMPLOYEE';
           const todayStr = new Date().toISOString().split('T')[0];
           const currentMonth = todayStr.substring(0, 7);
-
           if (isEmp) {
             // Employee View Logic
             const quotas = {
@@ -3317,12 +3319,21 @@
             document.getElementById('btn-apply-leave').classList.remove('hidden');
             document.getElementById('admin-leave-kpis').classList.add('hidden');
 
+            // FIX: Hide the search bar entirely for Employees
+            const searchContainer = document.getElementById('leave-search-container');
+            if (searchContainer) searchContainer.classList.add('hidden');
+
           } else {
-            // NEW: Admin View Logic (KPI Dashboard)
+            // Admin View Logic (KPI Dashboard)
             document.getElementById('leave-balances-container').classList.add('hidden');
             document.getElementById('btn-apply-leave').classList.add('hidden');
 
+            // FIX: Show the search bar for Admins
+            const searchContainer = document.getElementById('leave-search-container');
+            if (searchContainer) searchContainer.classList.remove('hidden');
+
             let pending = 0, onLeaveToday = 0, approvedMonth = 0, rejectedMonth = 0;
+
 
             data.forEach(l => {
               if (l.Status === 'Pending') pending++;
