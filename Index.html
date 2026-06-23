@@ -1970,25 +1970,68 @@
           }
         },
 
-        saveSkillCardNotes: (categoryName, notes) => {
-          // Instantly update the local UI state
+        saveSkillCardNotes: (categoryName, safeCatId) => {
+          const textarea = document.getElementById(`notes-${safeCatId}`);
+          const notes = textarea.value;
+
           if (!App.state.data.settings.SkillCardNotes) App.state.data.settings.SkillCardNotes = {};
           App.state.data.settings.SkillCardNotes[categoryName] = notes;
 
-          // Bypass the global loading screen and save directly
+          // UI Feedback: Turn on the spinner and disable the button
+          const btn = document.getElementById(`save-btn-${safeCatId}`);
+          const icon = document.getElementById(`save-icon-${safeCatId}`);
+          const spin = document.getElementById(`save-spin-${safeCatId}`);
+
+          if (btn) btn.disabled = true;
+          if (icon) icon.classList.add('hidden');
+          if (spin) spin.classList.remove('hidden');
+
+          // Bypass global loader and save silently
           google.script.run
             .withSuccessHandler(() => {
+              // Update the "original" state so the UI knows it is clean again
+              if (textarea) textarea.setAttribute('data-original', notes);
+
+              // Hide the button entirely and reset the spinner
+              if (btn) {
+                btn.classList.add('hidden');
+                btn.classList.remove('flex');
+                btn.disabled = false;
+              }
+              if (icon) icon.classList.remove('hidden');
+              if (spin) spin.classList.add('hidden');
+
               Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Notes Saved', showConfirmButton: false, timer: 1500 });
             })
             .withFailureHandler((err) => {
+              // If it fails, turn off the spinner so they can click save again
+              if (btn) btn.disabled = false;
+              if (icon) icon.classList.remove('hidden');
+              if (spin) spin.classList.add('hidden');
+
               Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Failed to save notes', showConfirmButton: false, timer: 2000 });
             })
             .saveSkillCardNotes(categoryName, notes);
         },
 
+
       },
 
       ui: {
+        toggleNoteSaveBtn: (safeCatId) => {
+          const textarea = document.getElementById(`notes-${safeCatId}`);
+          const btn = document.getElementById(`save-btn-${safeCatId}`);
+          if (!textarea || !btn) return;
+
+          const original = textarea.getAttribute('data-original') || '';
+          if (textarea.value !== original) {
+            btn.classList.remove('hidden');
+            btn.classList.add('flex');
+          } else {
+            btn.classList.add('hidden');
+            btn.classList.remove('flex');
+          }
+        },
         openLeaveModal: async () => {
           if (!App.state.data.holidays) {
             App.state.data.holidays = await App.api('getHolidays');
@@ -2495,7 +2538,8 @@
           let categories = catsStr ? catsStr.split(',').map(c => c.trim()).filter(c => c) : [];
 
           App.state.data.skills.forEach(s => {
-            if (s.Status !== 'Rejected' && !categories.includes(s.Category)) {
+            // FIX 1: Only resurrect a category if the skill is OFFICIAL (PUBLIC) and not rejected
+            if (s.Status !== 'Rejected' && s.Visibility === 'PUBLIC' && !categories.includes(s.Category)) {
               categories.push(s.Category);
             }
           });
@@ -2503,10 +2547,14 @@
           const grid = document.getElementById('skill-matrix-grid');
 
           grid.innerHTML = categories.map(cat => {
-            // FIX: This needs to be inside the loop so it knows what "cat" is!
             const safeCatId = cat.replace(/[^a-zA-Z0-9]/g, '-');
 
-            const catSkills = App.state.data.skills.filter(s => s.Category === cat && s.Status !== 'Rejected');
+            // FIX 2: Strictly filter out unapproved (PRIVATE) skills from the Matrix cards
+            const catSkills = App.state.data.skills.filter(s =>
+              s.Category === cat &&
+              s.Status !== 'Rejected' &&
+              s.Visibility === 'PUBLIC'
+            );
 
             const skillsHtml = catSkills.map(s => {
               // Combined 4-State Visual Logic
@@ -2542,6 +2590,8 @@
 
             const notesObj = App.state.data.settings?.SkillCardNotes || {};
             const cardNotes = notesObj[cat] || '';
+            // Escape quotes so it doesn't break the HTML attribute
+            const safeNotes = cardNotes.replace(/"/g, '&quot;');
 
             return `
               <div class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex flex-col h-full overflow-hidden hover:shadow-md transition-shadow">
@@ -2564,12 +2614,13 @@
                     ${skillsHtml || '<p class="text-sm text-gray-400 italic w-full text-center py-4">No skills added yet.</p>'}
                  </div>
                  
-                 <!-- NEW: Inline Notes Area with explicit Save Button -->
-                 <div class="px-4 py-2 border-t border-gray-50 dark:border-slate-700/50 bg-amber-50/30 dark:bg-amber-900/10 flex items-start gap-2">
-                    <textarea id="notes-${safeCatId}" class="flex-1 text-xs bg-transparent border-none outline-none resize-none text-gray-600 dark:text-gray-300 placeholder-gray-400/70 custom-scrollbar mt-1" placeholder="Add planner notes (e.g. Hiring targets)..." rows="2" spellcheck="false">${cardNotes}</textarea>
+                 <!-- NEW: Reactive Notes Area -->
+                 <div class="px-4 py-2 border-t border-gray-50 dark:border-slate-700/50 bg-amber-50/30 dark:bg-amber-900/10 flex items-start gap-2 min-h-[50px]">
+                    <textarea id="notes-${safeCatId}" oninput="App.ui.toggleNoteSaveBtn('${safeCatId}')" data-original="${safeNotes}" class="flex-1 text-xs bg-transparent border-none outline-none resize-none text-gray-600 dark:text-gray-300 placeholder-gray-400/70 custom-scrollbar mt-1" placeholder="Add planner notes (e.g. Hiring targets)..." rows="2" spellcheck="false">${cardNotes}</textarea>
                     
-                    <button onclick="App.actions.saveSkillCardNotes('${cat}', document.getElementById('notes-${safeCatId}').value)" class="p-1.5 mt-1 text-amber-600 hover:bg-amber-200 dark:text-amber-400 dark:hover:bg-amber-900/40 rounded-lg transition-colors shadow-sm bg-amber-100 dark:bg-amber-900/20" title="Save Notes">
-                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                    <button id="save-btn-${safeCatId}" onclick="App.actions.saveSkillCardNotes('${cat}', '${safeCatId}')" class="p-1.5 mt-1 text-amber-600 hover:bg-amber-200 dark:text-amber-400 dark:hover:bg-amber-900/40 rounded-lg transition-colors shadow-sm bg-amber-100 dark:bg-amber-900/20 hidden" title="Save Notes">
+                       <svg id="save-icon-${safeCatId}" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                       <svg id="save-spin-${safeCatId}" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     </button>
                  </div>
 
@@ -2644,11 +2695,14 @@
             }
           });
 
-          // FIX: Dynamic Category Count generation (Fixes the missing KPI cards)
+          // FIX: Dynamic Category Count generation (Only count approved PUBLIC skills)
           const cats = {};
           dynamicCategories.forEach(c => cats[c] = 0);
           allSkills.forEach(s => {
-            if (s.Status !== 'Rejected' && cats[s.Category] !== undefined) cats[s.Category]++;
+            // We only count it in the category cards if it's official and not rejected
+            if (s.Status !== 'Rejected' && s.Visibility === 'PUBLIC' && cats[s.Category] !== undefined) {
+              cats[s.Category]++;
+            }
           });
 
           const iconS = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>`;
@@ -2668,7 +2722,9 @@
           }
 
           const filterValue = filterDropdown.value;
-          let displaySkills = [...allSkills];
+
+          // FIX: Strictly filter out unapproved (PRIVATE) skills from the main master table
+          let displaySkills = allSkills.filter(s => s.Visibility === 'PUBLIC');
 
           if (filterValue !== 'All') {
             displaySkills = displaySkills.filter(s => s.Category === filterValue);
