@@ -156,7 +156,7 @@ function saveRowToSheet(sheetName, dataObj, keyField) {
 
   if (rowIndex > -1) {
     // FIX: Merge new data with existing data to prevent blanking out hidden columns!
-    const existingRow = data[rowIndex - 1]; 
+    const existingRow = data[rowIndex - 1];
     const rowData = headers.map((h, i) => dataObj[h] !== undefined ? dataObj[h] : existingRow[i]);
     sheet.getRange(rowIndex, 1, 1, headers.length).setValues([rowData]);
   } else {
@@ -552,19 +552,32 @@ function getLeaves() { return getSheetDataAsJSON(SHEETS.LEAVE); }
 
 function applyLeave(leaveData) {
   const currentUser = Session.getActiveUser().getEmail() || leaveData.EmpID;
+  const leaves = getSheetDataAsJSON(SHEETS.LEAVE); // Fetch all existing leaves
 
+  // 1. NEW VALIDATION: Check if they already applied for this exact date
+  const duplicateLeave = leaves.find(l => 
+    l.EmpID === leaveData.EmpID && 
+    l.StartDate === leaveData.Date && 
+    l.Status !== 'Rejected'
+  );
+
+  if (duplicateLeave) {
+    return { status: 'Error', message: `You already have a ${duplicateLeave.Status.toLowerCase()} leave request for this date.` };
+  }
+
+  // 2. Existing Optional Leave Validation
   if (leaveData.Type === 'Optional Leave') {
     const holidays = getSheetDataAsJSON(SHEETS.HOL);
     const isOptHol = holidays.find(h => h.Date === leaveData.Date && h.Type === 'Optional');
     if (!isOptHol) return { status: 'Error', message: 'The selected date is not an Optional Holiday.' };
 
     const month = leaveData.Date.substring(0, 7);
-    const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
     const existingOpt = leaves.find(l => l.EmpID === leaveData.EmpID && l.Type === 'Optional Leave' && l.StartDate.substring(0, 7) === month && l.Status !== 'Rejected');
 
     if (existingOpt) return { status: 'Error', message: 'You have already selected an Optional Leave for this month.' };
   }
 
+  // 3. Save the new leave request
   leaveData.LeaveID = 'LV-' + Math.floor(100000 + Math.random() * 900000);
   leaveData.Status = 'Pending';
   leaveData.StartDate = leaveData.Date;
@@ -580,10 +593,15 @@ function updateLeaveStatus(leaveId, status, remarks = '') {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   const leaves = getSheetDataAsJSON(SHEETS.LEAVE);
   let leave = leaves.find(l => l.LeaveID === leaveId);
+
   if (leave) {
     leave.Status = status;
     leave.Remarks = remarks;
     saveRowToSheet(SHEETS.LEAVE, leave, 'LeaveID');
+
+    // FIX: Force Google Sheets to instantly commit the save before returning!
+    SpreadsheetApp.flush();
+
     logAudit(currentUser, `LEAVE_${status.toUpperCase()}`, `Leave ${leaveId} ${status}. Remarks: ${remarks}`);
     return { status: 'Success', message: `Leave request has been ${status}.` };
   }

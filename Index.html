@@ -879,8 +879,8 @@
             id="emp-name" required
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
         </div>
-        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Email Address</label><input type="email"
-            id="emp-email"
+        <div><label class="block text-sm font-medium mb-1 dark:text-gray-200">Email Address (Optional)</label><input
+            type="email" id="emp-email"
             class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1651,27 +1651,38 @@
 
         updateLeave: async (id, status) => {
           const { value: remarks } = await Swal.fire({ title: `${status} Leave`, input: 'text', inputLabel: 'Optional Remarks', showCancelButton: true });
+
           if (remarks !== undefined) {
-            const res = await App.api('updateLeaveStatus', id, status, remarks);
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+            // 1. Show a sleek processing toast
+            Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Processing...', showConfirmButton: false, timer: 1000 });
 
-            // FIX: Clear the cache, force table render, and silently update dashboard counters
-            App.state.cache.leaves = null;
-            await App.loadData.leaves(true);
-
+            // 2. Perform backend update silently
             App.state.isSilentRefresh = true;
-            await App.loadData.dashboard();
-            App.state.isSilentRefresh = false;
-          }
-        },
+            try {
+              const res = await App.api('updateLeaveStatus', id, status, remarks);
 
-        updateLeave: async (id, status) => {
-          const { value: remarks } = await Swal.fire({ title: `${status} Leave`, input: 'text', inputLabel: 'Optional Remarks', showCancelButton: true });
-          if (remarks !== undefined) {
-            const res = await App.api('updateLeaveStatus', id, status, remarks);
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
-            App.loadData.leaves();
-            App.loadData.dashboard();
+              // 3. OPTIMISTIC UPDATE: Update the local cache instantly so we don't have to wait for Google Sheets to sync!
+              if (App.state.cache.leaves) {
+                const targetLeave = App.state.cache.leaves.find(l => l.LeaveID === id);
+                if (targetLeave) {
+                  targetLeave.Status = status;
+                  targetLeave.Remarks = remarks;
+                }
+              }
+
+              Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
+              // 4. Force a UI re-render instantly using our freshly updated local cache (force = false)
+              await App.loadData.leaves(false);
+
+              // Update dashboard silently in background
+              await App.loadData.dashboard();
+
+            } catch (e) {
+              Swal.fire({ icon: 'error', title: 'Failed to update leave', text: e.message });
+            } finally {
+              App.state.isSilentRefresh = false;
+            }
           }
         },
 
