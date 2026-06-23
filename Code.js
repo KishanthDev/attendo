@@ -15,7 +15,7 @@ const SHEETS = {
   CLIENT_ASSIGNMENTS: 'ClientAssignments',
   SKILLS: 'Skills',
   EMP_SKILLS: 'EmployeeSkills',
-  SKILL_CARDS: 'SkillCards'
+  SKILL_CARDS: 'SkillCards' // NEW: Dedicated Sheet for Cards and Notes
 };
 
 function doGet(e) {
@@ -46,7 +46,7 @@ function setupSystem() {
     [SHEETS.CLIENT_ASSIGNMENTS]: ['AssignmentID', 'ClientID', 'EmpID', 'EmployeeName', 'AssignedDate', 'Status'],
     [SHEETS.SKILLS]: ['SkillID', 'Category', 'SkillName', 'Status', 'CreatedBy', 'Visibility', 'HiringRequired'],
     [SHEETS.EMP_SKILLS]: ['EmpID', 'SkillID', 'SkillName', 'Category', 'UpdatedAt', 'AssignmentStatus'],
-    [SHEETS.SKILL_CARDS]: ['CategoryID', 'CategoryName', 'CardNotes']
+    [SHEETS.SKILL_CARDS]: ['CategoryID', 'CategoryName', 'CardNotes'] // NEW SCHEMA
   };
 
   for (const [sheetName, headers] of Object.entries(schemas)) {
@@ -67,26 +67,34 @@ function setupSystem() {
     setSheet.appendRow(['OptionalLeaveQuota', '2']);
   }
 
+  // Seed Default Skill Cards into the new dedicated sheet
+  const cardsSheet = ss.getSheetByName(SHEETS.SKILL_CARDS);
+  if (cardsSheet && cardsSheet.getLastRow() === 1) {
+    const defaultCards = ['Languages', 'Frameworks', 'DevOps', 'Cloud', 'AI', 'Other'];
+    defaultCards.forEach((cat, index) => {
+      cardsSheet.appendRow([`CAT-${100+index}`, cat, '']);
+    });
+  }
+
   // Seed Default Skills if empty
   const skillsSheet = ss.getSheetByName(SHEETS.SKILLS);
   if (skillsSheet.getLastRow() === 1) {
     const defaultSkills = [
-      ['SKL-101', 'Languages', 'JavaScript', 'Active'],
-      ['SKL-102', 'Languages', 'TypeScript', 'Active'],
-      ['SKL-103', 'Languages', 'Python', 'Active'],
-      ['SKL-201', 'Frameworks', 'React', 'Active'],
-      ['SKL-202', 'Frameworks', 'Next.js', 'Active'],
-      ['SKL-203', 'Frameworks', 'Node.js', 'Active'],
-      ['SKL-301', 'DevOps', 'Docker', 'Active'],
-      ['SKL-302', 'DevOps', 'Kubernetes', 'Active'],
-      ['SKL-401', 'Cloud', 'AWS', 'Active'],
-      ['SKL-402', 'Cloud', 'GCP', 'Active'],
-      ['SKL-501', 'AI', 'OpenAI', 'Active'],
-      ['SKL-502', 'AI', 'LangChain', 'Active']
+      ['SKL-101', 'Languages', 'JavaScript', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-102', 'Languages', 'TypeScript', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-103', 'Languages', 'Python', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-201', 'Frameworks', 'React', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-202', 'Frameworks', 'Next.js', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-203', 'Frameworks', 'Node.js', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-301', 'DevOps', 'Docker', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-302', 'DevOps', 'Kubernetes', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-401', 'Cloud', 'AWS', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-402', 'Cloud', 'GCP', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-501', 'AI', 'OpenAI', 'Active', 'ADMIN', 'PUBLIC', 'FALSE'],
+      ['SKL-502', 'AI', 'LangChain', 'Active', 'ADMIN', 'PUBLIC', 'FALSE']
     ];
     defaultSkills.forEach(row => skillsSheet.appendRow(row));
   }
-
 
   return "Setup successful.";
 }
@@ -222,15 +230,20 @@ function getAppSettings() {
     if (key === 'LateArrivalTime') {
       settings.LateArrivalTime = row.Value instanceof Date ? Utilities.formatDate(row.Value, Session.getScriptTimeZone(), 'HH:mm') : String(row.Value).trim();
     }
-    if (key === 'SkillCategories') {
-      settings.SkillCategories = String(row.Value).trim();
-    }
-    // NEW: Load Notes
-    if (key === 'SkillCardNotes') {
-      try { settings.SkillCardNotes = JSON.parse(row.Value); }
-      catch (e) { settings.SkillCardNotes = {}; }
-    }
   });
+
+  // Pull Categories and Notes from the NEW dedicated sheet
+  const cardsData = getSheetDataAsJSON(SHEETS.SKILL_CARDS);
+  if (cardsData.length > 0) {
+     settings.SkillCategories = cardsData.map(c => c.CategoryName).join(',');
+     settings.SkillCardNotes = {};
+     cardsData.forEach(c => {
+        if (c.CardNotes) settings.SkillCardNotes[c.CategoryName] = String(c.CardNotes);
+     });
+  } else {
+     settings.SkillCategories = 'Languages,Frameworks,DevOps,Cloud,AI,Other';
+     settings.SkillCardNotes = {};
+  }
 
   return settings;
 }
@@ -962,107 +975,6 @@ function rejectSkill(skillId) {
   return { status: 'Success', message: 'Skill request has been rejected.' };
 }
 
-function addSkillCategory(categoryName) {
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
-  const sheet = getDb().getSheetByName(SHEETS.SET);
-  const data = sheet.getDataRange().getValues();
-
-  let found = false;
-  let existingCats = 'Languages,Frameworks,DevOps,Cloud,AI,Other';
-  let rowIndex = -1;
-
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === 'SkillCategories') {
-      found = true;
-      existingCats = String(data[i][1]);
-      rowIndex = i + 1;
-      break;
-    }
-  }
-
-  // FIX: Safely parse the array and remove any empty string artifacts
-  let catArray = existingCats ? existingCats.split(',').map(c => c.trim()).filter(Boolean) : [];
-
-  if (!catArray.includes(categoryName.trim())) {
-    catArray.push(categoryName.trim());
-    const newVal = catArray.join(',');
-
-    if (found) {
-      sheet.getRange(rowIndex, 2).setValue(newVal);
-    } else {
-      sheet.appendRow(['SkillCategories', newVal]);
-    }
-    logAudit(currentUser, 'ADD_SKILL_CATEGORY', `Added category: ${categoryName}`);
-    return { status: 'Success', categories: newVal };
-  }
-
-  return { status: 'Error', message: 'Category card already exists.' };
-}
-
-function deleteSkillCategory(categoryName) {
-  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
-
-  // 1. Remove the Category from System Settings
-  const setSheet = getDb().getSheetByName(SHEETS.SET);
-  const setData = setSheet.getDataRange().getValues();
-  let rowIndex = -1;
-  let existingCats = 'Languages,Frameworks,DevOps,Cloud,AI,Other';
-
-  for (let i = 1; i < setData.length; i++) {
-    if (setData[i][0] === 'SkillCategories') {
-      existingCats = String(setData[i][1]);
-      rowIndex = i + 1;
-      break;
-    }
-  }
-
-  // Filter out the deleted category
-  let catArray = existingCats.split(',').map(c => c.trim()).filter(c => c !== categoryName);
-  let newVal = catArray.join(',');
-
-  if (rowIndex > -1) {
-    setSheet.getRange(rowIndex, 2).setValue(newVal);
-  } else {
-    // If it wasn't in the DB yet, create it now WITHOUT the deleted category
-    setSheet.appendRow(['SkillCategories', newVal]);
-  }
-
-  // 2. Find and Delete Skills associated with this Category
-  const skillsSheet = getDb().getSheetByName(SHEETS.SKILLS);
-  const skillsData = skillsSheet.getDataRange().getValues();
-  let deletedSkillIds = [];
-
-  if (skillsData.length > 1) {
-    const skillsHeaders = skillsData[0];
-    const catColIdx = skillsHeaders.indexOf('Category');
-    const idColIdx = skillsHeaders.indexOf('SkillID');
-
-    // Loop backwards to safely delete multiple rows
-    for (let i = skillsData.length - 1; i >= 1; i--) {
-      if (skillsData[i][catColIdx] === categoryName) {
-        deletedSkillIds.push(skillsData[i][idColIdx]);
-        skillsSheet.deleteRow(i + 1);
-      }
-    }
-  }
-
-  // 3. Find and Delete Employee mappings for those deleted skills
-  if (deletedSkillIds.length > 0) {
-    const empSkillsSheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
-    const empSkillsData = empSkillsSheet.getDataRange().getValues();
-
-    // Column 1 is SkillID in EMP_SKILLS (Index 0 = EmpID, Index 1 = SkillID)
-    for (let i = empSkillsData.length - 1; i >= 1; i--) {
-      if (deletedSkillIds.includes(empSkillsData[i][1])) {
-        empSkillsSheet.deleteRow(i + 1);
-      }
-    }
-  }
-
-  logAudit(currentUser, 'DELETE_SKILL_CATEGORY', `Deleted category: ${categoryName} and ${deletedSkillIds.length} skills.`);
-  return { status: 'Success', message: `Card and ${deletedSkillIds.length} related skills deleted.` };
-}
-
 function getEmployeesByCategory(category) {
   const empSkills = getSheetDataAsJSON(SHEETS.EMP_SKILLS).filter(es => es.Category === category);
 
@@ -1145,50 +1057,90 @@ function updateHiringFlag(skillId, value) {
   }
 }
 
+function addSkillCategory(categoryName) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const sheet = getDb().getSheetByName(SHEETS.SKILL_CARDS);
+  const data = sheet.getDataRange().getValues();
+  
+  const catNameTrimmed = categoryName.trim();
+  let exists = false;
+  
+  for(let i=1; i<data.length; i++){
+     if(data[i][1] === catNameTrimmed) { exists = true; break; }
+  }
+  
+  if (!exists) {
+     sheet.appendRow(['CAT-' + Math.floor(10000 + Math.random() * 90000), catNameTrimmed, '']);
+     logAudit(currentUser, 'ADD_SKILL_CATEGORY', `Added category: ${catNameTrimmed}`);
+     
+     // Return the updated comma string so the UI re-renders correctly
+     const updatedData = sheet.getDataRange().getValues();
+     const allCats = [];
+     for(let i=1; i<updatedData.length; i++){ allCats.push(updatedData[i][1]); }
+     return { status: 'Success', categories: allCats.join(',') };
+  }
+  
+  return { status: 'Error', message: 'Category card already exists.' };
+}
+
+function deleteSkillCategory(categoryName) {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+
+  // 1. Delete the Card from the dedicated sheet
+  const cardsSheet = getDb().getSheetByName(SHEETS.SKILL_CARDS);
+  const cardsData = cardsSheet.getDataRange().getValues();
+  for (let i = cardsData.length - 1; i >= 1; i--) {
+    if (cardsData[i][1] === categoryName) {
+      cardsSheet.deleteRow(i + 1);
+    }
+  }
+
+  // 2. Find and Delete Skills associated with this Category
+  const skillsSheet = getDb().getSheetByName(SHEETS.SKILLS);
+  const skillsData = skillsSheet.getDataRange().getValues();
+  let deletedSkillIds = [];
+
+  if (skillsData.length > 1) {
+    const skillsHeaders = skillsData[0];
+    const catColIdx = skillsHeaders.indexOf('Category');
+    const idColIdx = skillsHeaders.indexOf('SkillID');
+
+    for (let i = skillsData.length - 1; i >= 1; i--) {
+      if (skillsData[i][catColIdx] === categoryName) {
+        deletedSkillIds.push(skillsData[i][idColIdx]);
+        skillsSheet.deleteRow(i + 1);
+      }
+    }
+  }
+
+  // 3. Find and Delete Employee mappings for those deleted skills
+  if (deletedSkillIds.length > 0) {
+    const empSkillsSheet = getDb().getSheetByName(SHEETS.EMP_SKILLS);
+    const empSkillsData = empSkillsSheet.getDataRange().getValues();
+    for (let i = empSkillsData.length - 1; i >= 1; i--) {
+      if (deletedSkillIds.includes(empSkillsData[i][1])) {
+        empSkillsSheet.deleteRow(i + 1);
+      }
+    }
+  }
+
+  logAudit(currentUser, 'DELETE_SKILL_CATEGORY', `Deleted category: ${categoryName}`);
+  return { status: 'Success', message: `Card and ${deletedSkillIds.length} related skills deleted.` };
+}
+
 function editSkillCategory(oldName, newName) {
   const currentUser = Session.getActiveUser().getEmail() || 'Admin';
   if (!newName || !newName.trim() || oldName === newName) return { status: 'Error', message: 'Invalid name.' };
   newName = newName.trim();
 
-  // 1. Update Settings Sheet (Categories List & Notes Key)
-  const setSheet = getDb().getSheetByName(SHEETS.SET);
-  const setData = setSheet.getDataRange().getValues();
-  let catRowIndex = -1;
-  let notesRowIndex = -1;
-  let existingCats = '';
-  let notesStr = '{}';
-
-  for (let i = 1; i < setData.length; i++) {
-    if (setData[i][0] === 'SkillCategories') {
-      existingCats = String(setData[i][1]);
-      catRowIndex = i + 1;
-    }
-    if (setData[i][0] === 'SkillCardNotes') {
-      notesStr = String(setData[i][1]);
-      notesRowIndex = i + 1;
-    }
-  }
-
-  let catArray = existingCats.split(',').map(c => c.trim()).filter(Boolean);
-  if (catArray.includes(newName)) return { status: 'Error', message: 'Category name already exists.' };
-
-  const idx = catArray.indexOf(oldName);
-  if (idx > -1) {
-    catArray[idx] = newName;
-    setSheet.getRange(catRowIndex, 2).setValue(catArray.join(','));
-  }
-
-  // Update Notes JSON key
-  let notesObj = {};
-  try { notesObj = JSON.parse(notesStr); } catch (e) { }
-  if (notesObj[oldName] !== undefined) {
-    notesObj[newName] = notesObj[oldName];
-    delete notesObj[oldName];
-    if (notesRowIndex > -1) {
-      setSheet.getRange(notesRowIndex, 2).setValue(JSON.stringify(notesObj));
-    } else {
-      setSheet.appendRow(['SkillCardNotes', JSON.stringify(notesObj)]);
-    }
+  // 1. Update the Card Name in the dedicated sheet
+  const cardsSheet = getDb().getSheetByName(SHEETS.SKILL_CARDS);
+  const cardsData = cardsSheet.getDataRange().getValues();
+  for (let i = 1; i < cardsData.length; i++) {
+     if (cardsData[i][1] === oldName) {
+        cardsSheet.getRange(i+1, 2).setValue(newName);
+        break;
+     }
   }
 
   // 2. Update SKILLS sheet
@@ -1214,27 +1166,14 @@ function editSkillCategory(oldName, newName) {
 }
 
 function saveSkillCardNotes(categoryName, notes) {
-  const setSheet = getDb().getSheetByName(SHEETS.SET);
-  const setData = setSheet.getDataRange().getValues();
-  let notesRowIndex = -1;
-  let notesStr = '{}';
-
-  for (let i = 1; i < setData.length; i++) {
-    if (setData[i][0] === 'SkillCardNotes') {
-      notesStr = String(setData[i][1]);
-      notesRowIndex = i + 1;
-      break;
+  const cardsSheet = getDb().getSheetByName(SHEETS.SKILL_CARDS);
+  const cardsData = cardsSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < cardsData.length; i++) {
+    if (cardsData[i][1] === categoryName) {
+      cardsSheet.getRange(i+1, 3).setValue(notes); // Write to CardNotes column
+      return { status: 'Success' };
     }
   }
-
-  let notesObj = {};
-  try { notesObj = JSON.parse(notesStr); } catch (e) { }
-  notesObj[categoryName] = notes;
-
-  if (notesRowIndex > -1) {
-    setSheet.getRange(notesRowIndex, 2).setValue(JSON.stringify(notesObj));
-  } else {
-    setSheet.appendRow(['SkillCardNotes', JSON.stringify(notesObj)]);
-  }
-  return { status: 'Success' };
+  return { status: 'Error', message: 'Category not found' };
 }
