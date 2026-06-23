@@ -499,13 +499,41 @@
         </div>
 
         <div id="view-leaves" class="view-section space-y-6">
-          <div id="leave-balances-container" class="hidden"></div>
-          <div class="flex justify-between items-center">
-            <h3 class="font-semibold text-lg dark:text-white">Leave Requests</h3>
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
             <button onclick="App.ui.openLeaveModal()"
               class="bg-brand-600 hover:bg-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all hidden"
               id="btn-apply-leave">Apply Leave</button>
           </div>
+
+          <!-- Employee Balances (Hidden for Admin) -->
+          <div id="leave-balances-container" class="hidden"></div>
+
+          <!-- NEW: Admin Leave KPIs (Hidden for Employee) -->
+          <div id="admin-leave-kpis" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4"></div>
+
+          <!-- NEW: Toolbar (Search & Filter) -->
+          <div
+            class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
+            <div class="relative w-full sm:w-72">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </span>
+              <input type="text" id="leave-search" onkeyup="App.loadData.leaves(false, true)"
+                placeholder="Search employee..."
+                class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-shadow">
+            </div>
+            <select id="leave-filter" onchange="App.loadData.leaves(false, true)"
+              class="w-full sm:w-48 bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="All">All Statuses</option>
+              <option value="Pending">Pending Approvals</option>
+              <option value="Approved">Approved Leaves</option>
+              <option value="Rejected">Rejected Leaves</option>
+            </select>
+          </div>
+
           <div
             class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container">
             <table class="w-full text-sm text-left whitespace-nowrap" id="leaves-table"></table>
@@ -1614,7 +1642,26 @@
             Swal.fire({ icon: 'error', title: 'Request Failed', text: res.message });
           } else {
             Swal.fire({ icon: 'success', title: 'Requested', text: res.message });
-            App.loadData.leaves();
+
+            // FIX: Clear the cache and force a fresh table render
+            App.state.cache.leaves = null;
+            App.loadData.leaves(true);
+          }
+        },
+
+        updateLeave: async (id, status) => {
+          const { value: remarks } = await Swal.fire({ title: `${status} Leave`, input: 'text', inputLabel: 'Optional Remarks', showCancelButton: true });
+          if (remarks !== undefined) {
+            const res = await App.api('updateLeaveStatus', id, status, remarks);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
+            // FIX: Clear the cache, force table render, and silently update dashboard counters
+            App.state.cache.leaves = null;
+            await App.loadData.leaves(true);
+
+            App.state.isSilentRefresh = true;
+            await App.loadData.dashboard();
+            App.state.isSilentRefresh = false;
           }
         },
 
@@ -1754,12 +1801,18 @@
           App.ui.modals.close('skill-modal');
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
 
-          // FIX: Dynamically refresh the active view
+          // FIX: Clear caches for both master skills AND personal skills
           App.state.cache.skills = null;
+          App.state.cache.mySkills = null;
+
+          // Dynamically refresh the active view based on who is using it
           if (App.state.currentView === 'skills-master') {
-            App.loadData['skills-master'](true);
+            await App.loadData['skills-master'](true);
           } else if (App.state.currentView === 'skill-matrix') {
-            App.loadData['skill-matrix'](true);
+            await App.loadData['skill-matrix'](true);
+          } else if (App.state.currentView === 'my-skills') {
+            // Re-render the employee's personal portfolio instantly
+            await App.loadData['my-skills'](true);
           }
         },
 
@@ -1935,10 +1988,34 @@
         promoteSkill: async (id) => {
           const confirm = await Swal.fire({ title: 'Promote Skill?', text: "This will make the skill available to all employees globally.", icon: 'info', showCancelButton: true, confirmButtonText: 'Promote' });
           if (confirm.isConfirmed) {
+            App.ui.modals.close('review-skills-modal'); // FIX: Close modal only after confirmation
+
             const res = await App.api('promoteSkill', id);
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
             App.state.cache.skills = null;
-            App.loadData['skills-master'](true);
+            await App.loadData['skills-master'](true); // FIX: Await the fresh render
+          }
+        },
+
+        rejectSkill: async (id) => {
+          const confirm = await Swal.fire({
+            title: 'Reject Skill?',
+            text: "The employee will be notified that this skill was rejected.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Yes, reject'
+          });
+
+          if (confirm.isConfirmed) {
+            App.ui.modals.close('review-skills-modal'); // FIX: Close modal only after confirmation
+
+            const res = await App.api('rejectSkill', id);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+
+            App.state.cache.skills = null;
+            await App.loadData['skills-master'](true); // FIX: Await the fresh render
           }
         },
 
@@ -2045,24 +2122,6 @@
             App.state.cache.skills = null;
             App.loadData['skills-master'](true);
             App.ui.modals.viewSkill(skillId, skillName, category);
-          }
-        },
-
-        rejectSkill: async (id) => {
-          const confirm = await Swal.fire({
-            title: 'Reject Skill?',
-            text: "The employee will be notified that this skill was rejected.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Yes, reject'
-          });
-
-          if (confirm.isConfirmed) {
-            const res = await App.api('rejectSkill', id);
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
-            App.state.cache.skills = null;
-            App.loadData['skills-master'](true);
           }
         },
 
@@ -3203,19 +3262,29 @@
           tableHtml += `</tbody>`;
           document.getElementById('attendance-summary-table').innerHTML = tableHtml;
         },
-        leaves: async () => {
-          const data = await App.api('getLeaves');
+        leaves: async (force = false, isFilter = false) => {
+          // Smart caching: Don't hit the DB if we are just typing in the search bar
+          let data;
+          if (!force && App.state.cache.leaves) {
+            data = App.state.cache.leaves;
+          } else {
+            data = await App.api('getLeaves');
+            App.state.cache.leaves = data;
+          }
+
           const isEmp = App.state.user.Role === 'EMPLOYEE';
-          const filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
+          const todayStr = new Date().toISOString().split('T')[0];
+          const currentMonth = todayStr.substring(0, 7);
 
           if (isEmp) {
+            // Employee View Logic
             const quotas = {
               'Casual Leave': Number(App.state.data.settings?.CasualLeaveQuota || 10),
               'Optional Leave': Number(App.state.data.settings?.OptionalLeaveQuota || 2)
             };
             const used = { 'Casual Leave': 0, 'Optional Leave': 0 };
 
-            filtered.filter(l => l.Status === 'Approved' || l.Status === 'Pending').forEach(l => {
+            data.filter(l => l.EmpID === App.state.user.EmpID && (l.Status === 'Approved' || l.Status === 'Pending')).forEach(l => {
               if (l.Type === 'Casual Leave') used['Casual Leave'] += Number(l.Days || 1);
               if (l.Type === 'Optional Leave') used['Optional Leave'] += Number(l.Days || 1);
             });
@@ -3235,16 +3304,72 @@
 
             container.classList.remove('hidden');
             document.getElementById('btn-apply-leave').classList.remove('hidden');
+            document.getElementById('admin-leave-kpis').classList.add('hidden');
+
           } else {
+            // NEW: Admin View Logic (KPI Dashboard)
             document.getElementById('leave-balances-container').classList.add('hidden');
             document.getElementById('btn-apply-leave').classList.add('hidden');
+
+            let pending = 0, onLeaveToday = 0, approvedMonth = 0, rejectedMonth = 0;
+
+            data.forEach(l => {
+              if (l.Status === 'Pending') pending++;
+              if (l.Status === 'Approved' && l.StartDate <= todayStr && l.EndDate >= todayStr) onLeaveToday++;
+              if (l.Status === 'Approved' && l.StartDate.startsWith(currentMonth)) approvedMonth++;
+              if (l.Status === 'Rejected' && l.StartDate.startsWith(currentMonth)) rejectedMonth++;
+            });
+
+            const kpiContainer = document.getElementById('admin-leave-kpis');
+            kpiContainer.classList.remove('hidden');
+            kpiContainer.innerHTML = `
+               <div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center gap-4">
+                  <div class="p-3 bg-yellow-50 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                  <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending Approvals</p><h4 class="text-xl font-bold text-gray-800 dark:text-white">${pending}</h4></div>
+               </div>
+               <div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center gap-4">
+                  <div class="p-3 bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></div>
+                  <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">On Leave Today</p><h4 class="text-xl font-bold text-gray-800 dark:text-white">${onLeaveToday}</h4></div>
+               </div>
+               <div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center gap-4">
+                  <div class="p-3 bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                  <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Approved (This Mth)</p><h4 class="text-xl font-bold text-gray-800 dark:text-white">${approvedMonth}</h4></div>
+               </div>
+               <div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center gap-4">
+                  <div class="p-3 bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                  <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Rejected (This Mth)</p><h4 class="text-xl font-bold text-gray-800 dark:text-white">${rejectedMonth}</h4></div>
+               </div>
+            `;
           }
 
-          if (!App.state.data.employees || App.state.data.employees.length === 0) await App.loadData.employees(true);
+          if (!App.state.data.employees || App.state.data.employees.length === 0) {
+            await App.loadData.employees(true);
+          }
+
+          // NEW: Apply Search & Filters
+          const searchTerm = (document.getElementById('leave-search')?.value || '').toLowerCase();
+          const filterStatus = document.getElementById('leave-filter')?.value || 'All';
+
+          let filtered = isEmp ? data.filter(d => d.EmpID === App.state.user.EmpID) : data;
+
+          if (filterStatus !== 'All') {
+            filtered = filtered.filter(l => l.Status === filterStatus);
+          }
+
+          if (searchTerm) {
+            filtered = filtered.filter(l => {
+              const emp = App.state.data.employees.find(e => e.EmpID === l.EmpID);
+              const empName = emp ? emp.Name.toLowerCase() : '';
+              return l.EmpID.toLowerCase().includes(searchTerm) || empName.includes(searchTerm);
+            });
+          }
+
+          // Sort by Date Descending
+          filtered.sort((a, b) => new Date(b.StartDate) - new Date(a.StartDate));
 
           App.ui.render.table('leaves-table', ['Req. ID', 'Employee', 'Type', 'Date', 'Status', 'Remarks', 'Actions'], filtered, row => {
             let acts = '-';
-            if (!isEmp && row.Status === 'Pending') acts = `<div class="flex gap-2"><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Approved')" class="text-green-600 hover:text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-semibold">Approve</button><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Rejected')" class="text-red-600 hover:text-red-700 bg-red-50 px-2 py-1 rounded text-xs font-semibold">Reject</button></div>`;
+            if (!isEmp && row.Status === 'Pending') acts = `<div class="flex gap-2"><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Approved')" class="text-green-600 hover:text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-semibold shadow-sm transition-colors">Approve</button><button onclick="App.actions.updateLeave('${row.LeaveID}', 'Rejected')" class="text-red-600 hover:text-red-700 bg-red-50 px-2 py-1 rounded text-xs font-semibold shadow-sm transition-colors">Reject</button></div>`;
             const clr = row.Status === 'Approved' ? 'text-green-600 bg-green-50 dark:text-green-300 dark:bg-green-900/30' : (row.Status === 'Rejected' ? 'text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-900/30' : 'text-orange-600 bg-orange-50 dark:text-orange-300 dark:bg-orange-900/30');
             const dStr = row.StartDate.split('T')[0];
             const parts = dStr.split('-');
