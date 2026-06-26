@@ -470,7 +470,10 @@ function getAttendanceSummary(empIdFilter = null) {
 
   const result = Object.values(groups).map(g => {
     const hasActiveSession = g.Sessions.some(s => !s.CheckOut || s.CheckOut === "");
-    if (hasActiveSession) g.Status = 'Present';
+    const hasPendingApproval = g.Sessions.some(s => s.Status === 'Pending Approval');
+
+    if (hasPendingApproval) g.Status = 'Pending Approval'; // Highlight to Admin
+    else if (hasActiveSession) g.Status = 'Present';
     else if (g.TotalHours >= g.RequiredHours) g.Status = 'Completed';
     else if (g.TotalHours >= (g.RequiredHours / 2)) g.Status = 'Half Day';
     else if (g.TotalHours > 0) g.Status = 'Present';
@@ -1301,4 +1304,86 @@ function saveSkillCardNotes(categoryName, notes) {
     }
   }
   return { status: 'Error', message: 'Category not found' };
+}
+
+// 1. ADMIN APPROVAL/REJECTION ENGINE
+function processAttendanceCorrection(attId, decision, rejectionReason = '') {
+  const currentUser = Session.getActiveUser().getEmail() || 'Admin';
+  const sheet = getDb().getSheetByName(SHEETS.ATT);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][headers.indexOf('AttID')] === attId) {
+
+      if (decision === 'Approved') {
+        const hours = Number(data[i][headers.indexOf('Hours')]);
+        const settings = getAppSettings();
+        const reqHours = Number(settings.DailyWorkingHours) || 8;
+
+        // Decide final status based on approved hours
+        let finalStatus = 'Completed';
+        if (hours < (reqHours / 2)) finalStatus = 'Half Day';
+
+        sheet.getRange(i + 1, headers.indexOf('Status') + 1).setValue(finalStatus);
+
+        logAudit(currentUser, 'CORRECTION_APPROVED', `Approved correction for ${attId}. Hours: ${hours}`);
+        return { status: 'Success', message: 'Attendance correction approved!' };
+
+      } else if (decision === 'Rejected') {
+        // Revert checkout and hours, mark as Absent (Strict Policy)
+        sheet.getRange(i + 1, headers.indexOf('CheckOut') + 1).setValue("");
+        sheet.getRange(i + 1, headers.indexOf('Hours') + 1).setValue("");
+        sheet.getRange(i + 1, headers.indexOf('Status') + 1).setValue('Absent');
+
+        let reasonCol = headers.indexOf('CorrectionReason');
+        if (reasonCol > -1) {
+          sheet.getRange(i + 1, reasonCol + 1).setValue(`Rejected by Admin: ${rejectionReason}`);
+        }
+
+        logAudit(currentUser, 'CORRECTION_REJECTED', `Rejected ${attId}. Reason: ${rejectionReason}`);
+        return { status: 'Success', message: 'Correction rejected. Marked as Absent.' };
+      }
+    }
+  }
+  return { status: 'Error', message: 'Session not found.' };
+}
+
+// 2. AUTOMATIC 3-DAY EXPIRY TIME-BOMB
+function runAttendanceExpiryCleanup() {
+  const sheet = getDb().getSheetByName(SHEETS.ATT);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const now = new Date();
+
+  let expiredCount = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const checkOut = data[i][headers.indexOf('CheckOut')];
+    const status = data[i][headers.indexOf('Status')];
+    const rawDate = data[i][headers.indexOf('Date')];
+
+    // Safely parse date
+    let dateStr = rawDate;
+    if (rawDate instanceof Date) {
+      dateStr = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    } else if (typeof rawDate === 'string' && rawDate.includes('T')) {
+      dateStr = rawDate.split('T')[0];
+    }
+
+    const entryDate = new Date(dateStr);
+    const diffDays = Math.floor((now - entryDate) / (1000 * 60 * 60 * 24));
+
+    // If it's been 3 or more days and CheckOut is STILL missing (or it's sitting in Pending Approval)
+    if (diffDays >= 3 && status !== 'Absent' && (!checkOut || checkOut === "" || status === 'Pending Approval')) {
+      sheet.getRange(i + 1, headers.indexOf('Status') + 1).setValue('Absent');
+
+      let reasonCol = headers.indexOf('CorrectionReason');
+      if (reasonCol > -1) {
+        sheet.getRange(i + 1, reasonCol + 1).setValue('Auto-Expired: No valid Check-out within 3 days.');
+      }
+      expiredCount++;
+    }
+  }
+  if (expiredCount > 0) logAudit('System', 'AUTO_EXPIRY', `Auto-expired ${expiredCount} incomplete attendance records.`);
 }

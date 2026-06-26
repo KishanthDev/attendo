@@ -1609,6 +1609,48 @@
       },
 
       actions: {
+        // Add this inside your App.actions object:
+
+        processCorrection: async (attId, decision) => {
+          let rejectionReason = '';
+
+          if (decision === 'Rejected') {
+            const { value: text, isConfirmed } = await Swal.fire({
+              title: 'Reject Correction',
+              input: 'text',
+              inputPlaceholder: 'Reason for rejection...',
+              showCancelButton: true,
+              confirmButtonColor: '#d33',
+              confirmButtonText: 'Reject & Mark Absent'
+            });
+            if (!isConfirmed) return;
+            rejectionReason = text || 'Rejected by policy';
+          } else {
+            const { isConfirmed } = await Swal.fire({
+              title: 'Approve Correction?',
+              text: 'This will finalize their check-out time and calculate hours.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, Approve',
+              confirmButtonColor: '#10b981'
+            });
+            if (!isConfirmed) return;
+          }
+
+          // Show inline loading spinner
+          Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Processing...', showConfirmButton: false, timer: 1000 });
+
+          App.state.isSilentRefresh = true;
+          const res = await App.api('processAttendanceCorrection', attId, decision, rejectionReason);
+          App.state.isSilentRefresh = false;
+
+          if (res.status === 'Success') {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+            App.loadData.attendance();
+          } else {
+            Swal.fire({ icon: 'error', title: 'Action Failed', text: res.message });
+          }
+        },
         login: async () => {
           try {
             const email = document.getElementById('login-credential').value;
@@ -3491,7 +3533,9 @@
           if (data.length === 0) {
             tableHtml += `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-300">No records found.</td></tr>`;
           } else {
-            if (!App.state.data.employees || App.state.data.employees.length === 0 && !isEmp) App.loadData.employees(true);
+            if (!App.state.data.employees || App.state.data.employees.length === 0 && !isEmp) {
+              await App.loadData.employees(true);
+            }
 
             data.forEach((group, i) => {
               const th = group.TotalHours;
@@ -3503,11 +3547,71 @@
               else if (group.Status === 'Half Day') clr = 'bg-orange-100 text-orange-700 dark:text-orange-300 dark:bg-orange-900/30';
               else if (group.Status === 'Present') clr = 'bg-blue-100 text-blue-700 dark:text-blue-300 dark:bg-blue-900/30';
               else if (group.Status === 'Holiday') clr = 'bg-purple-100 text-purple-700 dark:text-purple-300 dark:bg-purple-900/30';
+              else if (group.Status === 'Pending Approval') clr = 'bg-orange-100 text-orange-700 dark:text-orange-300 dark:bg-orange-900/30';
 
               const emp = App.state.data.employees?.find(e => e.EmpID === group.EmpID);
               const empName = emp ? emp.Name : group.EmpID;
 
-              tableHtml += `<tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-colors" onclick="document.getElementById('child-row-${i}').classList.toggle('hidden')"><td class="px-4 py-3"><svg class="w-4 h-4 text-gray-400 dark:text-gray-200 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></td><td class="px-4 py-3 font-medium dark:text-white">${group.Date}</td>${!isEmp ? `<td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${group.EmpID}</div></td>` : ''}<td class="px-4 py-3 text-gray-600 dark:text-gray-200">${group.Sessions.length} Session(s)</td><td class="px-4 py-3 font-semibold dark:text-white">${hrs}h ${mins}m</td><td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${clr}">${group.Status}</span></td></tr><tr id="child-row-${i}" class="hidden bg-gray-50/30 dark:bg-slate-800/20 border-b border-gray-100 dark:border-slate-700 ${group.Sessions.length === 0 ? 'hidden' : ''}"><td colspan="${!isEmp ? '6' : '5'}" class="p-0"><div class="px-10 py-4"><table class="w-full text-xs text-left"><thead class="text-gray-400 dark:text-gray-200 border-b border-gray-200 dark:border-slate-700"><tr><th class="pb-2">Session ID</th><th class="pb-2">Check In</th><th class="pb-2">Check Out</th><th class="pb-2">Hours</th><th class="pb-2">Late?</th></tr></thead><tbody>${group.Sessions.map(s => `<tr><td class="py-2 text-gray-500 dark:text-gray-300">${s.AttID}</td><td class="py-2 font-medium text-green-600 dark:text-green-400">${formatTime(s.CheckIn)}</td><td class="py-2 font-medium text-orange-500 dark:text-orange-400">${formatTime(s.CheckOut)}</td><td class="py-2 dark:text-gray-100">${s.Hours || '-'}</td><td class="py-2"><span class="${s.LateArrival === 'Yes' ? 'text-red-500 font-bold' : 'dark:text-gray-300'}">${s.LateArrival || 'No'}</span></td></tr>`).join('')}</tbody></table></div></td></tr>`;
+              // Safely build the inner HTML for the nested child rows
+              let sessionsHtml = group.Sessions.map(s => {
+                let acts = '-';
+                let extraNote = s.CorrectionReason ? '<div class="text-[10px] text-orange-500 mt-1 italic break-words whitespace-normal max-w-[200px]">Note: ' + s.CorrectionReason + '</div>' : '';
+
+                if (!isEmp && s.Status === 'Pending Approval') {
+                  acts = '<div class="flex gap-2">' +
+                    '<button onclick="App.actions.processCorrection(\'' + s.AttID + '\', \'Approved\')" class="bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-900/40 dark:text-green-400 px-3 py-1 rounded-lg font-bold transition-colors">Approve</button>' +
+                    '<button onclick="App.actions.processCorrection(\'' + s.AttID + '\', \'Rejected\')" class="bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/40 dark:text-red-400 px-3 py-1 rounded-lg font-bold transition-colors">Reject</button>' +
+                    '</div>';
+                } else if (isEmp && s.Status === 'Pending Approval') {
+                  acts = '<span class="text-orange-500 font-bold bg-orange-50 px-2 py-1 rounded border border-orange-200">Awaiting Admin</span>';
+                }
+
+                let sStatus = s.Status || 'Present';
+                let sStatusClass = s.Status === 'Pending Approval' ? 'text-orange-500' : 'text-gray-600 dark:text-gray-300';
+
+                return '<tr class="border-b border-gray-100/50 dark:border-slate-700/30 last:border-0">' +
+                  '<td class="py-3 text-gray-500 dark:text-gray-300">' + s.AttID + '</td>' +
+                  '<td class="py-3 font-medium text-green-600 dark:text-green-400">' + formatTime(s.CheckIn) + '</td>' +
+                  '<td class="py-3 font-medium text-orange-500 dark:text-orange-400">' + formatTime(s.CheckOut) + '</td>' +
+                  '<td class="py-3 dark:text-gray-100 font-bold">' + (s.Hours || '-') + '</td>' +
+                  '<td class="py-3"><span class="font-bold ' + sStatusClass + '">' + sStatus + '</span></td>' +
+                  '<td class="py-3">' + acts + ' ' + extraNote + '</td>' +
+                  '</tr>';
+              }).join('');
+
+              tableHtml += `
+                <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-colors" onclick="document.getElementById('child-row-${i}').classList.toggle('hidden')">
+                  <td class="px-4 py-3">
+                    <svg class="w-4 h-4 text-gray-400 dark:text-gray-200 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </td>
+                  <td class="px-4 py-3 font-medium dark:text-white">${group.Date}</td>
+                  ${!isEmp ? `<td class="px-4 py-3"><div class="font-semibold text-gray-800 dark:text-white">${empName}</div><div class="text-xs text-gray-500 dark:text-gray-400">${group.EmpID}</div></td>` : ''}
+                  <td class="px-4 py-3 text-gray-600 dark:text-gray-200">${group.Sessions.length} Session(s)</td>
+                  <td class="px-4 py-3 font-semibold dark:text-white">${hrs}h ${mins}m</td>
+                  <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${clr}">${group.Status}</span></td>
+                </tr>
+                <tr id="child-row-${i}" class="hidden bg-gray-50/30 dark:bg-slate-800/20 border-b border-gray-100 dark:border-slate-700 ${group.Sessions.length === 0 ? 'hidden' : ''}">
+                  <td colspan="${!isEmp ? '6' : '5'}" class="p-0">
+                    <div class="px-10 py-4">
+                      <table class="w-full text-xs text-left">
+                        <thead class="text-gray-400 dark:text-gray-200 border-b border-gray-200 dark:border-slate-700">
+                          <tr>
+                            <th class="pb-2">Session ID</th>
+                            <th class="pb-2">Check In</th>
+                            <th class="pb-2">Check Out</th>
+                            <th class="pb-2">Hours</th>
+                            <th class="pb-2">Status</th>
+                            <th class="pb-2">Actions / Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${sessionsHtml}
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              `;
             });
           }
           tableHtml += `</tbody>`;
