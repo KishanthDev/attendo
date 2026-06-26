@@ -509,8 +509,7 @@
           <div id="leave-balances-container" class="hidden"></div>
 
           <!-- NEW: Admin Leave KPIs (Hidden for Employee) -->
-          <div id="admin-leave-kpis" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4"></div>
-
+          <div id="admin-leave-kpis" class="hidden grid grid-cols-1 md:grid-cols-5 gap-4"></div>
           <!-- NEW: Toolbar (Search & Filter) -->
           <div
             class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
@@ -1256,6 +1255,61 @@
     </div>
   </div>
 
+  <div id="on-leave-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div
+        class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+        <h3 class="font-bold text-gray-800 dark:text-white">Employees on Leave</h3>
+        <button onclick="App.ui.modals.close('on-leave-modal')" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="on-leave-list-body" class="p-4 max-h-60 overflow-y-auto space-y-2">
+        <!-- List will be injected here -->
+      </div>
+    </div>
+  </div>
+
+  <div id="correction-modal"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-dark-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-orange-100 dark:border-orange-900/30 bg-orange-50 dark:bg-orange-900/10">
+        <h3 class="text-lg font-bold text-orange-800 dark:text-orange-400">Action Required: Missing Check-out</h3>
+        <p class="text-xs text-orange-600 dark:text-orange-300 mt-1" id="correction-date-text">You must complete your
+          previous timesheet.</p>
+      </div>
+      <form id="correction-form" onsubmit="event.preventDefault(); App.actions.submitCorrection();"
+        class="p-6 space-y-4">
+        <input type="hidden" id="corr-att-id">
+
+        <div>
+          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Actual Check-out Time</label>
+          <input type="time" id="corr-time" required
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1 dark:text-gray-200">Reason / Justification</label>
+          <textarea id="corr-reason" required
+            class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500"
+            rows="3" placeholder="Forgot to log out, system crash, etc."></textarea>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="App.ui.modals.close('correction-modal')"
+            class="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-200 rounded-xl">Cancel</button>
+          <button type="submit"
+            class="px-5 py-2.5 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-xl shadow-lg transition-all">Submit
+            Correction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const App = {
       state: {
@@ -1578,17 +1632,25 @@
           }
         },
 
+        // KEEP THIS UPDATED BLOCK
         markAttendance: async (type) => {
           const res = await App.api('markAttendance', type, App.state.user.EmpID);
-          if (res.status === 'Error') {
+
+          if (res.status === 'CORRECTION_REQUIRED') {
+            // Fill and open the modal smoothly
+            document.getElementById('corr-att-id').value = res.data.AttID;
+            document.getElementById('correction-date-text').innerText = `Missing check-out for: ${res.data.Date}`;
+            App.ui.modals.open('correction-modal');
+          }
+          else if (res.status === 'Error') {
             Swal.fire({ icon: 'warning', title: 'Action Denied', text: res.message });
-          } else {
+          }
+          else {
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
             App.loadData.attendance();
             App.loadData.dashboard();
           }
         },
-
         saveClient: async () => {
           const data = { ClientID: document.getElementById('cl-id').value, ClientName: document.getElementById('cl-name').value, WorkingHours: document.getElementById('cl-hours').value, Status: document.getElementById('cl-status').value, Technologies: document.getElementById('cl-tech').value, StartDate: document.getElementById('cl-start').value, EndDate: document.getElementById('cl-end').value, Description: document.getElementById('cl-desc').value };
           App.ui.modals.close('client-modal');
@@ -2012,6 +2074,45 @@
           }
         },
 
+        // UPDATE: Inside App.actions object
+
+        markAttendance: async (type) => {
+          const res = await App.api('markAttendance', type, App.state.user.EmpID);
+
+          if (res.status === 'CORRECTION_REQUIRED') {
+            // Open the correction modal
+            document.getElementById('corr-att-id').value = res.data.AttID;
+            document.getElementById('correction-date-text').innerText = `Missing check-out for: ${res.data.Date}`;
+            App.ui.modals.open('correction-modal');
+            Swal.fire({ icon: 'warning', title: 'Check-out Missing', text: res.message });
+          }
+          else if (res.status === 'Error') {
+            Swal.fire({ icon: 'warning', title: 'Action Denied', text: res.message });
+          }
+          else {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 3000 });
+            App.loadData.attendance();
+            App.loadData.dashboard();
+          }
+        },
+
+        submitCorrection: async () => {
+          const attId = document.getElementById('corr-att-id').value;
+          const time = document.getElementById('corr-time').value;
+          const reason = document.getElementById('corr-reason').value;
+
+          App.ui.modals.close('correction-modal');
+
+          const res = await App.api('submitAttendanceCorrection', attId, time, reason, App.state.user.EmpID);
+
+          if (res.status === 'Error') {
+            Swal.fire({ icon: 'error', title: 'Failed', text: res.message });
+          } else {
+            Swal.fire({ icon: 'success', title: 'Submitted', text: 'Correction sent for Admin approval. You may now check in.' });
+            App.loadData.attendance();
+          }
+        },
+
         rejectSkill: async (id) => {
           const confirm = await Swal.fire({
             title: 'Reject Skill?',
@@ -2338,6 +2439,26 @@
           document.getElementById('sidebar-overlay').classList.toggle('hidden');
         },
         modals: {
+          // Add this inside the App.ui.modals object
+          showOnLeaveList: () => {
+            const list = App.state.data.onLeaveNames || [];
+            const body = document.getElementById('on-leave-list-body');
+
+            if (list.length === 0) {
+              body.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No one is on leave today.</p>';
+            } else {
+              // This will now display names instead of EmpIDs
+              body.innerHTML = list.map(name => `
+      <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
+        <div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 font-bold text-xs">
+          ${name.charAt(0)}
+        </div>
+        <span class="text-sm font-medium dark:text-white">${name}</span>
+      </div>
+    `).join('');
+            }
+            App.ui.modals.open('on-leave-modal');
+          },
           viewCategory: async (categoryName) => {
             document.getElementById('view-category-name').innerText = `Category: ${categoryName}`;
 
@@ -3341,7 +3462,15 @@
               if (l.Status === 'Approved' && l.StartDate.startsWith(currentMonth)) approvedMonth++;
               if (l.Status === 'Rejected' && l.StartDate.startsWith(currentMonth)) rejectedMonth++;
             });
+            const leaveEmployees = data
+              .filter(l => l.Status === 'Approved' && l.StartDate <= todayStr && l.EndDate >= todayStr)
+              .map(l => {
+                const emp = App.state.data.employees.find(e => e.EmpID === l.EmpID);
+                return emp ? emp.Name : l.EmpID;
+              });
 
+            // Store globally so the modal can read it
+            App.state.data.onLeaveNames = leaveEmployees;
             const kpiContainer = document.getElementById('admin-leave-kpis');
             kpiContainer.classList.remove('hidden');
             kpiContainer.innerHTML = `
@@ -3361,6 +3490,43 @@
                   <div class="p-3 bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
                   <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Rejected (This Mth)</p><h4 class="text-xl font-bold text-gray-800 dark:text-white">${rejectedMonth}</h4></div>
                </div>
+<div class="bg-white dark:bg-dark-card p-4 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
+    <div class="flex items-center justify-between">
+        <!-- Left -->
+        <div class="flex items-center gap-4">
+            <div class="p-3 bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400 rounded-xl">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                    </path>
+                </svg>
+            </div>
+
+            <div>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    On Leave Today
+                </p>
+                <h4 class="text-xl font-bold text-gray-800 dark:text-white">
+                    ${onLeaveToday}
+                </h4>
+            </div>
+        </div>
+
+        <!-- Right -->
+        <button
+            onclick="App.ui.modals.showOnLeaveList()"
+            class="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-gray-100 dark:hover:bg-dark-hover transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                </path>
+            </svg>
+        </button>
+    </div>
+</div>
+</div>
             `;
           }
 

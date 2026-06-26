@@ -35,7 +35,7 @@ function setupSystem() {
 
   const schemas = {
     [SHEETS.EMP]: ['EmpID', 'Name', 'Email', 'Password', 'Department', 'Designation', 'Role', 'Status', 'JoiningDate', 'ExitDate', 'MustChangePassword'],
-    [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status', 'LateArrival'],
+    [SHEETS.ATT]: ['AttID', 'EmpID', 'Date', 'CheckIn', 'CheckOut', 'Hours', 'Status', 'LateArrival','CorrectionReason'],
     [SHEETS.LEAVE]: ['LeaveID', 'EmpID', 'Type', 'StartDate', 'EndDate', 'Days', 'Status', 'Remarks'],
     [SHEETS.HOL]: ['HolID', 'Name', 'Date', 'Type', 'Description'],
     [SHEETS.SET]: ['Key', 'Value'],
@@ -484,6 +484,7 @@ function getAttendanceSummary(empIdFilter = null) {
   return result;
 }
 
+// REPLACES EXISTING markAttendance
 function markAttendance(action, empId) {
   const now = new Date();
   const todayStr = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd");
@@ -495,19 +496,40 @@ function markAttendance(action, empId) {
   const headers = data[0];
 
   let lastRecordIndex = -1, lastCheckIn = null, lastCheckOut = null, lastDateStr = null, sessionsToday = 0;
+  let previousIncompleteSession = null;
 
   for (let i = data.length - 1; i >= 1; i--) {
     if (data[i][headers.indexOf('EmpID')] === empId) {
-      let d = new Date(data[i][headers.indexOf('Date')]);
-      if (!isNaN(d.getTime())) {
-        let rStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
-        if (rStr === todayStr) sessionsToday++;
-        if (lastRecordIndex === -1) {
-          lastRecordIndex = i + 1;
-          lastCheckIn = data[i][headers.indexOf('CheckIn')];
-          lastCheckOut = data[i][headers.indexOf('CheckOut')];
-          lastDateStr = rStr;
-        }
+      let rawDate = data[i][headers.indexOf('Date')];
+      
+      // CRITICAL FIX: Convert Date object to a string so it doesn't crash the frontend return
+      let dStr = rawDate;
+      if (rawDate instanceof Date) {
+        dStr = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      } else if (typeof rawDate === 'string' && rawDate.includes('T')) {
+        dStr = rawDate.split('T')[0];
+      }
+
+      let cOut = data[i][headers.indexOf('CheckOut')];
+      
+      // Count today's sessions
+      if (dStr === todayStr) sessionsToday++;
+      
+      // Look for previous days missing a check-out
+      if (dStr !== todayStr && (!cOut || cOut === "")) {
+        previousIncompleteSession = {
+          AttID: data[i][headers.indexOf('AttID')],
+          Date: dStr, // Now safely a string
+          CheckIn: data[i][headers.indexOf('CheckIn')]
+        };
+      }
+
+      // Track the absolute latest session
+      if (lastRecordIndex === -1) {
+        lastRecordIndex = i + 1;
+        lastCheckIn = data[i][headers.indexOf('CheckIn')];
+        lastCheckOut = cOut;
+        lastDateStr = dStr;
       }
     }
   }
@@ -515,6 +537,15 @@ function markAttendance(action, empId) {
   const hasActiveSessionToday = (lastRecordIndex > -1 && lastDateStr === todayStr && (!lastCheckOut || lastCheckOut === ""));
 
   if (action === 'CHECK_IN') {
+    // ENFORCE CORRECTION RULE
+    if (previousIncompleteSession) {
+      return { 
+        status: 'CORRECTION_REQUIRED', 
+        data: previousIncompleteSession, 
+        message: `You missed a check-out on ${previousIncompleteSession.Date}. Please submit a correction.` 
+      };
+    }
+
     if (hasActiveSessionToday) return { status: 'Error', message: 'You have an active session! Check out first.' };
 
     let isLate = 'No';
@@ -524,7 +555,7 @@ function markAttendance(action, empId) {
       if (currentH > lateH || (currentH === lateH && currentM > lateM)) isLate = 'Yes';
     }
 
-    sheet.appendRow(['ATT-' + epochTimestamp, empId, todayStr, String(epochTimestamp), "", "", 'Present', isLate]);
+    sheet.appendRow(['ATT-' + epochTimestamp, empId, todayStr, String(epochTimestamp), "", "", 'Present', isLate, '']);
     logAudit(currentUser, 'CHECK_IN', `Checked in at Epoch ${epochTimestamp}`);
     return { status: 'Success', message: 'Successfully checked in!' };
 
@@ -541,7 +572,61 @@ function markAttendance(action, empId) {
 
     return { status: 'Success', message: 'Successfully checked out!' };
   }
+  
   return { status: 'Error', message: 'Invalid action payload.' };
+}
+
+function submitAttendanceCorrection(attId, checkoutTime, reason, empId) {
+  const sheet = getDb().getSheetByName(SHEETS.ATT);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][headers.indexOf('AttID')] === attId) {
+      let rawDate = data[i][headers.indexOf('Date')];
+      const checkInEpoch = Number(data[i][headers.indexOf('CheckIn')]);
+      
+      // 1. Safely extract the date as a YYYY-MM-DD string
+      let formattedDate = rawDate;
+      if (rawDate instanceof Date) {
+        formattedDate = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      } else if (typeof rawDate === 'string' && rawDate.includes('T')) {
+        formattedDate = rawDate.split('T')[0];
+      }
+
+      // 2. Parse the individual pieces to avoid timezone shifting bugs
+      const dateParts = formattedDate.split('-');
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // JS months are 0-indexed
+      const day = parseInt(dateParts[2], 10);
+      
+      const timeParts = checkoutTime.split(':');
+      const hours = parseInt(timeParts[0], 10);
+      const minutes = parseInt(timeParts[1], 10);
+      
+      // 3. Build the perfect local Date object
+      const fakeDate = new Date(year, month, day, hours, minutes, 0);
+      const checkOutEpoch = fakeDate.getTime();
+      
+      // Calculate Hours
+      let workedHours = (Math.abs(checkOutEpoch - checkInEpoch) / 36e5).toFixed(2);
+      
+      // 4. Save to Sheet
+      sheet.getRange(i + 1, headers.indexOf('CheckOut') + 1).setValue(String(checkOutEpoch));
+      sheet.getRange(i + 1, headers.indexOf('Hours') + 1).setValue(workedHours);
+      sheet.getRange(i + 1, headers.indexOf('Status') + 1).setValue('Pending Approval');
+      
+      // Ensure CorrectionReason column exists before writing
+      let reasonCol = headers.indexOf('CorrectionReason');
+      if (reasonCol > -1) {
+        sheet.getRange(i + 1, reasonCol + 1).setValue(reason);
+      }
+      
+      logAudit(empId, 'ATTENDANCE_CORRECTION', `Submitted correction for ${attId}`);
+      return { status: 'Success', message: 'Correction submitted. Pending manager approval.' };
+    }
+  }
+  return { status: 'Error', message: 'Session not found.' };
 }
 
 // ==========================================
