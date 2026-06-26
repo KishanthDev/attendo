@@ -467,6 +467,102 @@
           <div id="my-skills-container" class="grid grid-cols-1 gap-6"></div>
         </div>
 
+        <div id="view-timesheet" class="view-section space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h3 class="font-semibold text-lg dark:text-white">Daily Timesheet</h3>
+            <div class="flex items-center gap-2">
+              <label class="text-sm font-medium dark:text-gray-300">Select Date:</label>
+              <input type="date" id="ts-date" onchange="App.loadData.timesheet()"
+                class="bg-white dark:bg-dark-card dark:text-white border border-gray-200 dark:border-dark-border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 shadow-sm">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+              class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Required Hours</p>
+                <h4 class="text-3xl font-bold text-gray-800 dark:text-white mt-1" id="ts-kpi-req">0h</h4>
+              </div>
+              <div class="p-3 bg-gray-50 text-gray-400 dark:bg-slate-800 rounded-xl"><svg class="w-8 h-8" fill="none"
+                  stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg></div>
+            </div>
+            <div
+              class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Attendance Logged</p>
+                <h4 class="text-3xl font-bold text-brand-600 dark:text-brand-400 mt-1" id="ts-kpi-att">0h</h4>
+              </div>
+              <div class="p-3 bg-brand-50 text-brand-600 dark:bg-brand-900/30 rounded-xl"><svg class="w-8 h-8"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg></div>
+            </div>
+            <div
+              class="bg-white dark:bg-dark-card p-5 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Timesheet Tasks</p>
+                <h4 class="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1" id="ts-kpi-tasks">0h</h4>
+              </div>
+              <div class="p-3 bg-purple-50 text-purple-600 dark:bg-purple-900/30 rounded-xl"><svg class="w-8 h-8"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                  </path>
+                </svg></div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white dark:bg-dark-card rounded-2xl p-6 border border-gray-100 dark:border-dark-border shadow-sm">
+            <h4 class="font-bold mb-4 dark:text-white">Log Work Task</h4>
+            <form id="ts-add-form" onsubmit="event.preventDefault(); App.actions.saveTimesheetTask();"
+              class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+              <div class="md:col-span-3">
+                <label class="block text-xs font-medium mb-1 dark:text-gray-300">Project / Client</label>
+                <select id="ts-client" required
+                  class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500">
+                  <option value="Internal Work">Internal Work</option>
+                </select>
+              </div>
+              <div class="md:col-span-4">
+                <label class="block text-xs font-medium mb-1 dark:text-gray-300">Task Name</label>
+                <input type="text" id="ts-task" required placeholder="e.g. Built API Endpoints"
+                  class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-xs font-medium mb-1 dark:text-gray-300">Hours Spent</label>
+                <input type="number" step="0.25" min="0.25" max="24" id="ts-hours" required placeholder="0.0"
+                  class="w-full bg-gray-50 dark:bg-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-500">
+              </div>
+              <div class="md:col-span-3">
+                <button id="ts-save-btn" type="submit"
+                  class="w-full bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md transition-all flex justify-center items-center gap-2">
+                  <svg id="ts-save-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                  </svg>
+                  <svg id="ts-save-spin" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                  </svg>
+                  <span id="ts-save-text">Add Task</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div
+            class="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm table-container">
+            <table class="w-full text-sm text-left whitespace-nowrap" id="timesheet-table"></table>
+          </div>
+        </div>
+
         <div id="view-employees" class="view-section space-y-4">
           <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="relative w-full sm:w-72">
@@ -1272,6 +1368,7 @@
           case 'dashboard': await App.loadData.dashboard(); break;
           case 'employees': App.state.cache.employees = null; await App.loadData.employees(true); break;
           case 'attendance': await App.loadData.attendance(); break;
+          case 'timesheet': await App.loadData.timesheet(); break;
           case 'leaves': await App.loadData.leaves(); break;
           case 'holidays': App.state.cache.holidays = null; await App.loadData.holidays(true); break;
           case 'announcements': await App.loadData.announcements(); break;
@@ -2278,7 +2375,53 @@
             .saveSkillCardNotes(categoryName, notes);
         },
 
+        saveTimesheetTask: async () => {
+          const btn = document.getElementById('ts-save-btn');
+          const icon = document.getElementById('ts-save-icon');
+          const spin = document.getElementById('ts-save-spin');
+          const text = document.getElementById('ts-save-text');
 
+          // Lock UI
+          btn.disabled = true; btn.classList.add('opacity-75');
+          icon.classList.add('hidden'); spin.classList.remove('hidden');
+          text.innerText = 'Saving...';
+          App.state.isSilentRefresh = true;
+
+          const data = {
+            EmpID: App.state.user.EmpID,
+            Date: document.getElementById('ts-date').value,
+            ClientName: document.getElementById('ts-client').value,
+            TaskName: document.getElementById('ts-task').value,
+            Hours: document.getElementById('ts-hours').value,
+            Notes: ''
+          };
+
+          try {
+            const res = await App.api('saveTimesheetEntry', data);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 2000 });
+            document.getElementById('ts-add-form').reset();
+            await App.loadData.timesheet(true); // Refresh table
+          } catch (e) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Failed to save task', showConfirmButton: false, timer: 2000 });
+          } finally {
+            btn.disabled = false; btn.classList.remove('opacity-75');
+            icon.classList.remove('hidden'); spin.classList.add('hidden');
+            text.innerText = 'Add Task';
+            App.state.isSilentRefresh = false;
+          }
+        },
+
+        deleteTimesheetTask: async (entryId) => {
+          App.state.isSilentRefresh = true;
+          try {
+            await App.api('deleteTimesheetEntry', entryId);
+            await App.loadData.timesheet(true); // Refresh table
+          } catch (e) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Failed to delete task', showConfirmButton: false, timer: 2000 });
+          } finally {
+            App.state.isSilentRefresh = false;
+          }
+        },
       },
 
       ui: {
@@ -2662,6 +2805,7 @@
             { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'employees', label: 'Directory', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['ADMIN'] },
             { id: 'attendance', label: 'Attendance', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', roles: ['ADMIN', 'EMPLOYEE'] },
+            { id: 'timesheet', label: 'Timesheet', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01', roles: ['EMPLOYEE'] },
             { id: 'leaves', label: 'Leaves', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'holidays', label: 'Calendar', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', roles: ['ADMIN', 'EMPLOYEE'] },
             { id: 'skills-master', label: 'Skills Master', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', roles: ['ADMIN'] },
@@ -3275,6 +3419,59 @@
           }
           tableHtml += `</tbody>`;
           document.getElementById('attendance-summary-table').innerHTML = tableHtml;
+        },
+        timesheet: async (force = false) => {
+          // 1. Set default date to today if empty
+          const dateInput = document.getElementById('ts-date');
+          if (!dateInput.value) {
+            const today = new Date();
+            dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+          }
+          const selectedDate = dateInput.value;
+
+          // 2. Ensure Clients are loaded for the dropdown
+          if (!App.state.data.clients) App.state.data.clients = await App.api('getClients');
+          const clientSelect = document.getElementById('ts-client');
+          const activeClients = App.state.data.clients.filter(c => c.Status === 'Active');
+          clientSelect.innerHTML = '<option value="Internal Work">Internal Work</option>' +
+            activeClients.map(c => `<option value="${c.ClientName}">${c.ClientName}</option>`).join('');
+
+          // 3. Fetch Data
+          const [attendanceData, timesheetData] = await Promise.all([
+            App.api('getAttendanceSummary', App.state.user.EmpID),
+            App.api('getEmployeeTimesheet', App.state.user.EmpID, selectedDate)
+          ]);
+
+          // 4. Calculate KPIs
+          const reqHours = App.state.data.settings?.DailyWorkingHours || 8;
+          const todayAtt = attendanceData.find(a => a.Date === selectedDate);
+          const attHours = todayAtt ? todayAtt.TotalHours : 0;
+
+          let taskHours = 0;
+          timesheetData.forEach(t => taskHours += Number(t.Hours || 0));
+
+          document.getElementById('ts-kpi-req').innerText = `${reqHours}h`;
+          document.getElementById('ts-kpi-att').innerText = `${attHours.toFixed(1)}h`;
+
+          const taskKpi = document.getElementById('ts-kpi-tasks');
+          taskKpi.innerText = `${taskHours.toFixed(1)}h`;
+          // Visual warning if timesheet doesn't match attendance
+          if (taskHours < attHours) taskKpi.classList.replace('text-purple-600', 'text-orange-500');
+          else taskKpi.classList.replace('text-orange-500', 'text-purple-600');
+
+          // 5. Render Table
+          App.ui.render.table('timesheet-table', ['Project/Client', 'Task Name', 'Hours Logged', 'Actions'], timesheetData, row => {
+            return `<tr class="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                 <td class="px-4 py-3 font-semibold dark:text-white">${row.ClientName}</td>
+                 <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${row.TaskName}</td>
+                 <td class="px-4 py-3 font-bold text-brand-600 dark:text-brand-400">${row.Hours} hrs</td>
+                 <td class="px-4 py-3">
+                    <button onclick="App.actions.deleteTimesheetTask('${row.EntryID}')" class="p-1.5 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-lg transition-colors" title="Delete Task">
+                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                 </td>
+              </tr>`;
+          });
         },
         leaves: async (force = false, isFilter = false) => {
           // Smart caching: Don't hit the DB if we are just typing in the search bar

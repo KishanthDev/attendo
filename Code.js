@@ -15,7 +15,8 @@ const SHEETS = {
   CLIENT_ASSIGNMENTS: 'ClientAssignments',
   SKILLS: 'Skills',
   EMP_SKILLS: 'EmployeeSkills',
-  SKILL_CARDS: 'SkillCards' // NEW: Dedicated Sheet for Cards and Notes
+  SKILL_CARDS: 'SkillCards',
+  TIMESHEET: 'Timesheets'
 };
 
 function doGet(e) {
@@ -46,7 +47,8 @@ function setupSystem() {
     [SHEETS.CLIENT_ASSIGNMENTS]: ['AssignmentID', 'ClientID', 'EmpID', 'EmployeeName', 'AssignedDate', 'Status'],
     [SHEETS.SKILLS]: ['SkillID', 'Category', 'SkillName', 'Status', 'CreatedBy', 'Visibility', 'HiringRequired'],
     [SHEETS.EMP_SKILLS]: ['EmpID', 'SkillID', 'SkillName', 'Category', 'UpdatedAt', 'AssignmentStatus'],
-    [SHEETS.SKILL_CARDS]: ['CategoryID', 'CategoryName', 'CardNotes'] // NEW SCHEMA
+    [SHEETS.SKILL_CARDS]: ['CategoryID', 'CategoryName', 'CardNotes'],
+    [SHEETS.TIMESHEET]: ['EntryID', 'EmpID', 'Date', 'ClientName', 'TaskName', 'Hours', 'Notes', 'Timestamp']
   };
 
   for (const [sheetName, headers] of Object.entries(schemas)) {
@@ -555,9 +557,9 @@ function applyLeave(leaveData) {
   const leaves = getSheetDataAsJSON(SHEETS.LEAVE); // Fetch all existing leaves
 
   // 1. NEW VALIDATION: Check if they already applied for this exact date
-  const duplicateLeave = leaves.find(l => 
-    l.EmpID === leaveData.EmpID && 
-    l.StartDate === leaveData.Date && 
+  const duplicateLeave = leaves.find(l =>
+    l.EmpID === leaveData.EmpID &&
+    l.StartDate === leaveData.Date &&
     l.Status !== 'Rejected'
   );
 
@@ -1216,4 +1218,32 @@ function saveSkillCardNotes(categoryName, notes) {
     }
   }
   return { status: 'Error', message: 'Category not found' };
+}
+
+// ==========================================
+// TIMESHEET APIs
+// ==========================================
+
+function getEmployeeTimesheet(empId, dateStr) {
+  ensureSchemaHeaders(); // Safety check
+  const allEntries = getSheetDataAsJSON(SHEETS.TIMESHEET);
+  return allEntries.filter(t => t.EmpID === empId && t.Date === dateStr);
+}
+
+function saveTimesheetEntry(entryData) {
+  const currentUser = Session.getActiveUser().getEmail() || entryData.EmpID;
+  entryData.EntryID = 'TS-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+  entryData.Timestamp = new Date().toISOString();
+  
+  saveRowToSheet(SHEETS.TIMESHEET, entryData, 'EntryID');
+  logAudit(currentUser, 'ADD_TIMESHEET', `Added ${entryData.Hours} hrs for ${entryData.TaskName}`);
+  
+  return { status: 'Success', message: 'Task logged successfully.' };
+}
+
+function deleteTimesheetEntry(entryId) {
+  const currentUser = Session.getActiveUser().getEmail() || 'System';
+  deleteRowFromSheet(SHEETS.TIMESHEET, 'EntryID', entryId);
+  logAudit(currentUser, 'DELETE_TIMESHEET', `Deleted entry ${entryId}`);
+  return { status: 'Success', message: 'Task entry removed.' };
 }
